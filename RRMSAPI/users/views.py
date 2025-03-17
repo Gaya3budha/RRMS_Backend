@@ -24,6 +24,12 @@ class RolesListView(APIView):
         serializer = RoleSerializer(roles, many= True)
         return Response(serializer.data,status = status.HTTP_200_OK)
 
+class DistrictListView(APIView):
+    def get(self,request, *args, **kwargs):
+        districts = DistrictMaster.objects.all()
+        serializer = DistrictSerializer(districts, many= True)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+
 class UserListView(APIView):
     def get(self,request,*args,**kwargs):
         users=User.objects.all()

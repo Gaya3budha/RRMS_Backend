@@ -68,3 +68,15 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+
+
+# District Master
+class DistrictMaster(models.Model):
+    districtId = models.AutoField(primary_key = True)
+    districtName = models.CharField(unique = True, max_length = 100)
+    localName = models.CharField(max_length = 200)
+    active = models.CharField(default = 'Y')
+    lastModifiedDate = models.DateTimeField(auto_now = True)
+
+    def __str__(self):
+        return self.districtName
