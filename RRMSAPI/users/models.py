@@ -14,6 +14,13 @@ class Role(models.Model):
     def __str__(self):
         return self.roleName
 
+# DivisionMaster Table
+class DivisionMaster(models.Model):
+    divisionId = models.AutoField(primary_key = True)
+    divisionName = models.CharField(unique = True, max_length = 250)
+    active = models.CharField(default = 'Y')
+    lastModifiedDate = models.DateTimeField(auto_now = True)
+
 # User Table
 class CustomUserManager(BaseUserManager):
     def create_user(self,email,kgid,mobileno,password=None):
@@ -42,11 +49,12 @@ class User(AbstractBaseUser, PermissionsMixin):
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+    division = models.ForeignKey(DivisionMaster, on_delete=models.SET_NULL, null=True, blank=True)
 
     objects = CustomUserManager()
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['first_name', 'last_name','kgid','role']
+    REQUIRED_FIELDS = ['first_name', 'last_name','kgid','role','division']
 
     # Modify the 'groups' relationship by specifying a custom 'related_name'
     groups = models.ManyToManyField(
@@ -80,3 +88,4 @@ class DistrictMaster(models.Model):
 
     def __str__(self):
         return self.districtName
+
