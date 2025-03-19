@@ -1,25 +1,8 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
+from mdm.models import Role,DivisionMaster
 
 # Create your models here.
-
-# Role Table
-class Role(models.Model):
-    roleId = models.AutoField(primary_key = True)
-    roleName = models.CharField(max_length = 50, unique = True)
-    isActive = models.BooleanField(default = True)
-    createdOn = models.DateTimeField(auto_now_add = True)
-    lastModifiedDate = models.DateTimeField(auto_now = True)
-
-    def __str__(self):
-        return self.roleName
-
-# DivisionMaster Table
-class DivisionMaster(models.Model):
-    divisionId = models.AutoField(primary_key = True)
-    divisionName = models.CharField(unique = True, max_length = 250)
-    active = models.CharField(default = 'Y')
-    lastModifiedDate = models.DateTimeField(auto_now = True)
 
 # User Table
 class CustomUserManager(BaseUserManager):
@@ -44,12 +27,12 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
-    kgid = models.CharField(max_length=20,null=True)
+    kgid = models.CharField(max_length=20,unique=True,default=None)
     mobileno = models.CharField(max_length=15, unique=True, blank=True, null=True) 
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True)
+    division = models.ForeignKey(DivisionMaster, on_delete=models.SET_NULL, null=True, blank=True,default=None)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-    division = models.ForeignKey(DivisionMaster, on_delete=models.SET_NULL, null=True, blank=True)
 
     objects = CustomUserManager()
 
@@ -78,14 +61,5 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.email
 
 
-# District Master
-class DistrictMaster(models.Model):
-    districtId = models.AutoField(primary_key = True)
-    districtName = models.CharField(unique = True, max_length = 100)
-    localName = models.CharField(max_length = 200)
-    active = models.CharField(default = 'Y')
-    lastModifiedDate = models.DateTimeField(auto_now = True)
 
-    def __str__(self):
-        return self.districtName
 

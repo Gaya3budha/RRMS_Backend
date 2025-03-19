@@ -1,10 +1,7 @@
 from django.urls import path
-from .views import CreateUserView,UserListView, RolesListView, DivisionListView, DistrictListView
+from .views import CreateUserView,UserListView
 
 urlpatterns = [
-    path('roles/', RolesListView.as_view(), name='roles-list'),
     path('users/',UserListView.as_view(),name='user-list'), #path for fetching all the users
-    path('users/create/', CreateUserView.as_view(), name='create_user'),
-    path('divisions/', DivisionListView.as_view(), name='division-list'),
-    path('districts/', DistrictListView.as_view(), name='district-list'),
+    path('users/create/', CreateUserView.as_view(), name='create_user')
 ]

@@ -2,28 +2,10 @@ from django.shortcuts import render
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .serializers import UserSerializer, RoleSerializer, DivisionSerializer, DistrictSerializer 
-from .models import User,Role, DivisionMaster, DistrictMaster
+from .serializers import UserSerializer
+from .models import User
 
 # Create your views here.
-class RolesListView(APIView):
-    def get(self,request,*args,**kwargs):
-        roles = Role.objects.all()
-        serializer = RoleSerializer(roles, many= True)
-        return Response(serializer.data,status = status.HTTP_200_OK)
-
-class DistrictListView(APIView):
-    def get(self,request, *args, **kwargs):
-        districts = DistrictMaster.objects.all()
-        serializer = DistrictSerializer(districts, many= True)
-        return Response(serializer.data, status = status.HTTP_200_OK)
-
-class DivisionListView(APIView):
-    def get(self,request, *args, **kwargs):
-        divisions = DivisionMaster.objects.all()
-        serializer = DivisionSerializer(divisions, many= True)
-        return Response(serializer.data, status = status.HTTP_200_OK)
-
 class UserListView(APIView):
     def get(self,request,*args,**kwargs):
         users=User.objects.all()

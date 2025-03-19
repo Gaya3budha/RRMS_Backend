@@ -1,24 +1,16 @@
+import logging
 from rest_framework import serializers
-from .models import User, Role, DistrictMaster, DivisionMaster
+from .models import User
+from mdm.models import Role, DivisionMaster
 
-class RoleSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Role
-        fields = ['roleId','roleName']
 
-class DistrictSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = DistrictMaster
-        fields = ['districtId','districtName','localName','active','lastModifiedDate']
+# Set up the logger
+logger = logging.getLogger(__name__)
 
-class DivisionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = DivisionMaster
-        fields = ['divisionId','divisionName','active','lastModifiedDate']
 
 class UserSerializer(serializers.ModelSerializer):
     roleId = serializers.PrimaryKeyRelatedField(queryset=Role.objects.all(), source='role')
-    divisionId = serializers.PrimaryKeyRelatedField(queryset=DivisionMaster.objects.all(), source='divisionmaster',required=False)
+    divisionId = serializers.PrimaryKeyRelatedField(queryset=DivisionMaster.objects.all(), source='divisionmaster')
 
     class Meta:
         model = User
@@ -28,6 +20,7 @@ class UserSerializer(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
+
         user = User(
             email=validated_data['email'],
             first_name=validated_data['first_name'],
