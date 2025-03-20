@@ -39,3 +39,29 @@ class DistrictMaster(models.Model):
     def __str__(self):
         return self.districtName
 
+# Designation Master
+class DesignationMaster(models.Model):
+    designationId = models.AutoField(primary_key = True)
+    designationName = models.CharField( max_length = 100)
+    active = models.CharField(default = 'Y')
+    lastModifiedDate = models.DateTimeField(auto_now = True)
+
+# Unit Master
+class UnitMaster(models.Model):
+    unitId = models.AutoField(primary_key = True)
+    unitName = models.CharField( max_length = 100)
+    stateId = models.ForeignKey(StateMaster,on_delete=models.SET_NULL, null=True, blank=True)
+    districtId = models.ForeignKey(DistrictMaster,on_delete=models.SET_NULL, null=True, blank=True)
+    typeId = models.IntegerField()
+    parentUnit = models.IntegerField()
+    actualStrength = models.IntegerField()
+    sanctionedStrength = models.IntegerField()
+    talukID = models.IntegerField()
+    address1 = models.CharField(max_length = 250,blank = True, null = True)
+    address2 = models.CharField(max_length = 250,blank = True, null =True)
+    active = models.CharField(default = 'Y')
+    lastModifiedDate = models.DateTimeField(auto_now = True)
+
+
+    
+

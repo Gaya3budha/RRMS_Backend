@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework import status
-from .models import Role, DivisionMaster, DistrictMaster, StateMaster
-from .serializers import RoleSerializer, DivisionSerializer, DistrictSerializer, StateSerializer
+from .models import Role, DivisionMaster, DistrictMaster, StateMaster,UnitMaster, DesignationMaster
+from .serializers import RoleSerializer, DivisionSerializer, DistrictSerializer, StateSerializer, DesignationSerializer, UnitSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
@@ -34,4 +34,16 @@ class DivisionListView(APIView):
     def get(self,request, *args, **kwargs):
         divisions = DivisionMaster.objects.all()
         serializer = DivisionSerializer(divisions, many= True)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+
+class DesignationListView(APIView):
+    def get(self,request, *args, **kwargs):
+        designations = DesignationMaster.objects.all()
+        serializer = DesignationSerializer(designations, many= True)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+
+class UnitListView(APIView):
+    def get(self,request, *args, **kwargs):
+        units = UnitMaster.objects.all()
+        serializer = UnitSerializer(units, many= True)
         return Response(serializer.data, status = status.HTTP_200_OK)
