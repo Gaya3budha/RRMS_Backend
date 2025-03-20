@@ -46,5 +46,6 @@ class UserSerializer(serializers.ModelSerializer):
         if self.context.get('request') and self.context['request'].method == 'GET':
             representation['roleName'] = instance.role.roleName if instance.role else None
             representation['divisionName'] = instance.divisionmaster.divisionName if instance.divisionmaster else None
+            representation['designationName'] = instance.designationmaster.designationName if instance.designationmaster else None
 
         return representation
