@@ -1,7 +1,7 @@
 import logging
 from rest_framework import serializers
 from .models import User
-from mdm.models import Role, DivisionMaster
+from mdm.models import Role, DivisionMaster, DesignationMaster
 
 
 # Set up the logger
@@ -11,10 +11,11 @@ logger = logging.getLogger(__name__)
 class UserSerializer(serializers.ModelSerializer):
     roleId = serializers.PrimaryKeyRelatedField(queryset=Role.objects.all(), source='role')
     divisionId = serializers.PrimaryKeyRelatedField(queryset=DivisionMaster.objects.all(), source='divisionmaster')
+    designationId = serializers.PrimaryKeyRelatedField(queryset=DesignationMaster.objects.all(), source='designationmaster')
 
     class Meta:
         model = User
-        fields = ['email', 'first_name', 'last_name', 'mobileno', 'kgid', 'password', 'roleId','divisionId']
+        fields = ['email', 'first_name', 'last_name', 'mobileno', 'kgid', 'password', 'roleId','divisionId','designationId']
         extra_kwargs = {
             'password': {'write_only': True},
         }
@@ -30,6 +31,7 @@ class UserSerializer(serializers.ModelSerializer):
             password=validated_data['password'],
             role=validated_data['role'],
             divisionmaster=validated_data['divisionmaster'],
+            designationmaster=validated_data['designationmaster']
         )
 
         user.set_password(validated_data['password'])  # password is saved as hash

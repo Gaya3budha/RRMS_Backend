@@ -1,6 +1,6 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
-from mdm.models import Role,DivisionMaster
+from mdm.models import Role,DivisionMaster, DesignationMaster
 
 # Create your models here.
 
@@ -31,13 +31,14 @@ class User(AbstractBaseUser, PermissionsMixin):
     mobileno = models.CharField(max_length=15, unique=True, blank=True, null=True) 
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True)
     divisionmaster = models.ForeignKey(DivisionMaster, on_delete=models.SET_NULL, null=True, blank=True)
+    designationmaster = models.ForeignKey(DesignationMaster,  on_delete=models.SET_NULL, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
     objects = CustomUserManager()
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['first_name', 'last_name','kgid','role','division']
+    REQUIRED_FIELDS = ['first_name', 'last_name','kgid','role','divisionmaster','designationmaster']
 
     # Modify the 'groups' relationship by specifying a custom 'related_name'
     groups = models.ManyToManyField(
