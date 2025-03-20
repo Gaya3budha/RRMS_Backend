@@ -29,7 +29,7 @@ class UserSerializer(serializers.ModelSerializer):
             kgid=validated_data['kgid'],
             password=validated_data['password'],
             role=validated_data['role'],
-            division=validated_data.get('division'),
+            divisionmaster=validated_data['divisionmaster'],
         )
 
         user.set_password(validated_data['password'])  # password is saved as hash
