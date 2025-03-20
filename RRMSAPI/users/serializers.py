@@ -36,3 +36,13 @@ class UserSerializer(serializers.ModelSerializer):
         user.save()
 
         return user
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+
+        # Check if it's a GET request by checking the context (the request method)
+        if self.context.get('request') and self.context['request'].method == 'GET':
+            representation['roleName'] = instance.role.roleName if instance.role else None
+            representation['divisionName'] = instance.divisionmaster.divisionName if instance.divisionmaster else None
+
+        return representation
