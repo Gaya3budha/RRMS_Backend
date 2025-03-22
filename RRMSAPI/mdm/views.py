@@ -43,7 +43,11 @@ class DesignationListView(APIView):
         return Response(serializer.data, status = status.HTTP_200_OK)
 
 class UnitListView(APIView):
-    def get(self,request, *args, **kwargs):
-        units = UnitMaster.objects.all()
+    def get(self,request, districtId, *args, **kwargs):
+        if districtId:
+            units = UnitMaster.objects.filter(districtId= districtId).order_by('unitName')
+        else:
+            units = UnitMaster.objects.all()
+
         serializer = UnitSerializer(units, many= True)
         return Response(serializer.data, status = status.HTTP_200_OK)

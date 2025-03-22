@@ -7,5 +7,5 @@ urlpatterns = [
     path('districts/', DistrictListView.as_view(), name='district-list'),
     path('states/', StateListView.as_view(), name='state-list'),
     path('designations/', DesignationListView.as_view(), name='designation-list'),
-    path('units/', UnitListView.as_view(), name='unit-list')
+    path('units/<int:districtId>', UnitListView.as_view(), name='unit-list')
 ]
