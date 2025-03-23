@@ -1,10 +1,13 @@
 from django.shortcuts import render
-from rest_framework import status
+from rest_framework import status,permissions, serializers
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .serializers import UserSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
+from .serializers import UserSerializer, CustomTokenObtainPairSerializer
 from .models import User
 from mdm.models import Role
+
+
 # Create your views here.
 class UserListView(APIView):
     def get(self,request,*args,**kwargs):
@@ -58,6 +61,9 @@ class UpdateUserView(APIView):
         except Role.DoesNotExist:
             return Response({"error": "Role not found"}, status=status.HTTP_404_NOT_FOUND)
 
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
 
 
 

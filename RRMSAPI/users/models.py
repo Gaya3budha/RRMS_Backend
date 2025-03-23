@@ -6,17 +6,17 @@ from mdm.models import Role,DivisionMaster, DesignationMaster
 
 # User Table
 class CustomUserManager(BaseUserManager):
-    def create_user(self,email,kgid,mobileno,password=None):
-        if not email:
-            raise ValueError('Email is mandatory')
+    def create_user(self,kgid,email,mobileno,password=None, **extra_fields):
+        if not kgid:
+            raise ValueError('KGID is mandatory')
         email = self.normalize_email(email)
-        user = self.model(email=email, kgid = kgid, mobileno = mobileno)
+        user = self.model(email=email, kgid = kgid, mobileno = mobileno, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email,kgid,mobileno, password=None,):
-        user = self.create_user(email, employee_id, mobile_no, password)
+    def create_superuser(self,kgid,email,mobileno,password=None, **extra_fields):
+        user = self.create_user(kgid,email, mobile_no, password, **extra_fields)
         user.is_staff = True
         user.is_superuser = True
         user.save(using=self._db)
@@ -24,10 +24,10 @@ class CustomUserManager(BaseUserManager):
 
 # Custom User Model
 class User(AbstractBaseUser, PermissionsMixin):
+    kgid = models.CharField(max_length=20,unique=True)
     email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
-    kgid = models.CharField(max_length=20,unique=True,default=None)
     mobileno = models.CharField(max_length=15, unique=True, blank=True, null=True) 
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True)
     divisionmaster = models.ForeignKey(DivisionMaster, on_delete=models.SET_NULL, null=True, blank=True)
@@ -37,8 +37,8 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     objects = CustomUserManager()
 
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['first_name', 'last_name','kgid','role','divisionmaster','designationmaster']
+    USERNAME_FIELD = 'kgid'
+    REQUIRED_FIELDS = ['first_name', 'last_name','email','role','divisionmaster','designationmaster']
 
     # Modify the 'groups' relationship by specifying a custom 'related_name'
     groups = models.ManyToManyField(
@@ -59,7 +59,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     )
 
     def __str__(self):
-        return self.email
+        return self.kgid
 
 
 

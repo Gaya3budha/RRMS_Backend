@@ -1,12 +1,11 @@
 import logging
 from rest_framework import serializers
-from .models import User
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from mdm.models import Role, DivisionMaster, DesignationMaster
-
+from .models import User
 
 # Set up the logger
 logger = logging.getLogger(__name__)
-
 
 class UserSerializer(serializers.ModelSerializer):
     roleId = serializers.PrimaryKeyRelatedField(queryset=Role.objects.all(), source='role')
@@ -49,3 +48,14 @@ class UserSerializer(serializers.ModelSerializer):
             representation['designationName'] = instance.designationmaster.designationName if instance.designationmaster else None
 
         return representation
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+
+        token['email']=user.email
+        token['role'] = user.role_id
+        token['full_name']=f"{user.first_name} {user.last_name}"
+
+        return token

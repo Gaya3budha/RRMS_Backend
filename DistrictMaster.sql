@@ -828,4 +828,4 @@ INSERT Into TmpDistrictMaster (DistrictID, DistrictName, StateID, LocalName, Act
 INSERT Into TmpDistrictMaster (DistrictID, DistrictName, StateID, LocalName, Active, LastModifiedDate, LastModifiedBy, MachineAddress, ValidFrom, ValidTo) VALUES (2018000028, N'Yadadri', 2017000001, N'Yadadri', N'Y', CAST(N'2022-07-14T06:54:28.650' AS TIMESTAMPTZ ), 0, N'InitalLoad', CAST(N'2024-01-25T11:39:38.8223674' AS TIMESTAMPTZ ), CAST(N'9999-12-31T23:59:59.9999999' AS TIMESTAMPTZ ));
 
 insert into mdm_districtmaster 
-select districtid,districtname,localname,active,lastmodifieddate from TmpDISTRICTMASTER  order by districtname
+select districtid,districtname,localname,active,lastmodifieddate,stateid from TmpDISTRICTMASTER  order by districtname
