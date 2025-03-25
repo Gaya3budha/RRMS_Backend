@@ -20,12 +20,18 @@ class DivisionMaster(models.Model):
     active = models.CharField(default = 'Y')
     lastModifiedDate = models.DateTimeField(auto_now = True)
 
+    def __str__(self):
+        return self.divisionName
+
 # State Master
 class StateMaster(models.Model):
     stateId = models.AutoField(primary_key = True)
     stateName = models.CharField(unique = True, max_length = 100)
     active =models.CharField(default = 'Y')
     lastModifiedDate = models.DateTimeField(auto_now = True)
+
+    def __str__(self):
+        return self.stateName
 
 # District Master
 class DistrictMaster(models.Model):
@@ -46,6 +52,9 @@ class DesignationMaster(models.Model):
     active = models.CharField(default = 'Y')
     lastModifiedDate = models.DateTimeField(auto_now = True)
 
+    def __str__(self):
+        return self.designationName
+
 # Unit Master
 class UnitMaster(models.Model):
     unitId = models.AutoField(primary_key = True)
@@ -61,6 +70,17 @@ class UnitMaster(models.Model):
     address2 = models.CharField(max_length = 250,blank = True, null =True)
     active = models.CharField(default = 'Y')
     lastModifiedDate = models.DateTimeField(auto_now = True)
+
+    def __str__(self):
+        return self.unitName
+
+
+# class Permission(models.Model):
+#     permissionID = models.AutoField(primary_key = True)
+#     permissionName = models.CharField(max_length = 100,unique =True)
+
+#     def __str__(self):
+#         return self.permissionName
 
 
     

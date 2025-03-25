@@ -6,19 +6,23 @@ from mdm.models import Role,DivisionMaster, DesignationMaster
 
 # User Table
 class CustomUserManager(BaseUserManager):
-    def create_user(self,kgid,email,mobileno,password=None, **extra_fields):
+    def create_user(self,kgid,email,password=None, **extra_fields):
         if not kgid:
             raise ValueError('KGID is mandatory')
         email = self.normalize_email(email)
-        user = self.model(email=email, kgid = kgid, mobileno = mobileno, **extra_fields)
+        user = self.model(email=email, kgid = kgid, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self,kgid,email,mobileno,password=None, **extra_fields):
-        user = self.create_user(kgid,email, mobile_no, password, **extra_fields)
+    def create_superuser(self,kgid,email,password=None,role=None,divisionmaster= None,designationmaster = None, **extra_fields):
+        user = self.create_user(kgid,email, password, **extra_fields)
         user.is_staff = True
         user.is_superuser = True
+
+        if not role:
+            role = Role.objects.get(name="Admin")
+
         user.save(using=self._db)
         return user
 
