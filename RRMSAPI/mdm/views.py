@@ -19,11 +19,10 @@ class RolesListView(APIView):
         return Response(serializer.data,status = status.HTTP_200_OK)
 
 class DistrictListView(APIView):
-    def get(self,request, *args, **kwargs):
-        state_id = request.query_params.get('stateid', None)
-
-        if state_id:
-            districts = DistrictMaster.objects.filter(stateId=state_id)
+    def get(self,request,stateId, *args, **kwargs):
+        # state_id = request.query_params.get('stateid', None)
+        if stateId:
+            districts = DistrictMaster.objects.filter(stateId=stateId).order_by('districtName')
         else:
             districts = DistrictMaster.objects.all()
 
