@@ -1,5 +1,8 @@
 import logging
 from rest_framework import serializers
+from django.contrib.auth import authenticate
+from rest_framework.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from mdm.models import Role, DivisionMaster, DesignationMaster
 from .models import User
@@ -50,6 +53,9 @@ class UserSerializer(serializers.ModelSerializer):
         return representation
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    kgid = serializers.CharField()
+    password = serializers.CharField()
+
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
@@ -59,3 +65,22 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['full_name']=f"{user.first_name} {user.last_name}"
 
         return token
+    
+
+    def validate(self, attrs):
+        kgid = attrs.get('kgid')
+        password = attrs.get('password')
+        
+        user= authenticate(kgid = kgid, password= password)
+
+        if not user:
+            raise AuthenticationFailed('Incorrect username or password')
+
+        refresh = RefreshToken.for_user(user)
+        access_token = self.get_token(user)  # Use the custom get_token method for the payload
+
+        return {
+            'refresh': str(refresh),
+            'access': str(access_token),
+        }
+   
