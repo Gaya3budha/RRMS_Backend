@@ -140,6 +140,21 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:4200'
 ]
 
+CORS_ALLOW_HEADERS = [
+     'accept',
+    'accept-encoding',
+    'authorization',
+    'cache-control',  # Add 'cache-control' to the allowed headers
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
 AUTH_USER_MODEL = "users.User"
 
 REST_FRAMEWORK = {
