@@ -152,4 +152,5 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     'ALGORITHM': 'HS256',  # Default algorithm for signing JWT tokens
     'SIGNING_KEY': 'SECRET@123',  # You can use Django's SECRET_KEY here
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
 }
