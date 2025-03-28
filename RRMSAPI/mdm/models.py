@@ -1,6 +1,14 @@
 from django.db import models
 
 # Create your models here.
+# # Permission Table
+# class Permission(models.Model):
+#     permissionID = models.AutoField(primary_key = True)
+#     permissionName = models.CharField(max_length = 100,unique =True)
+
+#     def __str__(self):
+#         return self.permissionName
+
 # Role Table
 class Role(models.Model):
     roleId = models.AutoField(primary_key = True)
@@ -8,6 +16,7 @@ class Role(models.Model):
     isActive = models.BooleanField(default = True)
     createdOn = models.DateTimeField(auto_now_add = True)
     lastModifiedDate = models.DateTimeField(auto_now = True)
+    # permissions = models.ManyToManyField(Permission, related_name="roles")
 
     def __str__(self):
         return self.roleName
@@ -73,14 +82,6 @@ class UnitMaster(models.Model):
 
     def __str__(self):
         return self.unitName
-
-
-# class Permission(models.Model):
-#     permissionID = models.AutoField(primary_key = True)
-#     permissionName = models.CharField(max_length = 100,unique =True)
-
-#     def __str__(self):
-#         return self.permissionName
 
 
     
