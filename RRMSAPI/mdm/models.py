@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import  Permission
 
 # Create your models here.
 # # Permission Table
@@ -16,7 +17,7 @@ class Role(models.Model):
     isActive = models.BooleanField(default = True)
     createdOn = models.DateTimeField(auto_now_add = True)
     lastModifiedDate = models.DateTimeField(auto_now = True)
-    # permissions = models.ManyToManyField(Permission, related_name="roles")
+    permissions = models.ManyToManyField(Permission, blank=True)
 
     def __str__(self):
         return self.roleName

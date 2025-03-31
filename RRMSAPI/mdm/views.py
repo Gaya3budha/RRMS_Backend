@@ -1,52 +1,59 @@
 from django.shortcuts import render
 from rest_framework import status
 from .models import Role, DivisionMaster, DistrictMaster, StateMaster,UnitMaster, DesignationMaster
-from .serializers import RoleSerializer, DivisionSerializer, DistrictSerializer, StateSerializer, DesignationSerializer, UnitSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from .permissions import HasRequiredPermission
 
 # Create your views here.
-class StateListView(APIView):
-    def get(self,request,*args,**kwargs):
-        roles = StateMaster.objects.all()
-        serializer = StateSerializer(roles, many= True)
-        return Response(serializer.data,status = status.HTTP_200_OK)
+class StateMasterView(APIView):
+    permission_classes = [IsAuthenticated, HasRequiredPermission]
 
-class RolesListView(APIView):
-    def get(self,request,*args,**kwargs):
-        roles = Role.objects.all()
-        serializer = RoleSerializer(roles, many= True)
-        return Response(serializer.data,status = status.HTTP_200_OK)
+    def get(self,request):
+        states = StateMaster.objects.all().values("stateId","stateName")
+        # serializer = StateSerializer(states, many= True)
+        return Response({"responseData":list(states),"statusCode" :status.HTTP_200_OK})
 
-class DistrictListView(APIView):
-    def get(self,request,stateId, *args, **kwargs):
-        # state_id = request.query_params.get('stateid', None)
+class RoleView(APIView):
+    permission_classes = [IsAuthenticated, HasRequiredPermission] 
+
+    def get(self,request):
+        roles = Role.objects.all().values("roleId","roleName")
+        return Response({"responseData":list(roles),"statusCode" :status.HTTP_200_OK})
+
+class DistrictMasterView(APIView):
+    permission_classes = [IsAuthenticated, HasRequiredPermission] 
+
+    def get(self,request,stateId):
         if stateId:
-            districts = DistrictMaster.objects.filter(stateId=stateId).order_by('districtName')
+            districts = DistrictMaster.objects.filter(stateId=stateId).order_by('districtName').values("districtId","districtName")
         else:
-            districts = DistrictMaster.objects.all()
+            districts = DistrictMaster.objects.all().values("districtId","districtName")
 
-        serializer = DistrictSerializer(districts, many= True)
-        return Response(serializer.data, status = status.HTTP_200_OK)
+        return Response({"responseData":list(districts),"statusCode" :status.HTTP_200_OK})
 
-class DivisionListView(APIView):
+class DivisionMasterView(APIView):
+    permission_classes = [IsAuthenticated, HasRequiredPermission] 
+
+    def get(self,request):
+        divisions = DivisionMaster.objects.all().values("divisionId","divisionName")
+        return Response({"responseData":list(divisions),"statusCode" :status.HTTP_200_OK})
+
+class DesignationMasterView(APIView):
+    permission_classes = [IsAuthenticated, HasRequiredPermission] 
+
     def get(self,request, *args, **kwargs):
-        divisions = DivisionMaster.objects.all()
-        serializer = DivisionSerializer(divisions, many= True)
-        return Response(serializer.data, status = status.HTTP_200_OK)
+        designations = DesignationMaster.objects.all().values("designationId","designationName")
+        return Response({"responseData":list(designations),"statusCode" :status.HTTP_200_OK})
 
-class DesignationListView(APIView):
-    def get(self,request, *args, **kwargs):
-        designations = DesignationMaster.objects.all()
-        serializer = DesignationSerializer(designations, many= True)
-        return Response(serializer.data, status = status.HTTP_200_OK)
+class UnitMasterView(APIView):
+    permission_classes = [IsAuthenticated, HasRequiredPermission] 
 
-class UnitListView(APIView):
     def get(self,request, districtId, *args, **kwargs):
         if districtId:
-            units = UnitMaster.objects.filter(districtId= districtId).order_by('unitName')
+            units = UnitMaster.objects.filter(districtId= districtId).order_by('unitName').values("unitId","unitName")
         else:
-            units = UnitMaster.objects.all()
+            units = UnitMaster.objects.all().values("unitId","unitName")
 
-        serializer = UnitSerializer(units, many= True)
-        return Response(serializer.data, status = status.HTTP_200_OK)
+        return Response({"responseData":list(units),"statusCode" :status.HTTP_200_OK})
