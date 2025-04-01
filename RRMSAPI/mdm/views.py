@@ -12,7 +12,6 @@ class StateMasterView(APIView):
 
     def get(self,request):
         states = StateMaster.objects.all().values("stateId","stateName")
-        # serializer = StateSerializer(states, many= True)
         return Response({"responseData":list(states),"statusCode" :status.HTTP_200_OK})
 
 class RoleView(APIView):
