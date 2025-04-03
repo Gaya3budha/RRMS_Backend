@@ -64,17 +64,17 @@ class UpdateUserView(APIView):
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
-     serializer_class = CustomTokenObtainPairSerializer
-    # def post(self,request):
-        # serializer_class = CustomTokenObtainPairSerializer(data = request.data)
+    #  serializer_class = CustomTokenObtainPairSerializer
+    def post(self,request):
+        serializer_class = CustomTokenObtainPairSerializer(data = request.data)
 
-        # try:
-        #     if serializer_class.is_valid():
-        #         return Response({"responseData": serializer_class.validated_data, "statusCode": 200}, status=status.HTTP_200_OK)
-        #     return Response({"responseData":serializer_class.errors, "statusCode": 400}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            if serializer_class.is_valid():
+                return Response({"responseData": serializer_class.validated_data, "statusCode": 200}, status=status.HTTP_200_OK)
+            return Response({"responseData":serializer_class.errors, "statusCode": 400}, status=status.HTTP_400_BAD_REQUEST)
 
-        # except AuthenticationFailed as e:
-        #     return Response({"responseData":str(e), "statusCode": 401}, status=status.HTTP_401_UNAUTHORIZED)
+        except AuthenticationFailed as e:
+            return Response({"responseData":str(e), "statusCode": 401}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 

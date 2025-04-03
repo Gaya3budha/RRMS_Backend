@@ -61,9 +61,23 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token = super().get_token(user)
 
         token['email']=user.email
-        token['role'] = user.role_id
         token['full_name']=f"{user.first_name} {user.last_name}"
+         
 
+        role_name = None
+        permissions_list = []
+        token['role'] = user.role_id
+        if user.role:
+            try:
+                role = Role.objects.get(roleId = user.role_id)
+                role_name = role.roleName
+                permissions_list = [perm.codename for perm in role.permissions.all()]
+
+            except:
+                role_name= "Unknown Role"
+
+            token['role_name'] = role_name
+            token['permissions']= permissions_list
         return token
     
 

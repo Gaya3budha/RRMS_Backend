@@ -42,7 +42,8 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',
     'mdm',
-    'users'
+    'users',
+    'caseInfoFiles.apps.CaseinfofilesConfig',
 ]
 
 MIDDLEWARE = [

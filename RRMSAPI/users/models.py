@@ -1,6 +1,6 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
-from mdm.models import Role,DivisionMaster, DesignationMaster
+from mdm.models import Role,DivisionMaster, DesignationMaster, Permission
 
 # Create your models here.
 
@@ -28,6 +28,7 @@ class CustomUserManager(BaseUserManager):
 
 # Custom User Model
 class User(AbstractBaseUser, PermissionsMixin):
+
     kgid = models.CharField(max_length=20,unique=True)
     email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=100)
@@ -64,6 +65,14 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.kgid
+
+    def has_permissions(self, permission_codename):
+
+        if self.role:
+            return self.role.permissions.filter(codename = permission_codename).exists()
+        
+        return False
+
 
 
 
