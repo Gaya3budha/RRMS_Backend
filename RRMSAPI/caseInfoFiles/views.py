@@ -31,36 +31,42 @@ class CaseInfoFileUploadView(APIView):
 
             caseInfo = case_serailizer.save()
 
-            uploaded_file = request.FILES.get("Files")
+            uploaded_files = request.FILES.getlist("Files")
 
-            if not uploaded_file:
-                return Response({"error": "No file provided"}, status=status.HTTP_400_BAD_REQUEST)
+            if not uploaded_files:
+                return Response({"error": "No files Uploaded"}, status=status.HTTP_400_BAD_REQUEST)
 
-            file_content = uploaded_file.read()
+            file_details_list = [] 
 
-            # Compute file hash (SHA-256)
-            file_hash = hashlib.sha256(file_content).hexdigest()
+            for uploaded_file in uploaded_files:
+                file_content = uploaded_file.read()
 
-            # Define file path and save file
-            file_name = uploaded_file.name
-            file_path = os.path.join(UPLOAD_DIR, file_name)
+                # Compute file hash (SHA-256)
+                file_hash = hashlib.sha256(file_content).hexdigest()
+                
+                # Define file path and save file
+                file_name = uploaded_file.name
+                file_path = os.path.join(UPLOAD_DIR, file_name)
 
-            # Write file to disk
-            with open(file_path, "wb") as f:
-                f.write(file_content)
+                # Write file to disk
+                with open(file_path, "wb") as f:
+                    f.write(file_content)
 
-            # Save file details in the database with student_id
-            file_detail = FileDetails.objects.create(
-                caseDetails=caseInfo,
-                fileName=file_name,
-                filePath=file_path,
-                fileHash=file_hash
-            )
+                # Save file details in the database with student_id
+                file_detail = FileDetails.objects.create(
+                    caseDetails=caseInfo,
+                    fileName=file_name,
+                    filePath=file_path,
+                    fileHash=file_hash
+                )
 
+                file_details_list.append({
+                    "file":FileDetailsSerializer(file_detail).data
+                })
             return Response(
                 {
                     "student": CaseInfoDetailsSerializer(caseInfo).data,
-                    "file": FileDetailsSerializer(file_detail).data,
+                    "file": file_details_list ,
                 },
                 status=status.HTTP_201_CREATED,
             )
