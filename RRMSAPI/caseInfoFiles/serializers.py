@@ -6,15 +6,24 @@ from cryptography.fernet import Fernet
 
 
 class CaseInfoDetailsSerializer(serializers.ModelSerializer):
+    
     class Meta:
         model = CaseInfoDetails
         fields = "__all__"
 
 class FileDetailsSerializer(serializers.ModelSerializer):
     CaseInfoDetailsId = serializers.IntegerField(source='CaseInfoDetails.CaseInfoDetailsId',read_only = True)
+    
     class Meta:
         model = FileDetails
         fields = ['fileId','CaseInfoDetailsId','fileName','filePath','fileHash']
+
+class CaseInfoSearchSerializers(serializers.ModelSerializer):
+    files = FileDetailsSerializer(many= True, read_only= True)
+
+    class Meta:
+        model = CaseInfoDetails
+        fields = ['stateId','districtId','unitId','Office','caseDate','caseNo','firNo','files']
 
 # class FileUploadSerializer(serializers.Serializer):
 

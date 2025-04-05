@@ -2,17 +2,48 @@ from django.shortcuts import render
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import CaseInfoDetailsSerializer,FileDetailsSerializer
-from .models import FileDetails
+from .serializers import CaseInfoDetailsSerializer,FileDetailsSerializer, CaseInfoSearchSerializers
+from .models import FileDetails, CaseInfoDetails
 import json
 import hashlib
 from django.conf import settings
 import os
+from django.db.models import Q
 
 UPLOAD_DIR = os.path.join(settings.MEDIA_ROOT, "uploads/")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # Create your views here.
+class CaseInfoFilesSearchView(APIView):
+    def post(self, request):
+        searchParams = request.data
+        query = Q()
+
+        if "stateId" in searchParams:
+            query |= Q(stateId__icontains= searchParams['stateId'])
+
+        if "districtId" in searchParams:
+            query |= Q(districtId__icontains= searchParams['districtId'])
+        
+        if "unitId" in searchParams:
+            query |= Q(unitId__icontains= searchParams['unitId'])
+
+        if "office" in searchParams:
+            query |= Q(Office__icontains= searchParams['office'])
+
+        if "caseNo" in searchParams:
+            query |= Q(caseNo__icontains= searchParams['caseNo'])
+
+        if "firNo" in searchParams:
+            query |= Q(firNo__icontains= searchParams['firNo'])
+
+        if "caseDate" in searchParams:
+            query |= Q(caseDate__icontains= searchParams['caseDate'])
+
+        caseDetails= CaseInfoDetails.objects.filter(query).prefetch_related('files')
+        caseSerializer = CaseInfoSearchSerializers(caseDetails, many = True)
+        return Response({"responseData":{"response":caseSerializer.data,"status":status.HTTP_200_OK}})
+       
 class CaseInfoFileUploadView(APIView):
     def post(self, request):
         try:
