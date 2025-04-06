@@ -9,6 +9,8 @@ import hashlib
 from django.conf import settings
 import os
 from django.db.models import Q
+from django.http import FileResponse, Http404
+import mimetypes
 
 UPLOAD_DIR = os.path.join(settings.MEDIA_ROOT, "uploads/")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -104,3 +106,26 @@ class CaseInfoFileUploadView(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class FilePreviewAPIView(APIView):
+    def post(self,request):
+        file_hash = request.data.get("fileHash")
+
+        if not file_hash:
+            return Response({"responseData":{"error": "fileHash is required", "status" : status.HTTP_400_BAD_REQUEST}})
+
+        try:
+            objFile = FileDetails.objects.get(fileHash = file_hash)
+            filePath = objFile.filePath
+            
+            if not os.path.exists(filePath):
+                raise FileNotFoundError("File not found on disk")
+
+            mime_type, _ = mimetypes.guess_type(filePath)
+            return FileResponse(open(filePath, 'rb'), content_type=mime_type or 'application/octet-stream')
+
+        except FileDetails.DoesNotExist:
+            raise Http404("No file with given hash")
+
+        except FileNotFoundError:
+            raise Http404("File path invalid or missing")
