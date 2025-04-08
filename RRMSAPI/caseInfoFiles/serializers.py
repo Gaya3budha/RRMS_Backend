@@ -17,7 +17,7 @@ class FileDetailsSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = FileDetails
-        fields = ['fileId','CaseInfoDetailsId','fileName','filePath','fileHash']
+        fields = ['fileId','CaseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','classification']
 
 class CaseInfoSearchSerializers(serializers.ModelSerializer):
     stateName = serializers.SerializerMethodField()

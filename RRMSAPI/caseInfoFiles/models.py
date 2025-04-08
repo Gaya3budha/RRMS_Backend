@@ -18,6 +18,10 @@ class CaseInfoDetails(models.Model):
     author = models.TextField(max_length = 200)
     toAddr = models.TextField(max_length = 500)
 
+    class Meta:
+        permissions = [
+            ("can_search_caseFiles","can search the case and file details"),
+        ]
     def __str__(self):
         return self.caseNo
 
@@ -27,6 +31,11 @@ class FileDetails(models.Model):
     fileName = models.CharField(max_length=255)
     filePath = models.TextField()
     fileHash = models.CharField(max_length=64)
+    hashTag = models.TextField(null =True, blank = True)
+    subject = models.TextField(max_length = 1000, null =True, blank = True)
+    fileType = models.TextField(max_length = 100,null =True, blank = True)
+    classification = models.TextField(max_length = 200, default="private")
+
 
     def __str__(self):
         return self.fileName
