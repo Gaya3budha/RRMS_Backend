@@ -12,7 +12,7 @@ class CaseInfoDetails(models.Model):
     letterNo = models.CharField(max_length=100)
     caseDate = models.DateTimeField()
     caseType = models.CharField(max_length = 100)
-    subject  = models.TextField(max_length = 1000)
+    # subject  = models.TextField(max_length = 1000)
     caseNo = models.CharField(max_length=100)
     firNo = models.CharField(max_length=255)
     author = models.TextField(max_length = 200)
