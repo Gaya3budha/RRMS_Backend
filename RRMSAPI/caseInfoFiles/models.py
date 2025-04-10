@@ -20,7 +20,7 @@ class CaseInfoDetails(models.Model):
 
     class Meta:
         permissions = [
-            ("can_search_caseFiles","can search the case and file details"),
+            ("view_searchcaseFiles","can search the case and file details"),
         ]
     def __str__(self):
         return self.caseNo

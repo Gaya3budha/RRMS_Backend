@@ -22,6 +22,7 @@ class HasRequiredPermission(BasePermission):
 
         required_permission = self.get_required_permission(request, view)
 
+        print("required permission:", required_permission)
         if not required_permission:
             return True 
         

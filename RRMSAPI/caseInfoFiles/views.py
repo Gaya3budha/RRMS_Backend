@@ -10,6 +10,7 @@ from django.http import FileResponse, Http404
 from rest_framework.permissions import IsAuthenticated
 from mdm.permissions import HasRequiredPermission
 from rest_framework.parsers import MultiPartParser, FormParser
+from .permissions import HasCustomPermission
 import json
 import hashlib
 import os
@@ -19,8 +20,10 @@ UPLOAD_DIR = os.path.join(settings.MEDIA_ROOT, "uploads/")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # Create your views here.
-class CaseInfoFilesSearchView(APIView):
-    permission_classes = [IsAuthenticated, HasRequiredPermission]
+class SearchCaseFilesView(APIView):
+    permission_classes = [HasCustomPermission]
+    required_permission = 'view_caseinfodetails'
+
     def post(self, request):
         searchParams = request.data
         query = Q()
