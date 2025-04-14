@@ -1,8 +1,5 @@
 import logging
 from rest_framework import serializers
-# from django.contrib.auth import authenticate
-# from rest_framework.exceptions import AuthenticationFailed
-# from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from mdm.models import Role, DivisionMaster, DesignationMaster
 from .models import User

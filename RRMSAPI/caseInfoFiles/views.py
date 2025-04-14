@@ -2,8 +2,10 @@ from django.shortcuts import render
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import CaseInfoDetailsSerializer,FileDetailsSerializer, CaseInfoSearchSerializers
-from .models import FileDetails, CaseInfoDetails
+from .serializers import CaseInfoDetailsSerializer,FileDetailsSerializer, CaseInfoSearchSerializers, FavouriteSerializer
+from .models import FileDetails, CaseInfoDetails, FavouriteFiles
+from django.shortcuts import get_object_or_404
+from .utils import record_file_access
 from django.conf import settings
 from django.db.models import Q
 from django.http import FileResponse, Http404
@@ -11,6 +13,7 @@ from rest_framework.permissions import IsAuthenticated
 from mdm.permissions import HasRequiredPermission
 from rest_framework.parsers import MultiPartParser, FormParser
 from .permissions import HasCustomPermission
+from rest_framework.generics import ListAPIView
 import json
 import hashlib
 import os
@@ -20,6 +23,46 @@ UPLOAD_DIR = os.path.join(settings.MEDIA_ROOT, "uploads/")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # Create your views here.
+class LatestUserFilesView(ListAPIView):
+    serializer_class = FileDetailsSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return FileDetails.objects.filter(uploaded_by=self.request.user).order_by('-created_at')[:20]  # Adjust limit as needed
+
+
+class FavouriteFilesView(APIView):
+    permission_classes = [IsAuthenticated, HasRequiredPermission]
+
+    def get(self,request):
+        favs= FavouriteFiles.objects.filter(user=request.user).order_by('-added_at')
+        serializer = FavouriteSerializer(favs, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, file_id):
+        try:
+            file = FileDetails.objects.get(fileId=file_id)
+            print('authenticated user: ',request.user)
+            fav, created = FavouriteFiles.objects.get_or_create(user=request.user, file=file)
+            if not created:
+                record_file_access(request.user, file)
+                return Response({'message': 'Already in favorites'}, status=status.HTTP_200_OK)
+            return Response({'message': 'Added to favorites'}, status=status.HTTP_201_CREATED)
+        except FileDetails.DoesNotExist:
+            return Response({'error': 'File not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    def delete(self,request,file_id):
+        try:
+            fav = FavouriteFiles.objects.get(user = request.user,file_id = file_id)
+            file = FileDetails.objects.get(fileId = file_id)
+            fav.delete()
+            record_file_access(request.user, file)
+
+            return Response({'message':'Removed from favourites'},status= status.HTTP_200_OK)
+        except FavouriteFiles.DoesNotExist:
+            return Response({'error': 'This file is not favourited'}, status=status.HTTP_404_NOT_FOUND)
+  
+
 class SearchCaseFilesView(APIView):
     permission_classes = [HasCustomPermission]
     required_permission = 'view_caseinfodetails'
@@ -115,8 +158,11 @@ class CaseInfoDetailsView(APIView):
                     hashTag = file_details_data[i]['hashTag'],
                     subject = file_details_data[i]['subject'],
                     fileType = file_details_data[i]['fileType'],
-                    classification = file_details_data[i]['classification']
+                    classification = file_details_data[i]['classification'],
+                    uploaded_by = request.user
                 )
+
+                record_file_access(request.user, file_detail)
 
                 file_details_list.append({
                     "file":FileDetailsSerializer(file_detail).data
@@ -132,10 +178,107 @@ class CaseInfoDetailsView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-# class CaseInfoDetailsUpdateView(APIView):
-#     def get_object(self,request):
+    def put(self,request,pk):
+        try:
+            case_details = get_object_or_404(CaseInfoDetails, pk=pk)
+            case_info_json = request.data.get("caseDetails")
+            file_details = request.data.get("fileDetails")
+
+            if not case_info_json:
+                return Response({"error": "No Case Details provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+            if isinstance(case_info_json, str):
+                case_data = json.loads(case_info_json)
+
+            if isinstance(file_details, str):
+                file_details_data = json.loads(file_details)
+
+            # Update case details
+            serializer = CaseInfoDetailsSerializer(case_details, data=case_data, partial=True)
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            caseInfo = serializer.save()
+
+            uploaded_files = request.FILES.getlist("Files")
+            new_file_index = 0  # Index tracker for new file uploads
+            file_responses = []
+
+            for file_detail in file_details_data:
+                file_id = file_detail.get("fileId")
+                new_hashtag = file_detail.get("hashTag")
+                new_subject = file_detail.get("subject")
+                new_classification = file_detail.get("classification")
+                new_fileType = file_detail.get("fileType")
+
+
+                if file_id:
+                    # Update existing file
+                    try:
+                        file_obj = FileDetails.objects.get(pk=file_id, caseDetails=case_details)
+                        file_obj.hashTag = new_hashtag
+                        file_obj.subject = new_subject
+                        file_obj.classification = new_classification
+                        file_obj.fileType = new_fileType
+
+                        file_obj.save()
+
+                        file_responses.append({
+                            "file": FileDetailsSerializer(file_obj).data,
+                            "status": "updated"
+                        })
+                    except FileDetails.DoesNotExist:
+                        continue
+                else:
+                    # Add new file
+                    if new_file_index >= len(uploaded_files):
+                        return Response({"error": "fileDetails and uploaded Files doesn't match"}, status=status.HTTP_400_BAD_REQUEST)
+
+                    uploaded_file = uploaded_files[new_file_index]
+                    file_content = uploaded_file.read()
+                    file_hash = hashlib.sha256(file_content).hexdigest()
+                    file_name = uploaded_file.name
+                    file_path = os.path.join(UPLOAD_DIR, file_name)
+
+                    # Save file to disk
+                    with open(file_path, "wb") as f:
+                        f.write(file_content)
+
+                    new_file = FileDetails.objects.create(
+                        caseDetails=caseInfo,
+                        fileName=file_name,
+                        filePath=file_path,
+                        fileHash=file_hash,
+                        hashTag=new_hashtag,
+                        subject = new_subject,
+                        fileType = new_fileType,
+                        classification = new_classification,
+                        uploaded_by=request.user
+                    )
+
+                    record_file_access(request.user, new_file)
+
+                    file_responses.append({
+                        "file": FileDetailsSerializer(new_file).data,
+                        "status": "created"
+                    })
+
+                    new_file_index += 1
+            return Response(
+                {
+                    "studentDetails": CaseInfoDetailsSerializer(caseInfo).data,
+                    "files": file_responses,
+                    "message": "Student details and files processed successfully."
+                },
+                status=status.HTTP_200_OK
+            )
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class FilePreviewAPIView(APIView):
+    permission_classes = [IsAuthenticated, HasCustomPermission]
+    required_permission = 'add_filepreviewapi'
     def post(self,request):
         file_hash = request.data.get("fileHash")
 
@@ -145,6 +288,8 @@ class FilePreviewAPIView(APIView):
         try:
             objFile = FileDetails.objects.get(fileHash = file_hash)
             filePath = objFile.filePath
+
+            record_file_access(request.user, objFile)
             
             if not os.path.exists(filePath):
                 raise FileNotFoundError("File not found on disk")

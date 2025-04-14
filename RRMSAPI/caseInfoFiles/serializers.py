@@ -1,4 +1,4 @@
-from .models import CaseInfoDetails, FileDetails
+from .models import CaseInfoDetails, FileDetails, FavouriteFiles
 from rest_framework import serializers
 import hashlib
 import os
@@ -17,7 +17,7 @@ class FileDetailsSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = FileDetails
-        fields = ['fileId','CaseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','classification']
+        fields = ['fileId','CaseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','classification','uploaded_by']
 
 class CaseInfoSearchSerializers(serializers.ModelSerializer):
     stateName = serializers.SerializerMethodField()
@@ -51,4 +51,10 @@ class CaseInfoSearchSerializers(serializers.ModelSerializer):
             return unit.unitName
         except UnitMaster.DoesNotExist:
             return None
-      
+
+class FavouriteSerializer(serializers.ModelSerializer):
+    file = FileDetailsSerializer(read_only = True)
+
+    class Meta:
+        model = FavouriteFiles
+        fields = ['id','file','added_at']

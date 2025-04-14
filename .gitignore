@@ -1,1 +1,9 @@
 venv/
+RRMSAPI/caseInfoFiles/__pycache__/
+RRMSAPI/uploads/
+RRMSAPI/mdm/migrations/__pycache__/
+RRMSAPI/mdm/migrations/
+RRMSAPI/caseInfoFiles/migrations/
+RRMSAPI/mdm/__pycache__/
+RRMSAPI/users/__pycache__/
+RRMSAPI/RRMSAPI/__pycache__/

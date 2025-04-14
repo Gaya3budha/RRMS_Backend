@@ -3,7 +3,6 @@ from django.db import models
 from mdm.models import Role,DivisionMaster, DesignationMaster, Permission
 
 # Create your models here.
-
 # User Table
 class CustomUserManager(BaseUserManager):
     def create_user(self,kgid,email,password=None, **extra_fields):
