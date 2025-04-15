@@ -29,7 +29,7 @@ class CaseInfoSearchSerializers(serializers.ModelSerializer):
 
     class Meta:
         model = CaseInfoDetails
-        fields = ['CaseInfoDetailsId','stateId','stateName','districtId','districtName','unitId','unitName','Office','caseDate','caseNo','firNo','files']
+        fields = ['CaseInfoDetailsId','stateId','stateName','districtId','districtName','unitId','unitName','Office','caseDate','caseNo','firNo','letterNo','caseType','author','toAddr','files']
 
     def get_stateName(self, obj):
         try:
