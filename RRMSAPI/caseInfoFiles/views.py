@@ -83,6 +83,9 @@ class SearchCaseFilesView(APIView):
         if "office" in searchParams:
             query |= Q(Office__icontains= searchParams['office'])
 
+        if "letterNo" in searchParams:
+            query |= Q(letterNo__icontains= searchParams['letterNo'])
+
         if "caseNo" in searchParams:
             query |= Q(caseNo__icontains= searchParams['caseNo'])
 
@@ -92,7 +95,19 @@ class SearchCaseFilesView(APIView):
         if "caseDate" in searchParams:
             query |= Q(caseDate__icontains= searchParams['caseDate'])
 
-        caseDetails= CaseInfoDetails.objects.filter(query).prefetch_related('files')
+        if 'hashtag' in searchParams:
+            query |= Q(files__hashTag__icontains=searchParams['hashtag'])
+
+        if 'subject' in searchParams:
+            query |= Q(files__subject__icontains= searchParams['subject'])
+
+        if 'classification' in searchParams:
+            query |= Q(files__classification__icontains= searchParams['classification'])
+
+        if 'fileType' in searchParams:
+            query |= Q(files__fileType__icontains= searchParams['fileType'])
+
+        caseDetails= CaseInfoDetails.objects.filter(query).prefetch_related('files').order_by('-lastmodified_Date')[:20]
         caseSerializer = CaseInfoSearchSerializers(caseDetails, many = True)
         return Response({"responseData":{"response":caseSerializer.data,"status":status.HTTP_200_OK}})
        

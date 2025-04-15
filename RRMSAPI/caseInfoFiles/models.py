@@ -13,11 +13,12 @@ class CaseInfoDetails(models.Model):
     letterNo = models.CharField(max_length=100)
     caseDate = models.DateTimeField()
     caseType = models.CharField(max_length = 100)
-    # subject  = models.TextField(max_length = 1000)
     caseNo = models.CharField(max_length=100)
     firNo = models.CharField(max_length=255)
     author = models.TextField(max_length = 200)
     toAddr = models.TextField(max_length = 500)
+    lastmodified_by = models.ForeignKey(User, on_delete=models.CASCADE, null = True,blank = True)
+    lastmodified_Date = models.DateTimeField(auto_now_add=True, null = True,blank = True)
 
     class Meta:
         permissions = [
