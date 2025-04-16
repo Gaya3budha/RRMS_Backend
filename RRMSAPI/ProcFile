@@ -1,1 +1,1 @@
-web: gunicorn RRMSAPI.RRMSAPI.wsgi
+web: gunicorn RRMSAPI.RRMSAPI.wsgi:application
