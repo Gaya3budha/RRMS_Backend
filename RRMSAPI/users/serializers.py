@@ -61,7 +61,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['full_name']=f"{user.first_name} {user.last_name}"
         
         role_name = None
-        permissions = []
+        permissions_list = []
         if user.role_id:
             try:
                 role= Role.objects.get(roleId = user.role_id)
