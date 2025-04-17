@@ -65,7 +65,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware'
 ]
 
-ROOT_URLCONF = 'RRMSAPI.urls'
+ROOT_URLCONF = 'RRMSAPI.RRMSAPI.urls'
 
 TEMPLATES = [
     {
