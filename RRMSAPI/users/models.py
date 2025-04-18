@@ -72,6 +72,13 @@ class User(AbstractBaseUser, PermissionsMixin):
         
         return False
 
+class ActiveUser(models.Model):
+    user = models.OneToOneField('User', on_delete=models.CASCADE)
+    last_login = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.user.kgid
+
 
 
 

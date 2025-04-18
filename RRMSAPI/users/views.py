@@ -5,7 +5,8 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import UserSerializer, CustomTokenObtainPairSerializer
 from rest_framework.exceptions import AuthenticationFailed
-from .models import User
+from .models import User, ActiveUser
+from rest_framework.permissions import IsAdminUser
 from mdm.models import Role
 
 
@@ -70,6 +71,8 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
         try:
             if serializer_class.is_valid():
+                user = serializer_class.user
+                ActiveUser.objects.update_or_create(user=user)
                 return Response({"responseData": serializer_class.validated_data, "statusCode": 200}, status=status.HTTP_200_OK)
             return Response({"responseData":serializer_class.errors, "statusCode": 400}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -77,5 +80,15 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             return Response({"responseData":str(e), "statusCode": 401}, status=status.HTTP_401_UNAUTHORIZED)
 
 
+class GetLoggedInUsersView(APIView):
+     permission_classes = [IsAdminUser]
+     
+     def get(self, request, *args, **kwargs):
+        active_users = ActiveUser.objects.select_related('user').all()
+        active_users_data = UserSerializer([a.user for a in active_users], many=True, context={'request': request})
 
 
+        return Response({
+            "count": active_users.count(),
+            "users": active_users_data.data
+        })
