@@ -86,6 +86,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'RRMSAPI.wsgi.application'
 
 
+
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
@@ -178,6 +179,7 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'URL_TRAILING_SLASH': False,
 }
 
 
