@@ -32,7 +32,7 @@ SECRET_KEY = 'django-insecure-_29_+m4pu4x66=2l8milapzgrt2159te599c)ywhj#i*ca@(j2
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ALLOWED_HOSTS = [os.getenv("RENDER_EXTERNAL_HOSTNAME", "localhost")]
+ALLOWED_HOSTSsettings = ALLOWED_HOSTS = [os.getenv("RENDER_EXTERNAL_HOSTNAME", "localhost")]
 
 
 # Application definition
@@ -65,7 +65,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware'
 ]
 
-ROOT_URLCONF = 'RRMSAPI.RRMSAPI.urls'
+ROOT_URLCONF = 'RRMSAPI.urls'
 
 TEMPLATES = [
     {
