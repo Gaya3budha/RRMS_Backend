@@ -1,11 +1,15 @@
-from django.urls import path
-from .views import RoleView, DivisionMasterView, DistrictMasterView, StateMasterView, DesignationMasterView, UnitMasterView
+from django.urls import path, include
+from .views import  RoleViewSet,DivisionViewSet, DistrictMasterView, StateMasterView, DesignationViewSet, UnitMasterView
+from rest_framework.routers import SimpleRouter  
+
+router = SimpleRouter(trailing_slash=False) 
+router.register(r'roles', RoleViewSet)
+router.register(r'divisions', DivisionViewSet)
+router.register(r'designations', DesignationViewSet)
 
 urlpatterns = [
-    path('roles', RoleView.as_view(), name='roles-list'),
-    path('divisions', DivisionMasterView.as_view(), name='division-list'),
+    path('', include(router.urls)),
     path('districts/<int:stateId>', DistrictMasterView.as_view(), name='district-list'),
     path('states', StateMasterView.as_view(), name='state-list'),
-    path('designations', DesignationMasterView.as_view(), name='designation-list'),
     path('units/<int:districtId>', UnitMasterView.as_view(), name='unit-list')
 ]

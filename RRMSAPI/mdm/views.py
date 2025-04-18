@@ -5,6 +5,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .permissions import HasRequiredPermission
+from rest_framework import viewsets
+from .serializers import RoleSerializer, DivisionSerializer, DesignationSerializer
+from rest_framework.permissions import IsAdminUser
 
 # Create your views here.
 class StateMasterView(APIView):
@@ -14,12 +17,10 @@ class StateMasterView(APIView):
         states = StateMaster.objects.all().values("stateId","stateName")
         return Response({"responseData":list(states),"statusCode" :status.HTTP_200_OK})
 
-class RoleView(APIView):
-    permission_classes = [IsAuthenticated, HasRequiredPermission] 
-
-    def get(self,request):
-        roles = Role.objects.all().values("roleId","roleName")
-        return Response({"responseData":list(roles),"statusCode" :status.HTTP_200_OK})
+class RoleViewSet(viewsets.ModelViewSet):
+    queryset = Role.objects.all()
+    serializer_class = RoleSerializer
+    permission_classes = [IsAdminUser]
 
 class DistrictMasterView(APIView):
     permission_classes = [IsAuthenticated, HasRequiredPermission] 
@@ -32,19 +33,15 @@ class DistrictMasterView(APIView):
 
         return Response({"responseData":list(districts),"statusCode" :status.HTTP_200_OK})
 
-class DivisionMasterView(APIView):
-    permission_classes = [IsAuthenticated, HasRequiredPermission] 
+class DivisionViewSet(viewsets.ModelViewSet):
+    queryset = DivisionMaster.objects.all()
+    serializer_class = DivisionSerializer
+    permission_classes = [IsAdminUser]
 
-    def get(self,request):
-        divisions = DivisionMaster.objects.all().values("divisionId","divisionName")
-        return Response({"responseData":list(divisions),"statusCode" :status.HTTP_200_OK})
-
-class DesignationMasterView(APIView):
-    permission_classes = [IsAuthenticated, HasRequiredPermission] 
-
-    def get(self,request, *args, **kwargs):
-        designations = DesignationMaster.objects.all().values("designationId","designationName")
-        return Response({"responseData":list(designations),"statusCode" :status.HTTP_200_OK})
+class DesignationViewSet(viewsets.ModelViewSet):
+    queryset = DesignationMaster.objects.all()
+    serializer_class = DesignationSerializer
+    permission_classes = [IsAdminUser]
 
 class UnitMasterView(APIView):
     permission_classes = [IsAuthenticated, HasRequiredPermission] 
