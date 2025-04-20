@@ -15,7 +15,7 @@ def assign_permission_on_private_file(sender, instance, created, **kwargs):
 def notify_admin_on_upload(sender, instance, created, **kwargs):
     if created and not instance.is_approved:
         # Notify only viewers (roleid = 4) content manager
-        cm_users = User.objects.filter(roleid=4)
+        cm_users = User.objects.filter(role_id=4)
         for cm in cm_users:
             Notification.objects.create(
                 recipient=cm,
