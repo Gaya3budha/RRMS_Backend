@@ -1,10 +1,11 @@
 from django.shortcuts import render
-from rest_framework import status
+from rest_framework import status, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import CaseInfoDetailsSerializer,FileDetailsSerializer, CaseInfoSearchSerializers, FavouriteSerializer
-from .models import FileDetails, CaseInfoDetails, FavouriteFiles
+from .serializers import CaseInfoDetailsSerializer,FileDetailsSerializer,NotificationSerializer, CaseInfoSearchSerializers, FavouriteSerializer
+from .models import FileDetails, CaseInfoDetails, FavouriteFiles, Notification
 from django.shortcuts import get_object_or_404
+from django.db.models import Prefetch
 from .utils import record_file_access
 from django.conf import settings
 from django.db.models import Q
@@ -12,7 +13,7 @@ from django.http import FileResponse, Http404
 from rest_framework.permissions import IsAuthenticated
 from mdm.permissions import HasRequiredPermission
 from rest_framework.parsers import MultiPartParser, FormParser
-from .permissions import HasCustomPermission
+from .permissions import HasCustomPermission,FileDetailsPermission
 from rest_framework.generics import ListAPIView
 import json
 import hashlib
@@ -107,7 +108,18 @@ class SearchCaseFilesView(APIView):
         if 'fileType' in searchParams:
             query |= Q(files__fileType__icontains= searchParams['fileType'])
 
-        caseDetails= CaseInfoDetails.objects.filter(query).prefetch_related('files').order_by('-lastmodified_Date')[:20]
+        case_details_qs = CaseInfoDetails.objects.filter(query).distinct()
+
+        user = request.user
+        if user.is_staff:
+            file_filter = Q()  # Admin sees all
+        else:
+            file_filter = Q(is_approved=True) | Q(uploaded_by=user)
+
+        caseDetails = case_details_qs.prefetch_related(
+            Prefetch('files', queryset=FileDetails.objects.filter(file_filter))
+        ).order_by('-lastmodified_Date')[:20]
+
         caseSerializer = CaseInfoSearchSerializers(caseDetails, many = True)
         return Response({"responseData":{"response":caseSerializer.data,"status":status.HTTP_200_OK}})
        
@@ -139,7 +151,7 @@ class CaseInfoDetailsView(APIView):
             if not case_serailizer.is_valid():
                 return Response(case_serailizer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            caseInfo = case_serailizer.save()
+            caseInfo = case_serailizer.save(lastmodified_by= request.user)
 
             uploaded_files = request.FILES.getlist("Files")
 
@@ -281,9 +293,9 @@ class CaseInfoDetailsView(APIView):
                     new_file_index += 1
             return Response(
                 {
-                    "studentDetails": CaseInfoDetailsSerializer(caseInfo).data,
+                    "caseDetails": CaseInfoDetailsSerializer(caseInfo).data,
                     "files": file_responses,
-                    "message": "Student details and files processed successfully."
+                    "message": "Case details and files processed successfully."
                 },
                 status=status.HTTP_200_OK
             )
@@ -317,3 +329,29 @@ class FilePreviewAPIView(APIView):
 
         except FileNotFoundError:
             raise Http404("File path invalid or missing")
+
+
+class FileDetailsViewSet(APIView):
+   permission_classes=[FileDetailsPermission]
+   def post(self, request, pk):
+        file = get_object_or_404(FileDetails, pk=pk)
+        file.is_approved = True
+        file.save()
+        return Response({"status": "File approved"}, status=status.HTTP_200_OK)
+
+class NotificationListView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        if user.is_staff:
+            notifications = Notification.objects.all().order_by('-created_at')
+        elif user.role_id==4:
+            notifications = Notification.objects.filter(
+                            recipient=user).order_by('-created_at')
+        else:
+            return Response({"detail": "Not authorized."}, status=403)
+            
+        serializer = NotificationSerializer(notifications, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

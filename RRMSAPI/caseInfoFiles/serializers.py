@@ -1,4 +1,4 @@
-from .models import CaseInfoDetails, FileDetails, FavouriteFiles
+from .models import CaseInfoDetails, FileDetails, FavouriteFiles, Notification
 from rest_framework import serializers
 import hashlib
 import os
@@ -58,3 +58,10 @@ class FavouriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = FavouriteFiles
         fields = ['id','file','added_at']
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = Notification
+        fields = "__all__"
