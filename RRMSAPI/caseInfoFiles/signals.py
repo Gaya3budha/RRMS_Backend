@@ -22,5 +22,6 @@ def notify_admin_on_upload(sender, instance, created, **kwargs):
                 message=(
                     f"A new file has been uploaded for case no: "
                     f"{instance.caseDetails.caseNo} by {instance.uploaded_by}"
-                )
+                ),
+                file=instance 
             )

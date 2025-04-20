@@ -78,3 +78,4 @@ class Notification(models.Model):
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
+    file = models.ForeignKey(FileDetails, on_delete=models.CASCADE, null=True, blank=True) 

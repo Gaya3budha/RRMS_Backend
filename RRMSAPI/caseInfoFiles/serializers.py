@@ -61,6 +61,7 @@ class FavouriteSerializer(serializers.ModelSerializer):
 
 
 class NotificationSerializer(serializers.ModelSerializer):
+    file = FileDetailsSerializer()
     
     class Meta:
         model = Notification

@@ -331,7 +331,7 @@ class FilePreviewAPIView(APIView):
             raise Http404("File path invalid or missing")
 
 
-class FileDetailsViewSet(APIView):
+class FileApprovalDetailsViewSet(APIView):
    permission_classes=[FileDetailsPermission]
    def post(self, request, pk):
         file = get_object_or_404(FileDetails, pk=pk)
@@ -352,6 +352,6 @@ class NotificationListView(APIView):
                             recipient=user).order_by('-created_at')
         else:
             return Response({"detail": "Not authorized."}, status=403)
-            
+
         serializer = NotificationSerializer(notifications, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

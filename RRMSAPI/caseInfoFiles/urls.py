@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import CaseInfoDetailsView,SearchCaseFilesView, FilePreviewAPIView,NotificationListView, FavouriteFilesView,FavouriteFilesView,LatestUserFilesView
+from .views import CaseInfoDetailsView,SearchCaseFilesView, FileApprovalDetailsViewSet,FilePreviewAPIView,NotificationListView, FavouriteFilesView,FavouriteFilesView,LatestUserFilesView
 
 
 urlpatterns = [
@@ -12,4 +12,5 @@ urlpatterns = [
     path('favourites', FavouriteFilesView.as_view(), name='user-favourites'),
     path('files/latest', LatestUserFilesView.as_view(), name='latest-user-files'),
     path('notifications',NotificationListView.as_view(),name='view-notifications'),
+    path('approve-file/<int:pk>', FileApprovalDetailsViewSet.as_view(), name='approve-file'),
 ]
