@@ -4,11 +4,11 @@ from rest_framework.routers import SimpleRouter
 
 router = SimpleRouter(trailing_slash=False) 
 # router.register(r'roles', RoleViewSet)
-router.register(r'divisions', DivisionViewSet)
-router.register(r'designations', DesignationViewSet)
-router.register(r'fileTypes', FileTypesViewSet)
-router.register(r'fileClassification', FileClassificationViewSet)
-router.register(r'caseStatus', CaseStatusViewSet)
+router.register(r'divisions', DivisionViewSet, basename = 'division')
+router.register(r'designations', DesignationViewSet, basename = 'designation')
+router.register(r'fileTypes', FileTypesViewSet, basename = 'file-type')
+router.register(r'fileClassification', FileClassificationViewSet, basename = 'file-classification')
+router.register(r'caseStatus', CaseStatusViewSet, basename = 'case-status')
 
 urlpatterns = [
     path('', include(router.urls)),

@@ -34,14 +34,31 @@ class DistrictMasterView(APIView):
         return Response({"responseData":list(districts),"statusCode" :status.HTTP_200_OK})
 
 class DivisionViewSet(viewsets.ModelViewSet):
-    queryset = DivisionMaster.objects.all()
+    # queryset = DivisionMaster.objects.all()
     serializer_class = DivisionSerializer
     permission_classes = [IsAdminUser]
 
+    def get_queryset(self):
+        return DivisionMaster.objects.filter(active = 'Y')
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.active = 'N'
+        instance.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 class DesignationViewSet(viewsets.ModelViewSet):
-    queryset = DesignationMaster.objects.all()
+    # queryset = DesignationMaster.objects.all()
     serializer_class = DesignationSerializer
     permission_classes = [IsAdminUser]
+    def get_queryset(self):
+        return DesignationMaster.objects.filter(active = 'Y')
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.active = 'N'
+        instance.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 class UnitMasterView(APIView):
     permission_classes = [IsAuthenticated, HasRequiredPermission] 
@@ -55,19 +72,46 @@ class UnitMasterView(APIView):
         return Response({"responseData":list(units),"statusCode" :status.HTTP_200_OK})
 
 class FileTypesViewSet(viewsets.ModelViewSet):
-    queryset = FileType.objects.all()
+    # queryset = FileType.objects.all()
     serializer_class = FileTypeSerializer
     permission_classes = [IsAdminUser]
 
+    def get_queryset(self):
+        return FileType.objects.filter(active = 'Y')
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.active = 'N'
+        instance.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 class FileClassificationViewSet(viewsets.ModelViewSet):
-    queryset = FileClassification.objects.all()
+    # queryset = FileClassification.objects.all()
     serializer_class = FileClassificationSerializer
     permission_classes = [IsAdminUser]
 
+    def get_queryset(self):
+        return FileClassification.objects.filter(active = 'Y')
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.active = 'N'
+        instance.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 class CaseStatusViewSet(viewsets.ModelViewSet):
-    queryset = CaseStatus.objects.all()
+    # queryset = CaseStatus.objects.all()
     serializer_class = CaseStatusSerializer
     permission_classes = [IsAdminUser]
+
+    def get_queryset(self):
+        return CaseStatus.objects.filter(active = 'Y')
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.active = 'N'
+        instance.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     
 
