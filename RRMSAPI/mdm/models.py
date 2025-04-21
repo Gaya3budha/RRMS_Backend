@@ -84,6 +84,36 @@ class UnitMaster(models.Model):
     def __str__(self):
         return self.unitName
 
+# File Classification
+class FileClassification(models.Model):
+    fileClassificationId = models.AutoField(primary_key = True)
+    fileClassificationName = models.CharField( max_length = 100)
+    active = models.CharField(default = 'Y')
+    lastModifiedDate = models.DateTimeField(auto_now = True)
+
+    def __str__(self):
+        return self.fileClassificationName
+
+# File Type
+class FileType(models.Model):
+    fileTypeId = models.AutoField(primary_key = True)
+    fileTypeName = models.CharField( max_length = 100)
+    active = models.CharField(default = 'Y')
+    lastModifiedDate = models.DateTimeField(auto_now = True)
+
+    def __str__(self):
+        return self.fileTypeName
+
+# Case Status
+class CaseStatus(models.Model):
+    statusId = models.AutoField(primary_key = True)
+    statusName = models.CharField( max_length = 100)
+    active = models.CharField(default = 'Y')
+    lastModifiedDate = models.DateTimeField(auto_now = True)
+
+    def __str__(self):
+        return self.statusName
+    
 
     
 

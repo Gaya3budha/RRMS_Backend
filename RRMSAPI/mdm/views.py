@@ -1,12 +1,12 @@
 from django.shortcuts import render
 from rest_framework import status
-from .models import Role, DivisionMaster, DistrictMaster, StateMaster,UnitMaster, DesignationMaster
+from .models import Role, DivisionMaster, DistrictMaster, StateMaster,UnitMaster, DesignationMaster, FileType, FileClassification, CaseStatus
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .permissions import HasRequiredPermission
 from rest_framework import viewsets
-from .serializers import RoleSerializer, DivisionSerializer, DesignationSerializer
+from .serializers import RoleSerializer, DivisionSerializer, DesignationSerializer, FileClassificationSerializer, FileTypeSerializer, CaseStatusSerializer
 from rest_framework.permissions import IsAdminUser
 
 # Create your views here.
@@ -17,10 +17,10 @@ class StateMasterView(APIView):
         states = StateMaster.objects.all().values("stateId","stateName")
         return Response({"responseData":list(states),"statusCode" :status.HTTP_200_OK})
 
-class RoleViewSet(viewsets.ModelViewSet):
-    queryset = Role.objects.all()
-    serializer_class = RoleSerializer
-    permission_classes = [IsAdminUser]
+# class RoleViewSet(viewsets.ModelViewSet):
+#     queryset = Role.objects.all()
+#     serializer_class = RoleSerializer
+#     permission_classes = [IsAdminUser]
 
 class DistrictMasterView(APIView):
     permission_classes = [IsAuthenticated, HasRequiredPermission] 
@@ -53,3 +53,22 @@ class UnitMasterView(APIView):
             units = UnitMaster.objects.all().values("unitId","unitName")
 
         return Response({"responseData":list(units),"statusCode" :status.HTTP_200_OK})
+
+class FileTypesViewSet(viewsets.ModelViewSet):
+    queryset = FileType.objects.all()
+    serializer_class = FileTypeSerializer
+    permission_classes = [IsAdminUser]
+
+class FileClassificationViewSet(viewsets.ModelViewSet):
+    queryset = FileClassification.objects.all()
+    serializer_class = FileClassificationSerializer
+    permission_classes = [IsAdminUser]
+
+class CaseStatusViewSet(viewsets.ModelViewSet):
+    queryset = CaseStatus.objects.all()
+    serializer_class = CaseStatusSerializer
+    permission_classes = [IsAdminUser]
+
+    
+
+    

@@ -61,6 +61,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['full_name']=f"{user.first_name} {user.last_name}"
         
         role_name = None
+        division_name = None
         permissions_list = []
         if user.role_id:
             try:
@@ -70,9 +71,19 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             except Role.DoesNotExist:
                 role_name = "Unknown Role"
 
+        if user.divisionmaster_id:
+            try:
+                division = DivisionMaster.objects.get(divisionId = user.divisionmaster_id)
+                division_name = division.divisionName
+            except DivisionMaster.DoesNotExist:
+                division_name = ""
+
         
         token['permissions'] = permissions_list
+        token['role_id'] = user.role_id
         token['role_name']=role_name
+        token['division_id'] = user.divisionmaster_id
+        token['division_name']=division_name
         return token
     
 

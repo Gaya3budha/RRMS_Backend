@@ -1,6 +1,7 @@
 import logging
 from rest_framework import serializers
-from .models import  Role, DistrictMaster, DivisionMaster, StateMaster, DesignationMaster, UnitMaster
+
+from .models import  Role, DistrictMaster, DivisionMaster, StateMaster, DesignationMaster, UnitMaster, FileType, FileClassification, CaseStatus
 
 class StateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -32,3 +33,18 @@ class UnitSerializer(serializers.ModelSerializer):
         model = UnitMaster
         fields = ['unitId','unitName','stateId','districtId','typeId','parentUnit','actualStrength',
         'sanctionedStrength','talukID','address1','address2','active','lastModifiedDate']
+
+class FileTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FileType
+        fields = ['fileTypeId','fileTypeName','active','lastModifiedDate']
+
+class FileClassificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FileClassification
+        fields = ['fileClassificationId','fileClassificationName','active','lastModifiedDate']
+
+class CaseStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CaseStatus
+        fields = ['statusId','statusName','active','lastModifiedDate']
