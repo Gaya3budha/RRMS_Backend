@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from .serializers import CaseInfoDetailsSerializer,FileDetailsSerializer,NotificationSerializer, CaseInfoSearchSerializers, FavouriteSerializer
 from .models import FileDetails, CaseInfoDetails, FavouriteFiles, Notification
 from django.shortcuts import get_object_or_404
-from django.db.models import Prefetch
+from django.db.models import Prefetch, OuterRef, Exists
 from .utils import record_file_access
 from django.conf import settings
 from django.db.models import Q
@@ -116,8 +116,12 @@ class SearchCaseFilesView(APIView):
         else:
             file_filter = Q(is_approved=True) | Q(uploaded_by=user)
 
+        favourite_subquery = FavouriteFiles.objects.filter(user=request.user,file=OuterRef('pk'))
+
+        file_queryset = FileDetails.objects.filter(file_filter).annotate(is_favourited=Exists(favourite_subquery))
+
         caseDetails = case_details_qs.prefetch_related(
-            Prefetch('files', queryset=FileDetails.objects.filter(file_filter))
+            Prefetch('files', queryset=file_queryset)
         ).order_by('-lastmodified_Date')[:20]
 
         caseSerializer = CaseInfoSearchSerializers(caseDetails, many = True)
