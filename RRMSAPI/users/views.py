@@ -92,3 +92,16 @@ class GetLoggedInUsersView(APIView):
             "count": active_users.count(),
             "users": active_users_data.data
         })
+
+class GetDivisionrAdminsView(APIView):
+    def get(self, request, role_id):
+        current_user = User.objects.get(id = request.user.id).divisionmaster_id
+        given_role_users = User.objects.filter(role_id = role_id, divisionmaster_id = current_user)
+
+        serialized_users = UserSerializer(given_role_users, many=True)
+
+        return Response({
+            "users" : serialized_users.data
+        })
+
+
