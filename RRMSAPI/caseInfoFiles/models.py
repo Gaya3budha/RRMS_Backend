@@ -1,6 +1,6 @@
 from django.db import models
 from users.models import User
-
+from mdm.models import CaseStatus
 
 # Create your models here.
 
@@ -17,6 +17,8 @@ class CaseInfoDetails(models.Model):
     firNo = models.CharField(max_length=255)
     author = models.TextField(max_length = 200)
     toAddr = models.TextField(max_length = 500)
+    year = models.IntegerField(null = True,blank = True)
+    caseStatus = models.ForeignKey(CaseStatus, on_delete = models.CASCADE, null = True, blank= True)
     lastmodified_by = models.ForeignKey(User, on_delete=models.CASCADE, null = True,blank = True)
     lastmodified_Date = models.DateTimeField(auto_now_add=True, null = True,blank = True)
 
