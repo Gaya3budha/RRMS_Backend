@@ -74,7 +74,7 @@ class UnitMasterView(APIView):
 class FileTypesViewSet(viewsets.ModelViewSet):
     # queryset = FileType.objects.all()
     serializer_class = FileTypeSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAuthenticated, HasRequiredPermission] 
 
     def get_queryset(self):
         return FileType.objects.filter(active = 'Y')
@@ -88,7 +88,7 @@ class FileTypesViewSet(viewsets.ModelViewSet):
 class FileClassificationViewSet(viewsets.ModelViewSet):
     # queryset = FileClassification.objects.all()
     serializer_class = FileClassificationSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAuthenticated, HasRequiredPermission] 
 
     def get_queryset(self):
         return FileClassification.objects.filter(active = 'Y')
@@ -102,7 +102,7 @@ class FileClassificationViewSet(viewsets.ModelViewSet):
 class CaseStatusViewSet(viewsets.ModelViewSet):
     # queryset = CaseStatus.objects.all()
     serializer_class = CaseStatusSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAuthenticated, HasRequiredPermission] 
 
     def get_queryset(self):
         return CaseStatus.objects.filter(active = 'Y')
