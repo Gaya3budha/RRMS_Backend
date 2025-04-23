@@ -88,10 +88,12 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         
         token['permissions'] = permissions_list
+        token['role_id'] = user.role_id
         token['role_name']=role_name
+        token['division_id'] = user.divisionmaster_id
         token['division_name']=division_name
+        token['designation_id']= user.designationmaster_id
         token['designation_name']=designation_name
-
         return token
     
 
