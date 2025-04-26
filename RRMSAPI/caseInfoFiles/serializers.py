@@ -15,13 +15,14 @@ class CaseInfoDetailsSerializer(serializers.ModelSerializer):
 class FileDetailsSerializer(serializers.ModelSerializer):
     CaseInfoDetailsId = serializers.IntegerField(source='CaseInfoDetails.CaseInfoDetailsId',read_only = True)
     is_favourited = serializers.BooleanField(read_only=True)
+    is_access_request_approved = serializers.BooleanField()
     classification_name = serializers.CharField(source='classification.fileClassificationName', read_only=True)
-
+    is_request_raised = serializers.BooleanField()
     filetype_name = serializers.CharField(source='fileType.fileTypeName', read_only=True)
 
     class Meta:
         model = FileDetails
-        fields = ['fileId','CaseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','filetype_name','classification','classification_name','uploaded_by','is_favourited']
+        fields = ['fileId','CaseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','filetype_name','classification','classification_name','uploaded_by','is_favourited','is_access_request_approved','is_request_raised']
 
 class CaseInfoSearchSerializers(serializers.ModelSerializer):
     stateName = serializers.SerializerMethodField()

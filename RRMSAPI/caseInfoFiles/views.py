@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from .serializers import CaseInfoDetailsSerializer,FileAccessRequestSerializer,FileDetailsSerializer,NotificationSerializer, CaseInfoSearchSerializers, FavouriteSerializer
 from .models import FileDetails, CaseInfoDetails, FavouriteFiles, Notification, FileAccessRequest
 from django.shortcuts import get_object_or_404
-from django.db.models import Prefetch, OuterRef, Exists
+from django.db.models import Prefetch, OuterRef, Exists, Case, When, Value, BooleanField
 from .utils import record_file_access, timezone
 from django.conf import settings
 from django.db.models import Q
@@ -118,11 +118,24 @@ class SearchCaseFilesView(APIView):
         if user.is_staff | user.role_id== 4:
             file_filter = Q()  # Admin sees all
         else:
-            file_filter = Q(is_approved=True) | Q(uploaded_by=user)
+            request_raised_subquery = FileAccessRequest.objects.filter(
+                file=OuterRef('pk'),
+                requested_by=user
+                )
+            access_request_subquery = FileAccessRequest.objects.filter(
+                file=OuterRef('pk'),
+                requested_by=user,
+                is_approved=True 
+                )
+            file_filter = Q(is_approved=True) | Q(uploaded_by=user) | Exists(access_request_subquery)
 
         favourite_subquery = FavouriteFiles.objects.filter(user=request.user,file=OuterRef('pk'))
-
-        file_queryset = FileDetails.objects.select_related('classification').filter(file_filter).annotate(is_favourited=Exists(favourite_subquery))
+        print("access- ",file_filter)
+        file_queryset = FileDetails.objects.select_related('classification').filter(file_filter).annotate(
+            is_favourited=Exists(favourite_subquery),
+            is_request_raised = Exists(request_raised_subquery),
+            is_access_request_approved=Exists(access_request_subquery)
+            )
 
         caseDetails = case_details_qs.prefetch_related(
             Prefetch('files', queryset=file_queryset)
@@ -319,6 +332,8 @@ class FilePreviewAPIView(APIView):
     def post(self, request):
         file_hash = request.data.get("fileHash")
         requested_to_id = request.data.get("requested_to")
+        comments = request.data.get("comments")
+
 
         if not file_hash:
             return Response({
@@ -361,7 +376,8 @@ class FilePreviewAPIView(APIView):
                         access_request = FileAccessRequest.objects.create(
                             file=objFile,
                             requested_by=request.user,
-                            requested_to=requested_to_user
+                            requested_to=requested_to_user,
+                            comments = comments
                         )
 
                     return Response({
