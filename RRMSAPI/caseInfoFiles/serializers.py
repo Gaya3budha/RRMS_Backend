@@ -12,7 +12,7 @@ class CaseInfoDetailsSerializer(serializers.ModelSerializer):
         model = CaseInfoDetails
         fields = "__all__"
 
-class FileDetailsSerializer(serializers.ModelSerializer):
+class FileDetailsSearchSerializer(serializers.ModelSerializer):
     CaseInfoDetailsId = serializers.IntegerField(source='CaseInfoDetails.CaseInfoDetailsId',read_only = True)
     is_favourited = serializers.BooleanField(read_only=True)
     is_access_request_approved = serializers.BooleanField()
@@ -24,13 +24,23 @@ class FileDetailsSerializer(serializers.ModelSerializer):
         model = FileDetails
         fields = ['fileId','CaseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','filetype_name','classification','classification_name','uploaded_by','is_favourited','is_access_request_approved','is_request_raised']
 
+class FileDetailsSerializer(serializers.ModelSerializer):
+    CaseInfoDetailsId = serializers.IntegerField(source='CaseInfoDetails.CaseInfoDetailsId',read_only = True)
+    is_favourited = serializers.BooleanField(read_only=True)
+    classification_name = serializers.CharField(source='classification.fileClassificationName', read_only=True)
+    filetype_name = serializers.CharField(source='fileType.fileTypeName', read_only=True)
+
+    class Meta:
+        model = FileDetails
+        fields = ['fileId','CaseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','filetype_name','classification','classification_name','uploaded_by','is_favourited']
+
 class CaseInfoSearchSerializers(serializers.ModelSerializer):
     stateName = serializers.SerializerMethodField()
     districtName = serializers.SerializerMethodField()
     unitName = serializers.SerializerMethodField()
 
 
-    files = FileDetailsSerializer(many= True, read_only= True)
+    files = FileDetailsSearchSerializer(many= True, read_only= True)
 
     class Meta:
         model = CaseInfoDetails
