@@ -1,6 +1,6 @@
 from django.db import models
 from users.models import User
-from mdm.models import CaseStatus
+from mdm.models import CaseStatus, FileClassification, FileType
 
 # Create your models here.
 
@@ -31,11 +31,6 @@ class CaseInfoDetails(models.Model):
         return self.caseNo
 
 class FileDetails(models.Model):
-    CLASSIFICATION_CHOICES = [
-        ('public', 'Public'),
-        ('confidential', 'Confidential'),
-    ]
-
     fileId = models.AutoField(primary_key = True)
     caseDetails = models.ForeignKey('CaseInfoDetails',on_delete=models.CASCADE, related_name = 'files')
     fileName = models.CharField(max_length=255)
@@ -43,14 +38,24 @@ class FileDetails(models.Model):
     fileHash = models.CharField(max_length=64)
     hashTag = models.TextField(null =True, blank = True)
     subject = models.TextField(max_length = 1000, null =True, blank = True)
-    fileType = models.TextField(max_length = 100,null =True, blank = True)
-    classification = models.TextField(max_length = 20, choices=CLASSIFICATION_CHOICES)
+    fileType = models.ForeignKey(FileType,on_delete=models.CASCADE, null = True,blank = True)
+    classification = models.ForeignKey(FileClassification,on_delete=models.CASCADE, null = True,blank = True)
     uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE, null = True,blank = True)
     created_at = models.DateTimeField(auto_now_add=True, null = True,blank = True)
     is_approved = models.BooleanField(default=False)
 
     def __str__(self):
         return self.fileName
+
+class FileAccessRequest(models.Model):
+    file = models.ForeignKey(FileDetails, on_delete=models.CASCADE)
+    requested_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="access_requests")
+    approved_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="approved_requests")
+    requested_to = models.ForeignKey(User, on_delete=models.CASCADE, related_name="file_requests_received",null = True, blank = True)
+    comments = models.TextField(null= True, blank = True)
+    is_approved = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    approved_at = models.DateTimeField(null = True, blank =True)
 
 class FavouriteFiles(models.Model):
     user = models.ForeignKey(User,on_delete=models.CASCADE, related_name = 'favorited_by')
@@ -69,11 +74,6 @@ class FileUsage(models.Model):
     class Meta:
         unique_together = ('user', 'file')
 
-
-class FileAccessPermission(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    file = models.ForeignKey(FileDetails, on_delete=models.CASCADE, related_name='access_permissions')
-    can_view = models.BooleanField(default=True)
 
 class Notification(models.Model):
     recipient = models.ForeignKey(User, on_delete=models.CASCADE)

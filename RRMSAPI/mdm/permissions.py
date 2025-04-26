@@ -5,7 +5,6 @@ from .models import Role
 class HasRequiredPermission(BasePermission):
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
-            print("user is not authenticated")
             return False
         
         if not request.user.role_id:
@@ -22,7 +21,6 @@ class HasRequiredPermission(BasePermission):
 
         required_permission = self.get_required_permission(request, view)
 
-        print("required permission:", required_permission)
         if not required_permission:
             return True 
         

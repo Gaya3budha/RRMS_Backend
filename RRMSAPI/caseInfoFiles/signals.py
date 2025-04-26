@@ -1,15 +1,15 @@
-from .models import FileAccessPermission,FileDetails
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.contrib.auth import get_user_model
-from .models import Notification
+from .models import FileDetails, FileAccessRequest, Notification
 
-User = get_user_model()
-
-@receiver(post_save, sender=FileDetails)
-def assign_permission_on_private_file(sender, instance, created, **kwargs):
-    if created and instance.classification == 'private':
-        FileAccessPermission.objects.create(user=instance.CaseInfoDetails.user, file=instance)
+@receiver(post_save, sender=FileAccessRequest)
+def notify_on_access_request(sender, instance, created, **kwargs):
+    if created:
+        Notification.objects.create(
+            recipient=instance.requested_to,
+            message=f"{instance.requested_by} has requested access to file: {instance.file.fileName}",
+            file=instance.file
+        )
 
 @receiver(post_save, sender=FileDetails)
 def notify_admin_on_upload(sender, instance, created, **kwargs):

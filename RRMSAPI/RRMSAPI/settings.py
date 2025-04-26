@@ -49,7 +49,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'mdm',
     'users',
-    'caseInfoFiles',
+    'caseInfoFiles.apps.CaseinfofilesConfig',
 ]
 
 MIDDLEWARE = [

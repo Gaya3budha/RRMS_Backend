@@ -1,4 +1,4 @@
-from .models import CaseInfoDetails, FileDetails, FavouriteFiles, Notification
+from .models import CaseInfoDetails, FileDetails, FavouriteFiles, Notification, FileAccessRequest
 from rest_framework import serializers
 import hashlib
 import os
@@ -15,10 +15,13 @@ class CaseInfoDetailsSerializer(serializers.ModelSerializer):
 class FileDetailsSerializer(serializers.ModelSerializer):
     CaseInfoDetailsId = serializers.IntegerField(source='CaseInfoDetails.CaseInfoDetailsId',read_only = True)
     is_favourited = serializers.BooleanField(read_only=True)
+    classification_name = serializers.CharField(source='classification.fileClassificationName', read_only=True)
+
+    filetype_name = serializers.CharField(source='fileType.fileTypeName', read_only=True)
 
     class Meta:
         model = FileDetails
-        fields = ['fileId','CaseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','classification','uploaded_by','is_favourited']
+        fields = ['fileId','CaseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','filetype_name','classification','classification_name','uploaded_by','is_favourited']
 
 class CaseInfoSearchSerializers(serializers.ModelSerializer):
     stateName = serializers.SerializerMethodField()
@@ -67,3 +70,20 @@ class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
         fields = "__all__"
+
+class FileAccessRequestSerializer(serializers.ModelSerializer):
+    requested_by_name = serializers.CharField(source='requested_by.firtsName', read_only=True)
+    requested_to_name = serializers.CharField(source='requested_to.firstNAme', read_only=True)
+    file_name = serializers.CharField(source='file.fileName', read_only=True)
+
+    class Meta:
+        model = FileAccessRequest
+        fields = [
+            'id',
+            'file_name',
+            'requested_by_name',
+            'requested_to_name',
+            'is_approved',
+            'comments',
+            'created_at',
+        ]

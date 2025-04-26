@@ -2,19 +2,21 @@ from django.shortcuts import render
 from rest_framework import status, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import CaseInfoDetailsSerializer,FileDetailsSerializer,NotificationSerializer, CaseInfoSearchSerializers, FavouriteSerializer
-from .models import FileDetails, CaseInfoDetails, FavouriteFiles, Notification
+from .serializers import CaseInfoDetailsSerializer,FileAccessRequestSerializer,FileDetailsSerializer,NotificationSerializer, CaseInfoSearchSerializers, FavouriteSerializer
+from .models import FileDetails, CaseInfoDetails, FavouriteFiles, Notification, FileAccessRequest
 from django.shortcuts import get_object_or_404
 from django.db.models import Prefetch, OuterRef, Exists
-from .utils import record_file_access
+from .utils import record_file_access, timezone
 from django.conf import settings
 from django.db.models import Q
 from django.http import FileResponse, Http404
 from rest_framework.permissions import IsAuthenticated
 from mdm.permissions import HasRequiredPermission
+from mdm.models import FileClassification, FileType
 from rest_framework.parsers import MultiPartParser, FormParser
 from .permissions import HasCustomPermission,FileDetailsPermission
 from rest_framework.generics import ListAPIView
+from django.contrib.auth import get_user_model
 import json
 import hashlib
 import os
@@ -22,6 +24,8 @@ import mimetypes
 
 UPLOAD_DIR = os.path.join(settings.MEDIA_ROOT, "uploads/")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+User = get_user_model()
 
 # Create your views here.
 class LatestUserFilesView(ListAPIView):
@@ -43,12 +47,11 @@ class FavouriteFilesView(APIView):
     def post(self, request, file_id):
         try:
             file = FileDetails.objects.get(fileId=file_id)
-            print('authenticated user: ',request.user)
             fav, created = FavouriteFiles.objects.get_or_create(user=request.user, file=file)
             if not created:
                 record_file_access(request.user, file)
                 return Response({'message': 'Already in favorites'}, status=status.HTTP_200_OK)
-            return Response({'message': 'Added to favorites'}, status=status.HTTP_201_CREATED)
+            return Response({'is_favourited':True, 'message': 'Added to favorites'}, status=status.HTTP_201_CREATED)
         except FileDetails.DoesNotExist:
             return Response({'error': 'File not found'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -59,7 +62,7 @@ class FavouriteFilesView(APIView):
             fav.delete()
             record_file_access(request.user, file)
 
-            return Response({'message':'Removed from favourites'},status= status.HTTP_200_OK)
+            return Response({'is_favourited':False,'message':'Removed from favourites'},status= status.HTTP_200_OK)
         except FavouriteFiles.DoesNotExist:
             return Response({'error': 'This file is not favourited'}, status=status.HTTP_404_NOT_FOUND)
   
@@ -111,14 +114,14 @@ class SearchCaseFilesView(APIView):
         case_details_qs = CaseInfoDetails.objects.filter(query).distinct()
 
         user = request.user
-        if user.is_staff:
+        if user.is_staff | user.role_id== 4:
             file_filter = Q()  # Admin sees all
         else:
             file_filter = Q(is_approved=True) | Q(uploaded_by=user)
 
         favourite_subquery = FavouriteFiles.objects.filter(user=request.user,file=OuterRef('pk'))
 
-        file_queryset = FileDetails.objects.filter(file_filter).annotate(is_favourited=Exists(favourite_subquery))
+        file_queryset = FileDetails.objects.select_related('classification').filter(file_filter).annotate(is_favourited=Exists(favourite_subquery))
 
         caseDetails = case_details_qs.prefetch_related(
             Prefetch('files', queryset=file_queryset)
@@ -148,7 +151,7 @@ class CaseInfoDetailsView(APIView):
             if isinstance(file_details, str):
                 file_details_data = json.loads(file_details)
 
-                print('parsed file details json: ',file_details_data)
+                # print('parsed file details json: ',file_details_data)
 
             case_serailizer = CaseInfoDetailsSerializer(data = case_data)
 
@@ -178,7 +181,7 @@ class CaseInfoDetailsView(APIView):
                 with open(file_path, "wb") as f:
                     f.write(file_content)
 
-                    print("file detail :",file_details_data[i])
+                    # print("file detail :",file_details_data[i])
 
                 # Save file details in the database with casedetailsid
                 file_detail = FileDetails.objects.create(
@@ -188,8 +191,8 @@ class CaseInfoDetailsView(APIView):
                     fileHash=file_hash,
                     hashTag = file_details_data[i]['hashTag'],
                     subject = file_details_data[i]['subject'],
-                    fileType = file_details_data[i]['fileType'],
-                    classification = file_details_data[i]['classification'],
+                    fileType = FileType.objects.get(fileTypeId=file_details_data[i]['fileType']),
+                    classification = FileClassification.objects.get(fileClassificationId=file_details_data[i]['classification']),
                     uploaded_by = request.user
                 )
 
@@ -310,18 +313,64 @@ class CaseInfoDetailsView(APIView):
 class FilePreviewAPIView(APIView):
     permission_classes = [IsAuthenticated, HasCustomPermission]
     required_permission = 'add_filepreviewapi'
-    def post(self,request):
+
+    def post(self, request):
         file_hash = request.data.get("fileHash")
+        requested_to_id = request.data.get("requested_to")
 
         if not file_hash:
-            return Response({"responseData":{"error": "fileHash is required", "status" : status.HTTP_400_BAD_REQUEST}})
+            return Response({
+                "responseData": {
+                    "error": "fileHash is required",
+                    "status": status.HTTP_400_BAD_REQUEST
+                }
+            }, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            objFile = FileDetails.objects.get(fileHash = file_hash)
+            objFile = FileDetails.objects.select_related('classification').get(fileHash=file_hash)
             filePath = objFile.filePath
 
+            if objFile.classification_id == 12 and objFile.uploaded_by_id != request.user.id:
+
+                # Check if user already has access
+                is_approved = FileAccessRequest.objects.filter(
+                    file=objFile,
+                    requested_by=request.user,
+                    is_approved=True
+                ).exists()
+
+                if not is_approved:
+                    already_requested = FileAccessRequest.objects.filter(
+                        file=objFile,
+                        requested_by=request.user
+                    ).exists()
+
+                    if not already_requested:
+                        if not requested_to_id:
+                            return Response({
+                                "responseData": {
+                                    "error": "requested_to is required for private files",
+                                    "status": status.HTTP_400_BAD_REQUEST
+                                }
+                            }, status=status.HTTP_400_BAD_REQUEST)
+
+                        requested_to_id = request.data.get("requested_to")
+                        requested_to_user = get_object_or_404(User, id=requested_to_id)
+                        access_request = FileAccessRequest.objects.create(
+                            file=objFile,
+                            requested_by=request.user,
+                            requested_to=requested_to_user
+                        )
+
+                    return Response({
+                        "responseData": {
+                            "message": "Access request sent. Waiting for approval.",
+                            "status": status.HTTP_202_ACCEPTED
+                        }
+                    })
+
             record_file_access(request.user, objFile)
-            
+
             if not os.path.exists(filePath):
                 raise FileNotFoundError("File not found on disk")
 
@@ -333,7 +382,64 @@ class FilePreviewAPIView(APIView):
 
         except FileNotFoundError:
             raise Http404("File path invalid or missing")
+  
+class FileAccessRequestListAPIView(ListAPIView):
+    queryset = FileAccessRequest.objects.all().order_by('-created_at')
+    serializer_class = FileAccessRequestSerializer
+    permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        user = self.request.user
+
+        if user.is_superuser or user.role_id == 1:  # assuming role_id=1 is admin
+            return FileAccessRequest.objects.all().order_by('-created_at')
+
+        # Content Managers can see requests where they are the requested_to user
+        return FileAccessRequest.objects.filter(requested_to=user).order_by('-created_at')
+
+class ApproveorDenyConfidentialAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        is_approved = request.data.get('is_approved')
+        comment = request.data.get('comment', '') 
+
+        access_request = get_object_or_404(FileAccessRequest, pk=pk)
+
+        if is_approved not in [True, False, 'true', 'false', 'True', 'False', 1, 0]:
+            return Response({
+                "responseData": {
+                    "error": "is_approved must be true or false",
+                    "status": status.HTTP_400_BAD_REQUEST
+                }
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        is_approved_bool = str(is_approved).lower() == 'true' or is_approved == 1
+
+
+        access_request.is_approved = is_approved_bool
+        access_request.comment = comment
+        access_request.approved_by = request.user
+        access_request.approved_at = timezone.now()
+        access_request.save()
+
+        if is_approved_bool:
+            file_obj = access_request.file
+            file_obj.is_approved = True
+            file_obj.save()
+
+        Notification.objects.create(
+            recipient=access_request.requested_by,
+            message= f"Request {'approved' if is_approved_bool else 'denied'} successfully.",
+            file=access_request.file
+        )
+
+        return Response({
+            "responseData": {
+                "message":f"Request {'approved' if is_approved_bool else 'denied'} successfully.",
+                "status": status.HTTP_200_OK
+            }
+        }, status=status.HTTP_200_OK)
 
 class FileApprovalDetailsViewSet(APIView):
    permission_classes=[FileDetailsPermission]
