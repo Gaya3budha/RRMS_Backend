@@ -1,6 +1,10 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from .models import FileDetails, FileAccessRequest, Notification
+from django.contrib.auth import get_user_model
+
+
+User = get_user_model()
 
 @receiver(post_save, sender=FileAccessRequest)
 def notify_on_access_request(sender, instance, created, **kwargs):
@@ -22,7 +26,7 @@ def notify_admin_on_upload(sender, instance, created, **kwargs):
             Notification.objects.create(
                 recipient=cm,
                 message=(
-                    f"A new file has been uploaded for case no: "
+                    f"Files has been uploaded for case no: "
                     f"{instance.caseDetails.caseNo} by {instance.uploaded_by}"
                 ),
                 file=instance 

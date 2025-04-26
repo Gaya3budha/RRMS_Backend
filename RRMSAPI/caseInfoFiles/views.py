@@ -21,6 +21,7 @@ import json
 import hashlib
 import os
 import mimetypes
+import traceback
 
 UPLOAD_DIR = os.path.join(settings.MEDIA_ROOT, "uploads/")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -210,7 +211,8 @@ class CaseInfoDetailsView(APIView):
             )
 
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            tb = traceback.format_exc()
+            return Response({"error": str(e),"traceback": tb}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def put(self,request,pk):
         try:
