@@ -110,7 +110,7 @@ class GetLoggedInUsersView(APIView):
         })
 
 class GetDivisionrAdminsView(APIView):
-    def get(self, request):
+    def post(self, request):
         current_user =request.data.get("division_id")
         role_id =request.data.get("role_id")
 
