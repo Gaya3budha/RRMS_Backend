@@ -152,4 +152,13 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['divisions_roles'] = divisions_roles_data
         return token
     
+class UserDivisionRoleCreateSerializer(serializers.ModelSerializer):
+    divisionId = serializers.PrimaryKeyRelatedField(source='division', queryset=DivisionMaster.objects.all())
+    roleId = serializers.PrimaryKeyRelatedField(source='role', queryset=Role.objects.all())
+    designationId = serializers.PrimaryKeyRelatedField(source='designation', queryset=DesignationMaster.objects.all())
+
+    class Meta:
+        model = UserDivisionRole
+        fields = ['divisionId', 'roleId', 'designationId']
+    
 
