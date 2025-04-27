@@ -90,7 +90,7 @@ class UserDivisionRole(models.Model):
         unique_together = ('user', 'division')  # optional
 
     def __str__(self):
-        return f"{self.user.username} - {self.division.name} - {self.role.name} - {self.designation.name}"
+        return f"{self.user.first_name}{self.user.last_name} - {self.division.divisionName} - {self.role.roleName} - {self.designation.designationName}"
 
 
 
