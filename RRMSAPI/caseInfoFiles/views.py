@@ -12,7 +12,8 @@ from django.db.models import Q
 from django.http import FileResponse, Http404
 from rest_framework.permissions import IsAuthenticated
 from mdm.permissions import HasRequiredPermission
-from mdm.models import FileClassification, FileType
+from mdm.models import FileClassification, FileType, DivisionMaster
+from users.models import UserDivisionRole
 from rest_framework.parsers import MultiPartParser, FormParser
 from .permissions import HasCustomPermission,FileDetailsPermission
 from rest_framework.generics import ListAPIView
@@ -165,8 +166,11 @@ class CaseInfoDetailsView(APIView):
             if isinstance(file_details, str):
                 file_details_data = json.loads(file_details)
 
-                # print('parsed file details json: ',file_details_data)
-
+            division_id = request.data.get("division_id")
+            if not division_id:
+                return Response({"error": "Division ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+            case_data['division'] = division_id 
             case_serailizer = CaseInfoDetailsSerializer(data = case_data)
 
             if not case_serailizer.is_valid():
@@ -180,6 +184,7 @@ class CaseInfoDetailsView(APIView):
                 return Response({"error": "No files Uploaded"}, status=status.HTTP_400_BAD_REQUEST)
 
             file_details_list = [] 
+           
 
             for i in range(len(uploaded_files)):
                 file_content = uploaded_files[i].read()
@@ -195,8 +200,6 @@ class CaseInfoDetailsView(APIView):
                 with open(file_path, "wb") as f:
                     f.write(file_content)
 
-                    # print("file detail :",file_details_data[i])
-
                 # Save file details in the database with casedetailsid
                 file_detail = FileDetails.objects.create(
                     caseDetails=caseInfo,
@@ -207,7 +210,8 @@ class CaseInfoDetailsView(APIView):
                     subject = file_details_data[i]['subject'],
                     fileType = FileType.objects.get(fileTypeId=file_details_data[i]['fileType']),
                     classification = FileClassification.objects.get(fileClassificationId=file_details_data[i]['classification']),
-                    uploaded_by = request.user
+                    uploaded_by = request.user,
+                    division = DivisionMaster.objects.get(divisionId=request.data.get('division_id')) 
                 )
 
                 record_file_access(request.user, file_detail)
@@ -473,11 +477,21 @@ class NotificationListView(APIView):
     def get(self, request):
         user = request.user
 
+        division_id = request.query_params.get('division_id')
+
+        if not division_id:
+            return Response({"detail": "Division ID is required."}, status=400)
+        
+        user_division_role = UserDivisionRole.objects.filter(user=user).first()
+    
         if user.is_staff:
             notifications = Notification.objects.all().order_by('-created_at')
-        elif user.role_id==4:
+        elif user_division_role.role_id==1:
+            notifications = Notification.objects.filter(division=division_id).order_by('-created_at')
+        elif user_division_role.role_id==4:
+            user_division = user_division_role.division
             notifications = Notification.objects.filter(
-                            recipient=user).order_by('-created_at')
+                            recipient=user, division = user_division).order_by('-created_at')
         else:
             return Response({"detail": "Not authorized."}, status=403)
 

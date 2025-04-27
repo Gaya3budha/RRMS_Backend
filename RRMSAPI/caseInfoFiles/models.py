@@ -1,6 +1,6 @@
 from django.db import models
 from users.models import User
-from mdm.models import CaseStatus, FileClassification, FileType
+from mdm.models import CaseStatus, FileClassification, FileType, DivisionMaster
 
 # Create your models here.
 
@@ -21,6 +21,7 @@ class CaseInfoDetails(models.Model):
     caseStatus = models.ForeignKey(CaseStatus, on_delete = models.CASCADE, null = True, blank= True)
     lastmodified_by = models.ForeignKey(User, on_delete=models.CASCADE, null = True,blank = True)
     lastmodified_Date = models.DateTimeField(auto_now_add=True, null = True,blank = True)
+    division  = models.ForeignKey(DivisionMaster,blank= True, null=True,on_delete=models.CASCADE) 
 
     class Meta:
         permissions = [
@@ -43,6 +44,7 @@ class FileDetails(models.Model):
     uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE, null = True,blank = True)
     created_at = models.DateTimeField(auto_now_add=True, null = True,blank = True)
     is_approved = models.BooleanField(default=False)
+    division= models.ForeignKey(DivisionMaster, null= True, blank=True,on_delete=models.CASCADE)
 
     def __str__(self):
         return self.fileName
@@ -61,6 +63,7 @@ class FavouriteFiles(models.Model):
     user = models.ForeignKey(User,on_delete=models.CASCADE, related_name = 'favorited_by')
     file = models.ForeignKey('FileDetails',on_delete=models.CASCADE, related_name = 'favourites')
     added_at = models.DateTimeField(auto_now_add=True)
+    division = models.ForeignKey(DivisionMaster,null=True,blank=True,on_delete=models.CASCADE)
 
     class Meta:
         unique_together = ('user', 'file')
@@ -77,6 +80,7 @@ class FileUsage(models.Model):
 
 class Notification(models.Model):
     recipient = models.ForeignKey(User, on_delete=models.CASCADE)
+    division = models.ForeignKey(DivisionMaster,null = True, blank=True, on_delete=models.CASCADE)
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
