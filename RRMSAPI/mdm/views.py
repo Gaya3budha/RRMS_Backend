@@ -11,7 +11,7 @@ from rest_framework.permissions import IsAdminUser
 
 # Create your views here.
 class StateMasterView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasRequiredPermission]
 
     def get(self,request):
         states = StateMaster.objects.all().values("stateId","stateName")
@@ -23,7 +23,7 @@ class StateMasterView(APIView):
 #     permission_classes = [IsAdminUser]
 
 class DistrictMasterView(APIView):
-    permission_classes = [IsAuthenticated] 
+    permission_classes = [IsAuthenticated, HasRequiredPermission] 
 
     def get(self,request,stateId):
         if stateId:
@@ -61,7 +61,7 @@ class DesignationViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 class UnitMasterView(APIView):
-    permission_classes = [IsAuthenticated] 
+    permission_classes = [IsAuthenticated, HasRequiredPermission] 
 
     def get(self,request, districtId, *args, **kwargs):
         if districtId:

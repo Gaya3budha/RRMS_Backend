@@ -1,23 +1,33 @@
 from rest_framework.permissions import BasePermission
 from django.core.exceptions import ObjectDoesNotExist
 from .models import Role
+from users.models import UserDivisionRole
 
 class HasRequiredPermission(BasePermission):
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
         
-        if not request.user.role_id:
+        division_id = (request.data.get('division_id') or request.query_params.get('division_id'))
+
+        if not division_id:
             return False
-
-        user_permissions = set()
-
+        
+        
         try:
-            role = Role.objects.get(roleId = request.user.role_id)
-            user_permissions = {perm.codename for perm in role.permissions.all()}
-
-        except Role.DoesNotExist:
+            user_division_role = UserDivisionRole.objects.get(
+                user=request.user,
+                division_id=division_id
+            )
+        except UserDivisionRole.DoesNotExist:
             return False
+        
+        role = user_division_role.role
+
+        if not role:
+            return False
+
+        user_permissions = {perm.codename for perm in role.permissions.all()}
 
         required_permission = self.get_required_permission(request, view)
 
