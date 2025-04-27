@@ -33,9 +33,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     mobileno = models.CharField(max_length=15, unique=True, blank=True, null=True) 
-    role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True)
-    divisionmaster = models.ForeignKey(DivisionMaster, on_delete=models.SET_NULL, null=True, blank=True)
-    designationmaster = models.ForeignKey(DesignationMaster,  on_delete=models.SET_NULL, null=True, blank=True)
+    # role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True)
+    # divisionmaster = models.ForeignKey(DivisionMaster, on_delete=models.SET_NULL, null=True, blank=True)
+    division = models.ManyToManyField(DivisionMaster, through = 'UserDivisionRole')
+    # designationmaster = models.ForeignKey(DesignationMaster,  on_delete=models.SET_NULL, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
@@ -78,6 +79,19 @@ class ActiveUser(models.Model):
 
     def __str__(self):
         return self.user.kgid
+
+class UserDivisionRole(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    division = models.ForeignKey(DivisionMaster, on_delete=models.CASCADE)
+    role = models.ForeignKey(Role, on_delete=models.CASCADE)
+    designation = models.ForeignKey(DesignationMaster, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('user', 'division')  # optional
+
+    def __str__(self):
+        return f"{self.user.username} - {self.division.name} - {self.role.name} - {self.designation.name}"
+
 
 
 

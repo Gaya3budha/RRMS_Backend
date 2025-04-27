@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import UserSerializer, CustomTokenObtainPairSerializer
 from rest_framework.exceptions import AuthenticationFailed
-from .models import User, ActiveUser
+from .models import User, ActiveUser, UserDivisionRole
 from rest_framework.permissions import IsAdminUser
 from mdm.models import Role
 
@@ -26,6 +26,10 @@ class CreateUserView(APIView):
             return Response(serializer.data,status = status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+# class UserDivisionRoleCreateAPIView(ListAPIView):
+#     queryset = UserDivisionRole.objects.all()
+#     serializer_class = UserDivisionRoleCreateSerializer
 
 class UpdateUserView(APIView):
     def patch(self,request,kgid_user,*args,**kwargs):
