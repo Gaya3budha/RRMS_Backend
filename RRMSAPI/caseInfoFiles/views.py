@@ -77,6 +77,9 @@ class SearchCaseFilesView(APIView):
         searchParams = request.data
         query = Q()
 
+        if "division_id" in searchParams:
+            query |= Q(division__divisionId__icontains= searchParams['division_id'])
+
         if "stateId" in searchParams:
             query |= Q(stateId__icontains= searchParams['stateId'])
 
@@ -116,7 +119,9 @@ class SearchCaseFilesView(APIView):
         case_details_qs = CaseInfoDetails.objects.filter(query).distinct()
 
         user = request.user
-        if user.is_staff | user.role_id== 4:
+
+        user_divisions= UserDivisionRole.objects.get(user = user, division_id = searchParams['division_id'])
+        if user.is_staff or user_divisions.role == 4 or user_divisions.role == 1:
             file_filter = Q()  # Admin sees all
         else:
             request_raised_subquery = FileAccessRequest.objects.filter(
