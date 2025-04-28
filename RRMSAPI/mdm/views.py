@@ -22,6 +22,13 @@ class StateMasterView(APIView):
 #     serializer_class = RoleSerializer
 #     permission_classes = [IsAdminUser]
 
+class RoleView(APIView):
+    permission_classes = [IsAuthenticated, HasRequiredPermission] 
+
+    def get(self,request):
+        roles = Role.objects.all().values("roleId","roleName")
+        return Response({"responseData":list(roles),"statusCode" :status.HTTP_200_OK})
+
 class DistrictMasterView(APIView):
     permission_classes = [IsAuthenticated, HasRequiredPermission] 
 
