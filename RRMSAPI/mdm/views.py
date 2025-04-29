@@ -43,11 +43,27 @@ class DistrictMasterView(APIView):
 class DivisionViewSet(viewsets.ModelViewSet):
     # queryset = DivisionMaster.objects.all()
     serializer_class = DivisionSerializer
-    permission_classes = [IsAdminUser]
+    # permission_classes = [HasRequiredPermission]
 
     def get_queryset(self):
-        return DivisionMaster.objects.filter(active = 'Y')
+        user = self.request.user
+        if user.is_staff:  # admin user
+                return DivisionMaster.objects.filter(active='Y')
+        else:
+                division_id = self.request.query_params.get('division_id')
+                if division_id:
+                    return DivisionMaster.objects.filter(divisionId=division_id, active='Y')
+                else:
+                    return DivisionMaster.objects.none()
+        # return DivisionMaster.objects.none()
 
+    def get_permissions(self):
+        if self.request.user and self.request.user.is_staff:
+            permission_classes = [IsAdminUser]
+        else:
+            permission_classes = [HasRequiredPermission]
+        return [permission() for permission in permission_classes]
+    
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         instance.active = 'N'
@@ -57,10 +73,17 @@ class DivisionViewSet(viewsets.ModelViewSet):
 class DesignationViewSet(viewsets.ModelViewSet):
     # queryset = DesignationMaster.objects.all()
     serializer_class = DesignationSerializer
-    permission_classes = [IsAdminUser]
+    # permission_classes = [IsAdminUser]
     def get_queryset(self):
         return DesignationMaster.objects.filter(active = 'Y')
 
+    def get_permissions(self):
+        if self.request.user and self.request.user.is_staff:
+            permission_classes = [IsAdminUser]
+        else:
+            permission_classes = [HasRequiredPermission]
+        return [permission() for permission in permission_classes]
+    
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         instance.active = 'N'
