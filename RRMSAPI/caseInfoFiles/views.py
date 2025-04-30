@@ -423,9 +423,9 @@ class FileAccessRequestListAPIView(ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        division_id = self.request.query_params.get("division_id") | self.request.data.get("division_id")
+        division_id = self.request.query_params.get("division_id")
 
-        user_divisions= UserDivisionRole.objects.get(user = user, division_id = division_id)
+        user_divisions= UserDivisionRole.objects.get(user = user, division = division_id)
         print("division_id",division_id)
         if user.is_superuser or user_divisions.role_id == 1:  # assuming role_id=1 is admin
             return FileAccessRequest.objects.all().order_by('-created_at')
