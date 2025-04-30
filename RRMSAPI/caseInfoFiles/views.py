@@ -24,7 +24,7 @@ import os
 import mimetypes
 import traceback
 
-UPLOAD_DIR = os.path.join(settings.MEDIA_ROOT, "uploads/")
+UPLOAD_DIR = os.path.join(settings.MEDIA_ROOT, "uploads","CID")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 User = get_user_model()
@@ -199,8 +199,9 @@ class CaseInfoDetailsView(APIView):
                 
                 # Define file path and save file
                 file_name = uploaded_files[i].name
-                file_path = os.path.join(UPLOAD_DIR, file_name)
+                file_path = os.path.join(UPLOAD_DIR, str(caseInfo.year),str(division_id), str(caseInfo.CaseInfoDetailsId),file_name)
 
+                os.makedirs(os.path.dirname(file_path), exist_ok=True)
                 # Write file to disk
                 with open(file_path, "wb") as f:
                     f.write(file_content)
