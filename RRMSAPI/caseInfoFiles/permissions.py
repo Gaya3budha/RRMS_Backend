@@ -19,13 +19,20 @@ class HasCustomPermission(BasePermission):
         division_id = (request.data.get('division_id') or request.query_params.get('division_id'))
 
         divsions_roles=UserDivisionRole.objects.get(user = user,division_id=division_id)
-        print("divsions_roles",divsions_roles)
         return divsions_roles.role.permissions.filter(codename=required_permission).exists()
 
 class FileDetailsPermission(BasePermission):
-    def has_object_permission(self,request,view,obj):
-        if request.user.role_id == 4:
-            return True
+    def has_object_permission(self,request,obj):
+        division_id = request.query_params.get('division_id')
+
+        if division_id:
+            is_cm = request.user.userdivisionrole_set.filter(
+                division_id=division_id,
+                role_id=4 
+            ).exists()
+        print('division_id',division_id)
+        if is_cm:
+                return True
         if obj.is_approved:
             return True
         
