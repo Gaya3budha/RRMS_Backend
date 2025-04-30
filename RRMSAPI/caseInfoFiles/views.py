@@ -541,3 +541,23 @@ class NotificationListView(APIView):
 
         serializer = NotificationSerializer(notifications, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class MarkNotificationAsReadAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        notification_id = request.data.get("notification_id")
+
+        if not notification_id:
+            return Response({"error": "Notification ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        notification = get_object_or_404(Notification, id=notification_id)
+
+        # Check if the user is allowed to mark it as read
+        if request.user != notification.recipient and not request.user.is_staff:
+            return Response({"error": "Not authorized."}, status=status.HTTP_403_FORBIDDEN)
+
+        notification.is_read = True
+        notification.save()
+
+        return Response({"message": "Notification marked as read."}, status=status.HTTP_200_OK)
