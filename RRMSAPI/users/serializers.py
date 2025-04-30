@@ -71,11 +71,11 @@ class UserSerializer(serializers.ModelSerializer):
             # Flattening division-role-designation info
             representation['divisions_roles'] = [
                 {
-                    "divisionId": role.division.id,
+                    "divisionId": role.division.pk,
                     "divisionName": role.division.divisionName,
-                    "roleId": role.role.id,
+                    "roleId": role.role.pk,
                     "roleName": role.role.roleName,
-                    "designationId": role.designation.id,
+                    "designationId": role.designation.pk,
                     "designationName": role.designation.designationName
                 }
                 for role in instance.userdivisionrole_set.all()

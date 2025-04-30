@@ -13,7 +13,28 @@ from mdm.models import Role
 # Create your views here.
 class UserListView(APIView):
     def get(self,request,*args,**kwargs):
-        users=User.objects.all()
+        user = request.user
+        division_id = request.query_params.get('division_id')
+
+        if not division_id:
+            return Response({"detail": "divisionId is required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if user.is_superuser:
+            users=User.objects.all()
+        else:
+            is_admin_of_division = UserDivisionRole.objects.filter(
+                user=user,
+                division__pk=division_id,
+                role__roleName='Admin'  # or use role ID if preferred
+            ).exists()
+
+            if is_admin_of_division:
+                users = User.objects.filter(
+                    userdivisionrole__division__pk = division_id
+                ).distinct()
+            else:
+                return Response({"detail": "Not authorized for this division."}, status=status.HTTP_403_FORBIDDEN)
+        
         serializer = UserSerializer(users, many= True, context={'request': request})
         return Response(serializer.data,status = status.HTTP_200_OK)
 

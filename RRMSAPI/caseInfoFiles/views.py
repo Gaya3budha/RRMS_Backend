@@ -342,7 +342,7 @@ class FilePreviewAPIView(APIView):
         file_hash = request.data.get("fileHash")
         requested_to_id = request.data.get("requested_to")
         comments = request.data.get("comments")
-
+        case_id = request.data.get("case_id")
 
         if not file_hash:
             return Response({
@@ -353,7 +353,7 @@ class FilePreviewAPIView(APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            objFile = FileDetails.objects.select_related('classification').get(fileHash=file_hash)
+            objFile = FileDetails.objects.select_related('classification').get(fileHash=file_hash, caseDetails_id = case_id )
             filePath = objFile.filePath
 
             if objFile.classification_id == 12 and objFile.uploaded_by_id != request.user.id:
@@ -417,8 +417,11 @@ class FileAccessRequestListAPIView(ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
+        division_id = self.request.query_params.get("division_id") | self.request.data.get("division_id")
 
-        if user.is_superuser or user.role_id == 1:  # assuming role_id=1 is admin
+        user_divisions= UserDivisionRole.objects.get(user = user, division_id = division_id)
+        print("division_id",division_id)
+        if user.is_superuser or user_divisions.role_id == 1:  # assuming role_id=1 is admin
             return FileAccessRequest.objects.all().order_by('-created_at')
 
         # Content Managers can see requests where they are the requested_to user
