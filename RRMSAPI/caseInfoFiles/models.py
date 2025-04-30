@@ -58,6 +58,7 @@ class FileAccessRequest(models.Model):
     is_approved = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     approved_at = models.DateTimeField(null = True, blank =True)
+    division = models.ForeignKey(DivisionMaster, null=True,blank=True,on_delete=models.CASCADE)
 
 class FavouriteFiles(models.Model):
     user = models.ForeignKey(User,on_delete=models.CASCADE, related_name = 'favorited_by')

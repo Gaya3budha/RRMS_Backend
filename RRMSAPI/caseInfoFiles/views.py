@@ -343,6 +343,7 @@ class FilePreviewAPIView(APIView):
         requested_to_id = request.data.get("requested_to")
         comments = request.data.get("comments")
         case_id = request.data.get("case_id")
+        division_id = request.data.get("division_id")
 
         if not file_hash:
             return Response({
@@ -355,20 +356,24 @@ class FilePreviewAPIView(APIView):
         try:
             objFile = FileDetails.objects.select_related('classification').get(fileHash=file_hash, caseDetails_id = case_id )
             filePath = objFile.filePath
+            user_division_ids = request.user.userdivisionrole_set.values_list('division_id', flat=True)
 
-            if objFile.classification_id == 12 and objFile.uploaded_by_id != request.user.id:
+
+            if objFile.classification_id == 12 and objFile.uploaded_by_id != request.user.id and objFile.division_id in user_division_ids:
 
                 # Check if user already has access
                 is_approved = FileAccessRequest.objects.filter(
                     file=objFile,
                     requested_by=request.user,
-                    is_approved=True
+                    is_approved=True,
+                    division_id=objFile.division_id
                 ).exists()
 
                 if not is_approved:
                     already_requested = FileAccessRequest.objects.filter(
                         file=objFile,
-                        requested_by=request.user
+                        requested_by=request.user,
+                        division_id=objFile.division_id
                     ).exists()
 
                     if not already_requested:
@@ -386,7 +391,8 @@ class FilePreviewAPIView(APIView):
                             file=objFile,
                             requested_by=request.user,
                             requested_to=requested_to_user,
-                            comments = comments
+                            comments = comments,
+                            division_id=objFile.division_id
                         )
 
                     return Response({
