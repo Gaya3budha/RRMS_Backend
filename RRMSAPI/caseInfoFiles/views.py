@@ -183,6 +183,8 @@ class CaseInfoDetailsView(APIView):
 
             caseInfo = case_serailizer.save(lastmodified_by= request.user)
 
+            div_name=DivisionMaster.objects.get(divisionId=division_id)
+
             uploaded_files = request.FILES.getlist("Files")
 
             if not uploaded_files:
@@ -199,7 +201,7 @@ class CaseInfoDetailsView(APIView):
                 
                 # Define file path and save file
                 file_name = uploaded_files[i].name
-                file_path = os.path.join(UPLOAD_DIR, str(caseInfo.year),str(division_id), str(caseInfo.CaseInfoDetailsId),file_name)
+                file_path = os.path.join(UPLOAD_DIR, str(caseInfo.year),str(div_name.divisionName), str(caseInfo.caseNo),file_name)
 
                 os.makedirs(os.path.dirname(file_path), exist_ok=True)
                 # Write file to disk
