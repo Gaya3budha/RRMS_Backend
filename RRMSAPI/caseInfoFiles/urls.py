@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import CaseInfoDetailsView,SearchCaseFilesView, FileApprovalDetailsViewSet,FilePreviewAPIView,FileAccessRequestListAPIView,ApproveorDenyConfidentialAPIView,NotificationListView, FavouriteFilesView,FavouriteFilesView,LatestUserFilesView
+from .views import CaseInfoDetailsView,SearchCaseFilesView,RevokeFileAccessRequestAPIView, FileApprovalDetailsViewSet,FilePreviewAPIView,FileAccessRequestListAPIView,ApproveorDenyConfidentialAPIView,NotificationListView, FavouriteFilesView,FavouriteFilesView,LatestUserFilesView
 
 
 urlpatterns = [
@@ -14,5 +14,6 @@ urlpatterns = [
     path('notifications',NotificationListView.as_view(),name='view-notifications'),
     path('approve-file/<int:pk>', FileApprovalDetailsViewSet.as_view(), name='approve-file'),
     path('access/<int:pk>/action', ApproveorDenyConfidentialAPIView.as_view(), name='access-request-action'),
-    path('requests',FileAccessRequestListAPIView.as_view(),name='get-all-file-access-request')
+    path('requests',FileAccessRequestListAPIView.as_view(),name='get-all-file-access-request'),
+    path('revoke',RevokeFileAccessRequestAPIView.as_view(),name='revoke-access')
 ]

@@ -97,4 +97,5 @@ class FileAccessRequestSerializer(serializers.ModelSerializer):
             'is_approved',
             'comments',
             'created_at',
+            'status'
         ]

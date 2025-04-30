@@ -50,6 +50,12 @@ class FileDetails(models.Model):
         return self.fileName
 
 class FileAccessRequest(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('revoked', 'Revoked'),  # Add this
+        ('denied', 'Denied'),
+    ]
     file = models.ForeignKey(FileDetails, on_delete=models.CASCADE)
     requested_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="access_requests")
     approved_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="approved_requests")
@@ -59,7 +65,8 @@ class FileAccessRequest(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     approved_at = models.DateTimeField(null = True, blank =True)
     division = models.ForeignKey(DivisionMaster, null=True,blank=True,on_delete=models.CASCADE)
-
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    
 class FavouriteFiles(models.Model):
     user = models.ForeignKey(User,on_delete=models.CASCADE, related_name = 'favorited_by')
     file = models.ForeignKey('FileDetails',on_delete=models.CASCADE, related_name = 'favourites')

@@ -436,6 +436,32 @@ class FileAccessRequestListAPIView(ListAPIView):
         # Content Managers can see requests where they are the requested_to user
         return FileAccessRequest.objects.filter(requested_to=user).order_by('-created_at')
 
+class RevokeFileAccessRequestAPIView(APIView):
+    permission_classes = [IsAuthenticated,FileDetailsPermission]
+
+    def post(self, request, *args, **kwargs):
+        request_id = request.data.get("request_id")
+        division_id = request.data.get("division_id")
+        
+        if not request_id or not division_id:
+            return Response({"error": "Missing request_id or division_id"}, status=status.HTTP_400_BAD_REQUEST)
+
+        file_request = get_object_or_404(FileAccessRequest, id=request_id)
+        user = request.user
+
+        # Check if user has the right role
+        try:
+            user_division = UserDivisionRole.objects.get(user=user, division=division_id)
+        except UserDivisionRole.DoesNotExist:
+            return Response({"error": "User does not have access to this division"}, status=status.HTTP_403_FORBIDDEN)
+
+        file_request.is_approved=False
+        # Revoke the request
+        file_request.status = "revoked"  # You can define a 'revoked' status in your choices
+        file_request.save()
+
+        return Response({"message": "File access request revoked successfully"}, status=status.HTTP_200_OK)
+    
 class ApproveorDenyConfidentialAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -457,6 +483,7 @@ class ApproveorDenyConfidentialAPIView(APIView):
 
 
         access_request.is_approved = is_approved_bool
+        access_request.status = "Approved" if is_approved_bool else "Denied"
         access_request.comment = comment
         access_request.approved_by = request.user
         access_request.approved_at = timezone.now()
