@@ -119,7 +119,7 @@ class FileClassificationViewSet(viewsets.ModelViewSet):
     serializer_class = FileClassificationSerializer
 
     def get_queryset(self):
-        return FileClassification.objects.filter(active = 'Y')
+        return FileClassification.objects.filter(active = 'Y').values('fileClassificationId','fileClassificationName','active')
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -132,7 +132,7 @@ class CaseStatusViewSet(viewsets.ModelViewSet):
     serializer_class = CaseStatusSerializer
 
     def get_queryset(self):
-        return CaseStatus.objects.filter(active = 'Y')
+        return CaseStatus.objects.filter(active = 'Y').values('statusId','statusName','active')
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
