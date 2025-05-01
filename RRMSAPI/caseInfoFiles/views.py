@@ -201,7 +201,7 @@ class CaseInfoDetailsView(APIView):
                 
                 # Define file path and save file
                 file_name = uploaded_files[i].name
-                file_path = os.path.join(UPLOAD_DIR, str(caseInfo.year),str(div_name.divisionName), str(caseInfo.caseNo),file_name)
+                file_path = os.path.join(UPLOAD_DIR, str(caseInfo.year),str(div_name.divisionName), str(caseInfo.caseNo),str(file_details_data[i]['fileStage']),file_name)
 
                 os.makedirs(os.path.dirname(file_path), exist_ok=True)
                 # Write file to disk
@@ -219,7 +219,8 @@ class CaseInfoDetailsView(APIView):
                     fileType = FileType.objects.get(fileTypeId=file_details_data[i]['fileType']),
                     classification = FileClassification.objects.get(fileClassificationId=file_details_data[i]['classification']),
                     uploaded_by = request.user,
-                    division = DivisionMaster.objects.get(divisionId=request.data.get('division_id')) 
+                    division = DivisionMaster.objects.get(divisionId=request.data.get('division_id')),
+                    filestage =file_details_data[i]['fileStage']
                 )
 
                 record_file_access(request.user, file_detail)

@@ -32,6 +32,11 @@ class CaseInfoDetails(models.Model):
         return self.caseNo
 
 class FileDetails(models.Model):
+    FILE_STAGE_CHOICES = [
+        ('Enquiry', 'enquiry'),
+        ('I/O', 'i/o'),
+        ('Crime', 'crime')
+    ]
     fileId = models.AutoField(primary_key = True)
     caseDetails = models.ForeignKey('CaseInfoDetails',on_delete=models.CASCADE, related_name = 'files')
     fileName = models.CharField(max_length=255)
@@ -45,6 +50,7 @@ class FileDetails(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, null = True,blank = True)
     is_approved = models.BooleanField(default=False)
     division= models.ForeignKey(DivisionMaster, null= True, blank=True,on_delete=models.CASCADE)
+    filestage = models.CharField(max_length=20, choices=FILE_STAGE_CHOICES, null= True, blank= True)
 
     def __str__(self):
         return self.fileName
@@ -66,7 +72,7 @@ class FileAccessRequest(models.Model):
     approved_at = models.DateTimeField(null = True, blank =True)
     division = models.ForeignKey(DivisionMaster, null=True,blank=True,on_delete=models.CASCADE)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    
+
 class FavouriteFiles(models.Model):
     user = models.ForeignKey(User,on_delete=models.CASCADE, related_name = 'favorited_by')
     file = models.ForeignKey('FileDetails',on_delete=models.CASCADE, related_name = 'favourites')
