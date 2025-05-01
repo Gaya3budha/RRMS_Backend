@@ -86,6 +86,7 @@ class FileAccessRequestSerializer(serializers.ModelSerializer):
     requested_by_name = serializers.CharField(source='requested_by.firtsName', read_only=True)
     requested_to_name = serializers.CharField(source='requested_to.firstName', read_only=True)
     file_name = serializers.CharField(source='file.fileName', read_only=True)
+    created_at = serializers.DateTimeField(format="%d-%m-%Y %I:%M %p")
 
     class Meta:
         model = FileAccessRequest

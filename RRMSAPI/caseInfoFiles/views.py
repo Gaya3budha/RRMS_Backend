@@ -42,14 +42,17 @@ class FavouriteFilesView(APIView):
     permission_classes = [IsAuthenticated, HasRequiredPermission]
 
     def get(self,request):
-        favs= FavouriteFiles.objects.filter(user=request.user).order_by('-added_at')
+        division_id = request.query_params.get("division_id")
+        favs= FavouriteFiles.objects.filter(user=request.user,division_id=division_id).order_by('-added_at')
         serializer = FavouriteSerializer(favs, many=True)
         return Response(serializer.data)
 
     def post(self, request, file_id):
+        division_id = request.query_params.get("division_id")
+        division = DivisionMaster.objects.get(divisionId = division_id)
         try:
             file = FileDetails.objects.get(fileId=file_id)
-            fav, created = FavouriteFiles.objects.get_or_create(user=request.user, file=file)
+            fav, created = FavouriteFiles.objects.get_or_create(user=request.user, file=file, division = division)
             if not created:
                 record_file_access(request.user, file)
                 return Response({'message': 'Already in favorites'}, status=status.HTTP_200_OK)
