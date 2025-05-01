@@ -31,7 +31,7 @@ class FileDetailsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FileDetails
-        fields = ['fileId','CaseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','classification','uploaded_by','division','fileStage']  
+        fields = ['fileId','CaseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','classification','uploaded_by','division','filestage']  
         # 'classification_name','is_favourited', 'filetype_name'
 
 class CaseInfoSearchSerializers(serializers.ModelSerializer):
