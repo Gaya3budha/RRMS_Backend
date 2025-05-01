@@ -79,47 +79,64 @@ class SearchCaseFilesView(APIView):
     def post(self, request):
         searchParams = request.data
         query = Q()
+        filters_applied = False
 
         if "division_id" in searchParams:
-            query |= Q(division__divisionId__icontains= searchParams['division_id'])
+            query &= Q(division__divisionId__icontains= searchParams['division_id'])
+            filters_applied = True
 
         if "stateId" in searchParams:
-            query |= Q(stateId__icontains= searchParams['stateId'])
+            query &= Q(stateId__icontains= searchParams['stateId'])
+            filters_applied = True
 
         if "districtId" in searchParams:
-            query |= Q(districtId__icontains= searchParams['districtId'])
+            query &= Q(districtId__icontains= searchParams['districtId'])
+            filters_applied = True
         
         if "unitId" in searchParams:
-            query |= Q(unitId__icontains= searchParams['unitId'])
+            query &= Q(unitId__icontains= searchParams['unitId'])
+            filters_applied = True
 
         if "office" in searchParams:
-            query |= Q(Office__icontains= searchParams['office'])
+            query &= Q(Office__icontains= searchParams['office'])
+            filters_applied = True
 
         if "letterNo" in searchParams:
-            query |= Q(letterNo__icontains= searchParams['letterNo'])
+            query &= Q(letterNo__icontains= searchParams['letterNo'])
+            filters_applied = True
 
         if "caseNo" in searchParams:
-            query |= Q(caseNo__icontains= searchParams['caseNo'])
+            query &= Q(caseNo__icontains= searchParams['caseNo'])
+            filters_applied = True
 
         if "firNo" in searchParams:
-            query |= Q(firNo__icontains= searchParams['firNo'])
+            query &= Q(firNo__icontains= searchParams['firNo'])
+            filters_applied = True
 
         if "caseDate" in searchParams:
-            query |= Q(caseDate__icontains= searchParams['caseDate'])
+            query &= Q(caseDate__icontains= searchParams['caseDate'])
+            filters_applied = True
 
         if 'hashtag' in searchParams:
-            query |= Q(files__hashTag__icontains=searchParams['hashtag'])
+            query &= Q(files__hashTag__icontains=searchParams['hashtag'])
+            filters_applied = True
 
         if 'subject' in searchParams:
-            query |= Q(files__subject__icontains= searchParams['subject'])
+            query &= Q(files__subject__icontains= searchParams['subject'])
+            filters_applied = True
 
         if 'classification' in searchParams:
-            query |= Q(files__classification__icontains= searchParams['classification'])
+            query &= Q(files__classification__icontains= searchParams['classification'])
+            filters_applied = True
 
         if 'fileType' in searchParams:
-            query |= Q(files__fileType__icontains= searchParams['fileType'])
+            query &= Q(files__fileType__icontains= searchParams['fileType'])
+            filters_applied = True
 
-        case_details_qs = CaseInfoDetails.objects.filter(query).distinct()
+        if filters_applied:
+            case_details_qs = CaseInfoDetails.objects.filter(query).distinct()
+        else:
+            case_details_qs = CaseInfoDetails.objects.all()
 
         user = request.user
 

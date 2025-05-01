@@ -21,7 +21,7 @@ class FileDetailsSearchSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FileDetails
-        fields = ['fileId','CaseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','filetype_name','classification','classification_name','uploaded_by','is_favourited','is_access_request_approved','is_request_raised']
+        fields = ['fileId','CaseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','filetype_name','classification','classification_name','uploaded_by','is_favourited','is_access_request_approved','is_request_raised','filestage']
 
 class FileDetailsSerializer(serializers.ModelSerializer):
     CaseInfoDetailsId = serializers.IntegerField(source='CaseInfoDetails.CaseInfoDetailsId',read_only = True)
@@ -31,7 +31,7 @@ class FileDetailsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FileDetails
-        fields = ['fileId','CaseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','classification','uploaded_by','division']  
+        fields = ['fileId','CaseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','classification','uploaded_by','division','fileStage']  
         # 'classification_name','is_favourited', 'filetype_name'
 
 class CaseInfoSearchSerializers(serializers.ModelSerializer):
