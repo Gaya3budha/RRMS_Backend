@@ -383,7 +383,7 @@ class FilePreviewAPIView(APIView):
             user_division_ids = request.user.userdivisionrole_set.values_list('division_id', flat=True)
 
 
-            if objFile.classification_id == 12 and objFile.uploaded_by_id != request.user.id and objFile.division_id in user_division_ids:
+            if objFile.classification_id == 15 and objFile.uploaded_by_id != request.user.id and objFile.division_id in user_division_ids:
 
                 # Check if user already has access
                 is_approved = FileAccessRequest.objects.filter(
