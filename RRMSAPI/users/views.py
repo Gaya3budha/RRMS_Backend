@@ -118,7 +118,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
 
 class GetLoggedInUsersView(APIView):
-     permission_classes = [IsAdminUser]
+    #  permission_classes = [IsAdminUser]
      
      def get(self, request, *args, **kwargs):
         active_users = ActiveUser.objects.select_related('user').all()
