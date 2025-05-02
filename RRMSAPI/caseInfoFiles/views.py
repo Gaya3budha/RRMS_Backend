@@ -553,12 +553,12 @@ class NotificationListView(APIView):
             notifications = Notification.objects.all().order_by('-created_at')
         elif user_division_role.role_id==1:
             notifications = Notification.objects.filter(division=division_id).order_by('-created_at')
-        elif user_division_role.role_id==4:
+        else:
             user_division = user_division_role.division
             notifications = Notification.objects.filter(
                             recipient=user, division = user_division).order_by('-created_at')
-        else:
-            return Response({"detail": "Not authorized."}, status=403)
+        # else:
+        #     return Response({"detail": "Not authorized."}, status=403)
 
         serializer = NotificationSerializer(notifications, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
