@@ -141,21 +141,25 @@ class SearchCaseFilesView(APIView):
         user = request.user
 
         user_divisions= UserDivisionRole.objects.get(user = user, division_id = searchParams['division_id'])
-        if user.is_staff or user_divisions.role == 4 or user_divisions.role == 1:
+
+        request_raised_subquery = FileAccessRequest.objects.filter(
+                    file=OuterRef('pk'),
+                    requested_by=user
+                    )
+        access_request_subquery = FileAccessRequest.objects.filter(
+                    file=OuterRef('pk'),
+                    requested_by=user,
+                    is_approved=True 
+                    )
+        favourite_subquery = FavouriteFiles.objects.filter(user=request.user,file=OuterRef('pk'))
+        
+        print('user_divisions:',user_divisions.role_id)
+        if user.is_staff or user_divisions.role_id in [1,4]:
             file_filter = Q()  # Admin sees all
         else:
-            request_raised_subquery = FileAccessRequest.objects.filter(
-                file=OuterRef('pk'),
-                requested_by=user
-                )
-            access_request_subquery = FileAccessRequest.objects.filter(
-                file=OuterRef('pk'),
-                requested_by=user,
-                is_approved=True 
-                )
+           
             file_filter = Q(is_approved=True) | Q(uploaded_by=user) | Exists(access_request_subquery)
 
-        favourite_subquery = FavouriteFiles.objects.filter(user=request.user,file=OuterRef('pk'))
         print("access- ",file_filter)
         file_queryset = FileDetails.objects.select_related('classification').filter(file_filter).annotate(
             is_favourited=Exists(favourite_subquery),
@@ -380,6 +384,7 @@ class FilePreviewAPIView(APIView):
         try:
             objFile = FileDetails.objects.select_related('classification').get(fileHash=file_hash, caseDetails_id = case_id )
             filePath = objFile.filePath
+            print('file path:',filePath)
             user_division_ids = request.user.userdivisionrole_set.values_list('division_id', flat=True)
 
 
@@ -392,6 +397,8 @@ class FilePreviewAPIView(APIView):
                     is_approved=True,
                     division_id=objFile.division_id
                 ).exists()
+
+                print('is_Approved',is_approved)
 
                 if not is_approved:
                     already_requested = FileAccessRequest.objects.filter(
@@ -463,6 +470,7 @@ class RevokeFileAccessRequestAPIView(APIView):
     def post(self, request, *args, **kwargs):
         request_id = request.data.get("request_id")
         division_id = request.data.get("division_id")
+        comments = request.data.get("comments")
         
         if not request_id or not division_id:
             return Response({"error": "Missing request_id or division_id"}, status=status.HTTP_400_BAD_REQUEST)
@@ -477,10 +485,14 @@ class RevokeFileAccessRequestAPIView(APIView):
             return Response({"error": "User does not have access to this division"}, status=status.HTTP_403_FORBIDDEN)
 
         file_request.is_approved=False
+        file_request.comments = comments
         # Revoke the request
         file_request.status = "revoked"  # You can define a 'revoked' status in your choices
         file_request.save()
 
+        file_Details_object= FileDetails.objects.get(fileId = file_request.file_id)
+        file_Details_object.is_approved=False
+        print('file_Details_object',file_Details_object.is_approved)
         return Response({"message": "File access request revoked successfully"}, status=status.HTTP_200_OK)
     
 class ApproveorDenyConfidentialAPIView(APIView):
