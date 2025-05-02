@@ -51,7 +51,7 @@ class FileDetails(models.Model):
     is_approved = models.BooleanField(default=False)
     division= models.ForeignKey(DivisionMaster, null= True, blank=True,on_delete=models.CASCADE)
     filestage = models.CharField(max_length=20, choices=FILE_STAGE_CHOICES, null= True, blank= True)
-
+    comments = models.CharField(max_length=100,null=True,blank=True)
     def __str__(self):
         return self.fileName
 

@@ -542,10 +542,20 @@ class ApproveorDenyConfidentialAPIView(APIView):
 
 class FileApprovalDetailsViewSet(APIView):
    permission_classes=[FileDetailsPermission]
-   def post(self, request, pk):
-        file = get_object_or_404(FileDetails, pk=pk)
-        file.is_approved = True
+   def post(self, request):
+        file_id= request.data.get("file_id")
+        is_approved= request.data.get("is_approved")
+        comments = request.data.get("comments")
+        file = get_object_or_404(FileDetails, pk=file_id)
+        file.is_approved = is_approved
+        file.comments = comments
         file.save()
+
+        Notification.objects.create(
+            recipient=file.uploaded_by,
+            message= f"File {'approved' if is_approved else 'denied'} with comments -{comments}",
+            file= file
+        )
         return Response({"status": "File approved"}, status=status.HTTP_200_OK)
 
 class NotificationListView(APIView):
