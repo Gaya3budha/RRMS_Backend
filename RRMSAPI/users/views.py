@@ -8,6 +8,7 @@ from rest_framework.exceptions import AuthenticationFailed
 from .models import User, ActiveUser, UserDivisionRole
 from rest_framework.permissions import IsAdminUser
 from mdm.models import Role
+from datetime import date
 
 
 # Create your views here.
@@ -121,7 +122,9 @@ class GetLoggedInUsersView(APIView):
     #  permission_classes = [IsAdminUser]
      
      def get(self, request, *args, **kwargs):
-        active_users = ActiveUser.objects.select_related('user').all()
+        active_users = ActiveUser.objects.select_related('user').filter(last_login__date=date.today())
+
+        print('active_users',active_users)
         active_users_data = UserSerializer([a.user for a in active_users], many=True, context={'request': request})
 
 

@@ -385,10 +385,13 @@ class FilePreviewAPIView(APIView):
             objFile = FileDetails.objects.select_related('classification').get(fileHash=file_hash, caseDetails_id = case_id )
             filePath = objFile.filePath
             print('file path:',filePath)
+
+            user_div_roles = request.user.userdivisionrole_set.filter(division_id=objFile.division_id)
+            print('user_div_roles',user_div_roles)
             user_division_ids = request.user.userdivisionrole_set.values_list('division_id', flat=True)
 
-
-            if objFile.classification_id == 15 and objFile.uploaded_by_id != request.user.id and objFile.division_id in user_division_ids:
+            has_access = user_div_roles.filter(role_id__in=[1,4]).exists()
+            if objFile.classification_id == 15 and objFile.uploaded_by_id != request.user.id and objFile.division_id in user_division_ids and not has_access:
 
                 # Check if user already has access
                 is_approved = FileAccessRequest.objects.filter(

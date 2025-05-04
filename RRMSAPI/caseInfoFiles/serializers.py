@@ -7,6 +7,7 @@ from cryptography.fernet import Fernet
 
 
 class CaseInfoDetailsSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = CaseInfoDetails
         fields = "__all__"
@@ -38,6 +39,7 @@ class CaseInfoSearchSerializers(serializers.ModelSerializer):
     stateName = serializers.SerializerMethodField()
     districtName = serializers.SerializerMethodField()
     unitName = serializers.SerializerMethodField()
+    caseDate = serializers.DateTimeField(format="%d-%m-%Y %I:%M %p")
 
 
     files = FileDetailsSearchSerializer(many= True, read_only= True)

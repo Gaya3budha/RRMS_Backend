@@ -1,6 +1,10 @@
 from django.urls import path
+from django.contrib import admin
 from .views import CaseInfoDetailsView,SearchCaseFilesView,MarkNotificationAsReadAPIView,RevokeFileAccessRequestAPIView, FileApprovalDetailsViewSet,FilePreviewAPIView,FileAccessRequestListAPIView,ApproveorDenyConfidentialAPIView,NotificationListView, FavouriteFilesView,FavouriteFilesView,LatestUserFilesView
 
+admin.site.site_header = "RRMS Super Admin Portal"
+admin.site.site_title = "RRMS"
+admin.site.index_title = "Master Data Dashboard"
 
 urlpatterns = [
     path('save', CaseInfoDetailsView.as_view(), name='case-data'),
