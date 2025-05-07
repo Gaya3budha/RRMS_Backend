@@ -115,5 +115,10 @@ class CaseStatus(models.Model):
         return self.statusName
     
 
-    
-
+class GeneralLookUp(models.Model):
+    lookupId = models.AutoField(primary_key=True)
+    lookupName = models.CharField( max_length= 100)
+    CategoryId = models.IntegerField()
+    lookupOrder = models.IntegerField(null = True, blank=True)
+    active = models.CharField(default ='Y')
+    lastmodifiedDate = models.DateTimeField(auto_now= True)

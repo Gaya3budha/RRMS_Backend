@@ -1,7 +1,7 @@
 import logging
 from rest_framework import serializers
 
-from .models import  Role, DistrictMaster, DivisionMaster, StateMaster, DesignationMaster, UnitMaster, FileType, FileClassification, CaseStatus
+from .models import  Role, DistrictMaster, DivisionMaster, StateMaster, DesignationMaster, GeneralLookUp,UnitMaster, FileType, FileClassification, CaseStatus
 
 class StateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -48,3 +48,11 @@ class CaseStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = CaseStatus
         fields = ['statusId','statusName','active','lastModifiedDate']
+
+class LookupCustomSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(source='lookupid')
+    value = serializers.CharField(source='lookupvalue')
+
+    class Meta:
+        model = GeneralLookUp
+        fields = ['id', 'value']

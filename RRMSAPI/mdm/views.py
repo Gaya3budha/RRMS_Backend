@@ -1,13 +1,15 @@
 from django.shortcuts import render
 from rest_framework import status
-from .models import Role, DivisionMaster, DistrictMaster, StateMaster,UnitMaster, DesignationMaster, FileType, FileClassification, CaseStatus
+from .models import Role, DivisionMaster,GeneralLookUp, DistrictMaster, StateMaster,UnitMaster, DesignationMaster, FileType, FileClassification, CaseStatus
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .permissions import HasRequiredPermission
 from rest_framework import viewsets
-from .serializers import RoleSerializer, DivisionSerializer, DesignationSerializer, FileClassificationSerializer, FileTypeSerializer, CaseStatusSerializer
+from .serializers import RoleSerializer,LookupCustomSerializer, DivisionSerializer, DesignationSerializer, FileClassificationSerializer, FileTypeSerializer, CaseStatusSerializer
 from rest_framework.permissions import IsAdminUser
+from .utils import CATEGORY_LABELS
+from rest_framework.generics import ListAPIView
 
 # Create your views here.
 class StateMasterView(APIView):
@@ -139,6 +141,27 @@ class CaseStatusViewSet(viewsets.ModelViewSet):
         instance.active = 'N'
         instance.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+
+class LookupByCategoryView(ListAPIView):
+    serializer_class = LookupCustomSerializer
+
+    def get_queryset(self):
+        return GeneralLookUp.objects.filter(active='Y').order_by('CategoryId','lookupOrder')
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        grouped = {}
+        for lookup in queryset:
+            category_id = lookup.CategoryId
+            label = CATEGORY_LABELS.get(category_id, f"Category_{category_id}")
+            item = {
+                "id": lookup.lookupId,
+                "value": lookup.lookupName
+            }
+            grouped.setdefault(label, []).append(item)
+
+        return Response(grouped)
 
     
 
