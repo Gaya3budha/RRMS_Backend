@@ -1,6 +1,7 @@
 from django.contrib import admin
-from .models import Role,DivisionMaster, FileType, FileClassification, CaseStatus, DesignationMaster
+from .models import Role,DivisionMaster, FileType, FileClassification, CaseStatus, DesignationMaster, UnitMaster
 from django.contrib.auth.models import  Permission
+from django.contrib.auth.models import Group
 
 # Register your models here.
 # admin.site.register(Role)
@@ -9,6 +10,8 @@ from django.contrib.auth.models import  Permission
 admin.site.register(FileType)
 admin.site.register(FileClassification)
 admin.site.register(CaseStatus)
+admin.site.unregister(Group)
+admin.site.register(UnitMaster)
 
 @admin.register(DivisionMaster)
 class DivisionMasterAdmin(admin.ModelAdmin):

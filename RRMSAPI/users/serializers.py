@@ -90,49 +90,15 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
-
+        print(user)
         token['email']=user.email
         token['full_name']=f"{user.first_name} {user.last_name}"
-
+        token['is_superadmin']=user.is_superuser
         divisions_roles_data = []
         
         # Fetch user's division-role-designation mappings
         user_division_roles = user.userdivisionrole_set.all()
-        
-        # role_name = None
-        # division_name = None
-        # designation_name = None
-        # permissions_list = []
-        # if user.role_id:
-        #     try:
-        #         role= Role.objects.get(roleId = user.role_id)
-        #         role_name=role.roleName
-        #         permissions_list = [perm.codename for perm in role.permissions.all()]
-        #     except Role.DoesNotExist:
-        #         role_name = "Unknown Role"
-
-        # if user.divisionmaster_id:
-        #     try:
-        #         division = DivisionMaster.objects.get(divisionId = user.divisionmaster_id)
-        #         division_name = division.divisionName
-        #     except DivisionMaster.DoesNotExist:
-        #         division_name = ""
-
-        # if user.designationmaster_id:
-        #     try:
-        #         designation = DesignationMaster.objects.get(designationId = user.designationmaster_id)
-        #         designation_name = designation.designationName
-        #     except DesignationMaster.DoesNotExist:
-        #         designation_name = ""
-
-        
-        # token['permissions'] = permissions_list
-        # token['role_id'] = user.role_id
-        # token['role_name']=role_name
-        # token['division_id'] = user.divisionmaster_id
-        # token['division_name']=division_name
-        # token['designation_id']= user.designationmaster_id
-        # token['designation_name']=designation_name
+       
         for ur in user_division_roles:
             division_name = ur.division.divisionName if ur.division else ""
             role_name = ur.role.roleName if ur.role else ""

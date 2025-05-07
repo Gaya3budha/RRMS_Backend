@@ -8,6 +8,9 @@ class HasRequiredPermission(BasePermission):
         if not request.user or not request.user.is_authenticated:
             return False
         
+        if request.user.is_superuser:
+            return True
+        
         division_id = (request.data.get('division_id') or request.query_params.get('division_id'))
 
         if not division_id:

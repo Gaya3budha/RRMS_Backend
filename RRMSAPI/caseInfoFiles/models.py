@@ -11,7 +11,7 @@ class CaseInfoDetails(models.Model):
     unitId = models.IntegerField()
     Office = models.TextField(max_length=255)
     letterNo = models.CharField(max_length=100)
-    caseDate = models.DateTimeField()
+    caseDate = models.DateTimeField(null=True,blank=True)
     caseType = models.CharField(max_length = 100)
     caseNo = models.CharField(max_length=100)
     firNo = models.CharField(max_length=255)
