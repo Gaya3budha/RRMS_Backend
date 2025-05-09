@@ -11,6 +11,12 @@ class CaseInfoDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = CaseInfoDetails
         fields = "__all__"
+    
+    def validate_caseNo(self,value):
+        if CaseInfoDetails.objects.filter(caseNo=value).exists():
+            raise serializers.ValidationError("(CCMS)Case No/ Enquiry No already exists")
+        
+        return value
 
 class FileDetailsSearchSerializer(serializers.ModelSerializer):
     CaseInfoDetailsId = serializers.IntegerField(source='CaseInfoDetails.CaseInfoDetailsId',read_only = True)
@@ -22,7 +28,7 @@ class FileDetailsSearchSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FileDetails
-        fields = ['fileId','CaseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','filetype_name','classification','classification_name','uploaded_by','is_approved','is_favourited','is_access_request_approved','is_request_raised','filestage','comments']
+        fields = ['fileId','CaseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','filetype_name','classification','classification_name','uploaded_by','is_approved','is_favourited','is_access_request_approved','is_request_raised','documentType','comments']
 
 class FileDetailsSerializer(serializers.ModelSerializer):
     CaseInfoDetailsId = serializers.IntegerField(source='CaseInfoDetails.CaseInfoDetailsId',read_only = True)
@@ -32,7 +38,7 @@ class FileDetailsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FileDetails
-        fields = ['fileId','CaseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','classification','uploaded_by','filestage','classification_name','is_favourited', 'filetype_name']  
+        fields = ['fileId','CaseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','classification','uploaded_by','documentType','classification_name','is_favourited', 'filetype_name']  
         # 'classification_name','is_favourited', 'filetype_name'
 
 class CaseInfoSearchSerializers(serializers.ModelSerializer):

@@ -1,6 +1,6 @@
 from django.db import models
 from users.models import User
-from mdm.models import CaseStatus, FileClassification, FileType, DivisionMaster
+from mdm.models import CaseStatus, FileClassification, FileType, DivisionMaster, GeneralLookUp
 
 # Create your models here.
 
@@ -13,7 +13,7 @@ class CaseInfoDetails(models.Model):
     letterNo = models.CharField(max_length=100)
     caseDate = models.DateTimeField(null=True,blank=True)
     caseType = models.CharField(max_length = 100)
-    caseNo = models.CharField(max_length=100)
+    caseNo = models.CharField(max_length=17, unique=True)
     firNo = models.CharField(max_length=255)
     author = models.TextField(max_length = 200)
     toAddr = models.TextField(max_length = 500)
@@ -44,13 +44,13 @@ class FileDetails(models.Model):
     fileHash = models.CharField(max_length=64)
     hashTag = models.TextField(null =True, blank = True)
     subject = models.TextField(max_length = 1000, null =True, blank = True)
-    fileType = models.IntegerField( null = True,blank = True)
-    classification = models.IntegerField(null = True,blank = True)
+    fileType = models.ForeignKey(GeneralLookUp,on_delete=models.CASCADE, null = True,blank = True,related_name="file_type")
+    classification = models.ForeignKey(GeneralLookUp,on_delete=models.CASCADE,null = True,blank = True,related_name="file_classification")
     uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE, null = True,blank = True)
     created_at = models.DateTimeField(auto_now_add=True, null = True,blank = True)
     is_approved = models.BooleanField(default=False)
     division= models.ForeignKey(DivisionMaster, null= True, blank=True,on_delete=models.CASCADE)
-    filestage = models.CharField(max_length=20, choices=FILE_STAGE_CHOICES, null= True, blank= True)
+    documentType = models.ForeignKey(GeneralLookUp,on_delete=models.CASCADE,null= True, blank= True,related_name="document_type")
     comments = models.CharField(max_length=100,null=True,blank=True)
     def __str__(self):
         return self.fileName

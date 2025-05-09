@@ -12,7 +12,7 @@ from django.db.models import Q
 from django.http import FileResponse, Http404
 from rest_framework.permissions import IsAuthenticated
 from mdm.permissions import HasRequiredPermission
-from mdm.models import FileClassification, FileType, DivisionMaster
+from mdm.models import FileClassification, GeneralLookUp, DivisionMaster
 from users.models import UserDivisionRole
 from rest_framework.parsers import MultiPartParser, FormParser
 from .permissions import HasCustomPermission,FileDetailsPermission
@@ -225,7 +225,7 @@ class CaseInfoDetailsView(APIView):
                 
                 # Define file path and save file
                 file_name = uploaded_files[i].name
-                file_path = os.path.join(UPLOAD_DIR, str(caseInfo.year),str(div_name.divisionName), str(caseInfo.caseNo),str(file_details_data[i]['fileStage']),file_name)
+                file_path = os.path.join(UPLOAD_DIR, str(caseInfo.year),str(div_name.divisionName),str(caseInfo.caseType), str(caseInfo.caseNo),str(file_details_data[i]['fileType']),str(file_details_data[i]['documentType']),file_name)
 
                 os.makedirs(os.path.dirname(file_path), exist_ok=True)
                 # Write file to disk
@@ -240,11 +240,11 @@ class CaseInfoDetailsView(APIView):
                     fileHash=file_hash,
                     hashTag = file_details_data[i]['hashTag'],
                     subject = file_details_data[i]['subject'],
-                    fileType = FileType.objects.get(fileTypeId=file_details_data[i]['fileType']),
-                    classification = FileClassification.objects.get(fileClassificationId=file_details_data[i]['classification']),
+                    fileType = GeneralLookUp.objects.get(lookupId=file_details_data[i]['fileType']),
+                    classification = GeneralLookUp.objects.get(lookupId=file_details_data[i]['classification']),
                     uploaded_by = request.user,
                     division = DivisionMaster.objects.get(divisionId=request.data.get('division_id')),
-                    filestage =file_details_data[i]['fileStage']
+                    documentType =GeneralLookUp.objects.get(lookupId=file_details_data[i]['documentType'])
                 )
 
                 record_file_access(request.user, file_detail)
@@ -575,7 +575,7 @@ class NotificationListView(APIView):
         user_division_role = UserDivisionRole.objects.filter(user=user).first()
     
         if user.is_staff:
-            notifications = Notification.objects.all().order_by('-created_at')
+            notifications = Notification.objects.all().order_by('-created_at').distinct()
         elif user_division_role.role_id==1:
             notifications = Notification.objects.filter(division=division_id).order_by('-created_at')
         else:
