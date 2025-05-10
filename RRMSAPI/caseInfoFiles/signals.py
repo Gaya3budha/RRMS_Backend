@@ -1,7 +1,9 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from .models import FileDetails, FileAccessRequest, Notification
+from .models import FileDetails, FileAccessRequest, Notification, FileUploadApproval
 from users.models import UserDivisionRole
+from django.dispatch import receiver
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth import get_user_model
 
 
@@ -24,9 +26,25 @@ def notify_admin_on_upload(sender, instance, created, **kwargs):
 
         if user_division_role:
             user_division = user_division_role.division
-            # Notify only viewers (roleid = 4) content manager
-            cm_users = UserDivisionRole.objects.filter(role__roleId=4, division=user_division)
-            for cm in cm_users:
+            print("instance.caseDetails- ",instance.caseDetails)
+            upload_approval = FileUploadApproval.objects.create(
+                file=instance,
+                requested_by=uploader,
+                case_details_id = instance.caseDetails,
+                division = user_division
+            )
+            # Notify only viewers (roleid = 4) 
+            # cm_users = UserDivisionRole.objects.filter(role__roleId=4, division=user_division)
+            reviewers_and_admins = UserDivisionRole.objects.filter(
+                role__roleId__in=[1, 4],  # admin + Content Manager
+                division=user_division
+            )
+
+            content_type = ContentType.objects.get_for_model(upload_approval)
+
+            notified_users= set()
+
+            for cm in reviewers_and_admins:
                 _user = cm.user
                 Notification.objects.create(
                     recipient=_user,
@@ -34,6 +52,10 @@ def notify_admin_on_upload(sender, instance, created, **kwargs):
                         f"Files has been uploaded for case no: "
                         f"{instance.caseDetails.caseNo} by {instance.uploaded_by}"
                     ),
-                    file=instance,
-                    division = user_division
+                    # file=instance,
+                    division = user_division,
+                    type="UPLOAD_APPROVAL",
+                    content_type=content_type,
+                    object_id=upload_approval.id,
                 )
+                notified_users.add(_user.id)
