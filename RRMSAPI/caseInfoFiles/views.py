@@ -126,11 +126,11 @@ class SearchCaseFilesView(APIView):
             filters_applied = True
 
         if 'classification' in searchParams:
-            query &= Q(files__classification__icontains= searchParams['classification'])
+            query &= Q(files__classification__lookupId__icontains= searchParams['classification'])
             filters_applied = True
 
         if 'fileType' in searchParams:
-            query &= Q(files__fileType__icontains= searchParams['fileType'])
+            query &= Q(files__fileType__lookupId__icontains= searchParams['fileType'])
             filters_applied = True
 
         if filters_applied:
