@@ -27,12 +27,7 @@ def notify_admin_on_upload(sender, instance, created, **kwargs):
         if user_division_role:
             user_division = user_division_role.division
             print("instance.caseDetails- ",instance.caseDetails)
-            upload_approval = FileUploadApproval.objects.create(
-                file=instance,
-                requested_by=uploader,
-                case_details_id = instance.caseDetails,
-                division = user_division
-            )
+            
             # Notify only viewers (roleid = 4) 
             # cm_users = UserDivisionRole.objects.filter(role__roleId=4, division=user_division)
             reviewers_and_admins = UserDivisionRole.objects.filter(
@@ -40,12 +35,20 @@ def notify_admin_on_upload(sender, instance, created, **kwargs):
                 division=user_division
             )
 
-            content_type = ContentType.objects.get_for_model(upload_approval)
 
             notified_users= set()
 
             for cm in reviewers_and_admins:
                 _user = cm.user
+
+                upload_approval = FileUploadApproval.objects.create(
+                    file=instance,
+                    requested_by=uploader,
+                    case_details_id = instance.caseDetails,
+                    division = user_division,
+                    reviewed_by = _user
+                )
+                content_type = ContentType.objects.get_for_model(upload_approval)
                 Notification.objects.create(
                     recipient=_user,
                     message=(

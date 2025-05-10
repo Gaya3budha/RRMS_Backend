@@ -637,16 +637,25 @@ class UploadApprovalListView(APIView):
 
         approvals = FileUploadApproval.objects.filter(status="PENDING")
 
+        user_roles = UserDivisionRole.objects.filter(user=user)
+        admin_roles = user_roles.filter(role__roleId=1)
+        cm_roles = user_roles.filter(role__roleId=4)
+
+        if admin_roles.exists():
+            # If user is admin, show all approvals in their divisions
+            admin_divisions = admin_roles.values_list('division_id', flat=True)
+            approvals = approvals.filter(division_id__in=admin_divisions)
+        elif cm_roles.exists():
+            # If reviewer, show only those assigned to them
+            approvals = approvals.filter(reviewed_by=user)
+        else:
+            approvals = approvals.filter(file__uploaded_by=user)
+
+
         # Filter by division
         if division_id:
             approvals = approvals.filter(file__division__id=division_id)
 
-        # Filter by department if FileDetails or related models contain department
-        # if department_id:
-        #     approvals = approvals.filter(file__department__id=department_id) 
-
-        # Optional: Filter to only show approvals relevant to the logged-in user
-        approvals = approvals.filter(file__uploaded_by=user)
         serializer = FileUploadApprovalSerializer(approvals, many=True)
         return Response(serializer.data)
     
