@@ -18,6 +18,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from .permissions import HasCustomPermission,FileDetailsPermission
 from rest_framework.generics import ListAPIView
 from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.models import ContentType
 import json
 import hashlib
 import os
@@ -542,6 +543,81 @@ class ApproveorDenyConfidentialAPIView(APIView):
                 "status": status.HTTP_200_OK
             }
         }, status=status.HTTP_200_OK)
+    
+class SendUploadApprovalReminder(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self,request,approval_id):
+        approval = get_object_or_404(FileUploadApproval, id=approval_id)
+
+        # logic to check only the uploaded users can send reminder
+        if approval.requested_by != request.user:
+            return Response({"error": "Only the uploader can send reminders."}, status=403)
+        
+        if approval.status != "PENDING":
+            return Response({"error": "Approval is not pending."}, status=400)
+        
+        content_type = ContentType.objects.get_for_model(FileUploadApproval)
+
+        last_reminder = Notification.objects.filter(
+            type='UPLOAD_APPROVAL_REMINDER',
+            content_type=content_type,
+            object_id=approval.id,
+            requestedBy=request.user
+        ).order_by('-created_at').first()
+
+        if last_reminder and (timezone.now() - last_reminder.created_at < timedelta(days=1)):
+            return Response({
+                "error": "Reminder already sent recently. can send a reminder again next day."
+            }, status=400)
+        
+        reviewers = UserDivisionRole.objects.filter(
+            division=approval.division,
+            role__roleId__in=[1, 4]
+        )
+
+        print('request.user-',request.user)
+        for reviewer in reviewers:
+            Notification.objects.create(
+                recipient=reviewer.user,
+                requestedBy=request.user,
+                message=(
+                    f"Reminder: {request.user.first_name} uploaded a file for approval "
+                    f"(Case: {approval.file.caseDetails.caseNo})"
+                ),
+                type='UPLOAD_APPROVAL_REMINDER',
+                content_type=content_type,
+                object_id=approval.id
+            )
+
+        return Response({"message": "Reminder sent successfully."})
+    
+class WithdrawUploadApprovalView(APIView):
+    def post(self, request, approval_id):
+        approval = get_object_or_404(FileUploadApproval, id=approval_id, requested_by=request.user)
+
+        if approval.status != 'PENDING':
+            return Response({"error": "Only pending approvals can be withdrawn."}, status=400)
+
+        # Delete related notifications
+        Notification.objects.filter(
+            content_type=ContentType.objects.get_for_model(approval),
+            object_id=approval.id,
+            type__in=['UPLOAD_APPROVAL', 'UPLOAD_APPROVAL_REMINDER']
+        ).delete()
+
+        file_detail = approval.file
+        if file_detail:
+            file_path = file_detail.filePath
+            if os.path.exists(file_path):
+                os.remove(file_path)
+            file_detail.delete()
+
+        # update approval status
+        approval.status = 'WITHDRAWN'
+        approval.save()
+
+        return Response({"message": "Upload approval withdrawn and notification deleted."})
     
 class UploadApprovalListView(APIView):
     def get(self, request):
