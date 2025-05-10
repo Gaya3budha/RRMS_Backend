@@ -596,8 +596,13 @@ class WithdrawUploadApprovalView(APIView):
     def post(self, request, approval_id):
         approval = get_object_or_404(FileUploadApproval, id=approval_id, requested_by=request.user)
 
+        if approval.requested_by != request.user:
+            return Response({"error": "Only the uploader can withdraw requests."}, status=403)
+        
         if approval.status != 'PENDING':
             return Response({"error": "Only pending approvals can be withdrawn."}, status=400)
+
+        file_detail = approval.file
 
         # Delete related notifications
         Notification.objects.filter(
@@ -606,18 +611,23 @@ class WithdrawUploadApprovalView(APIView):
             type__in=['UPLOAD_APPROVAL', 'UPLOAD_APPROVAL_REMINDER']
         ).delete()
 
-        file_detail = approval.file
+        # Delete file from disk and database
         if file_detail:
             file_path = file_detail.filePath
-            if os.path.exists(file_path):
-                os.remove(file_path)
+            try:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+            except Exception as e:
+                print(f"Error deleting file: {e}")
             file_detail.delete()
 
-        # update approval status
-        approval.status = 'WITHDRAWN'
-        approval.save()
+        # # Now update the approval
+        # approval.status = 'WITHDRAWN'
+        # approval.file = None  # ← Set to None before saving, to prevent the error
+        # approval.save()
+        approval.delete()
 
-        return Response({"message": "Upload approval withdrawn and notification deleted."})
+        return Response({"message": "Upload approval Request withdrawn successfully."})
     
 class UploadApprovalListView(APIView):
     def get(self, request):

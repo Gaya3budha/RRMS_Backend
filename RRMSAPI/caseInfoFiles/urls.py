@@ -1,6 +1,6 @@
 from django.urls import path
 from django.contrib import admin
-from .views import CaseInfoDetailsView,SearchCaseFilesView,SendUploadApprovalReminder,MarkNotificationAsReadAPIView,UploadApprovalListView,RevokeFileAccessRequestAPIView, FileApprovalDetailsViewSet,FilePreviewAPIView,FileAccessRequestListAPIView,ApproveorDenyConfidentialAPIView,NotificationListView, FavouriteFilesView,FavouriteFilesView,LatestUserFilesView
+from .views import CaseInfoDetailsView,SearchCaseFilesView,SendUploadApprovalReminder,WithdrawUploadApprovalView,MarkNotificationAsReadAPIView,UploadApprovalListView,RevokeFileAccessRequestAPIView, FileApprovalDetailsViewSet,FilePreviewAPIView,FileAccessRequestListAPIView,ApproveorDenyConfidentialAPIView,NotificationListView, FavouriteFilesView,FavouriteFilesView,LatestUserFilesView
 
 admin.site.site_header = "RRMS Super Admin Portal"
 admin.site.site_title = "RRMS"
@@ -18,6 +18,7 @@ urlpatterns = [
     path('notifications',NotificationListView.as_view(),name='view-notifications'),
     path('upload-approvals',UploadApprovalListView.as_view(),name='upload-approvals'),
     path('upload-approval/<int:approval_id>/send-reminder',SendUploadApprovalReminder.as_view(),name='send-upload-approvals'),
+    path('withdraw-upload-approval/<int:approval_id>',WithdrawUploadApprovalView.as_view(),name='withdraw-approval'),
     path('approve-file', FileApprovalDetailsViewSet.as_view(), name='approve-file'),
     path('access/<int:pk>/action', ApproveorDenyConfidentialAPIView.as_view(), name='access-request-action'),
     path('requests',FileAccessRequestListAPIView.as_view(),name='get-all-file-access-request'),

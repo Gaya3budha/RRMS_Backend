@@ -72,7 +72,6 @@ class FileUploadApproval(models.Model):
     reviewed_at = models.DateTimeField(null=True, blank=True)
     department = models.IntegerField(null=True, blank=True)
     division = models.ForeignKey(DivisionMaster, null=True,blank=True,on_delete=models.CASCADE)
-    department = models.IntegerField(null=True, blank=True)
     is_approved = models.BooleanField(default=False)
     comments = models.TextField(null= True, blank = True)
 
