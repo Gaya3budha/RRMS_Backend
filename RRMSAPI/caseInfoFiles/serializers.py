@@ -1,10 +1,26 @@
-from .models import CaseInfoDetails, FileDetails, FavouriteFiles, Notification, FileAccessRequest
+from .models import CaseInfoDetails, FileDetails, FavouriteFiles, Notification, FileAccessRequest,FileUploadApproval
 from rest_framework import serializers
 import hashlib
 import os
 from mdm.models import StateMaster, DistrictMaster, UnitMaster
 from cryptography.fernet import Fernet
 
+class FileUploadApprovalSerializer(serializers.ModelSerializer):
+    division_name = serializers.CharField(source='division.divisionName', read_only=True)
+    requested_by_first_name = serializers.CharField(source='requested_by.first_name', read_only=True)
+    requested_by_last_name = serializers.CharField(source='requested_by.last_name', read_only=True)
+    reviewed_by_first_name = serializers.CharField(source='reviewed_by.first_name', read_only=True)
+    reviewed_by_last_name = serializers.CharField(source='reviewed_by.last_name', read_only=True)
+    file_name = serializers.CharField(source='file.fileName', read_only=True)
+    case_no = serializers.CharField(source='case_details_id.caseNo', read_only=True)
+
+    class Meta:
+        model = FileUploadApproval
+        fields = [
+            'id','status','file','file_name','case_details_id','case_no','requested_by','requested_by_first_name',
+            'requested_by_last_name','reviewed_by','reviewed_by_first_name','reviewed_by_last_name','reviewed_at',
+            'department','division','division_name','is_approved','comments'
+        ]
 
 class CaseInfoDetailsSerializer(serializers.ModelSerializer):
 

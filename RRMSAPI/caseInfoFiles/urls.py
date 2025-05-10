@@ -1,6 +1,6 @@
 from django.urls import path
 from django.contrib import admin
-from .views import CaseInfoDetailsView,SearchCaseFilesView,MarkNotificationAsReadAPIView,RevokeFileAccessRequestAPIView, FileApprovalDetailsViewSet,FilePreviewAPIView,FileAccessRequestListAPIView,ApproveorDenyConfidentialAPIView,NotificationListView, FavouriteFilesView,FavouriteFilesView,LatestUserFilesView
+from .views import CaseInfoDetailsView,SearchCaseFilesView,MarkNotificationAsReadAPIView,UploadApprovalListView,RevokeFileAccessRequestAPIView, FileApprovalDetailsViewSet,FilePreviewAPIView,FileAccessRequestListAPIView,ApproveorDenyConfidentialAPIView,NotificationListView, FavouriteFilesView,FavouriteFilesView,LatestUserFilesView
 
 admin.site.site_header = "RRMS Super Admin Portal"
 admin.site.site_title = "RRMS"
@@ -16,6 +16,7 @@ urlpatterns = [
     path('favourites', FavouriteFilesView.as_view(), name='user-favourites'),
     path('files/latest', LatestUserFilesView.as_view(), name='latest-user-files'),
     path('notifications',NotificationListView.as_view(),name='view-notifications'),
+    path('upload-approvals',UploadApprovalListView.as_view(),name='upload-approvals'),
     path('approve-file', FileApprovalDetailsViewSet.as_view(), name='approve-file'),
     path('access/<int:pk>/action', ApproveorDenyConfidentialAPIView.as_view(), name='access-request-action'),
     path('requests',FileAccessRequestListAPIView.as_view(),name='get-all-file-access-request'),

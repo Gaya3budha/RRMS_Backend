@@ -2,8 +2,8 @@ from django.shortcuts import render
 from rest_framework import status, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import CaseInfoDetailsSerializer,FileAccessRequestSerializer,FileDetailsSerializer,NotificationSerializer, CaseInfoSearchSerializers, FavouriteSerializer
-from .models import FileDetails, CaseInfoDetails, FavouriteFiles, Notification, FileAccessRequest
+from .serializers import CaseInfoDetailsSerializer,FileUploadApprovalSerializer,FileAccessRequestSerializer,FileDetailsSerializer,NotificationSerializer, CaseInfoSearchSerializers, FavouriteSerializer
+from .models import FileDetails, CaseInfoDetails, FavouriteFiles, Notification, FileAccessRequest, FileUploadApproval
 from django.shortcuts import get_object_or_404
 from django.db.models import Prefetch, OuterRef, Exists, Case, When, Value, BooleanField
 from .utils import record_file_access, timezone
@@ -542,9 +542,30 @@ class ApproveorDenyConfidentialAPIView(APIView):
                 "status": status.HTTP_200_OK
             }
         }, status=status.HTTP_200_OK)
+    
+class UploadApprovalListView(APIView):
+    def get(self, request):
+        user = request.user
+        division_id = request.query_params.get('division_id')
+        # department_id = request.query_params.get('department_id')
 
+        approvals = FileUploadApproval.objects.filter(status="PENDING")
+
+        # Filter by division
+        if division_id:
+            approvals = approvals.filter(file__division__id=division_id)
+
+        # Filter by department if FileDetails or related models contain department
+        # if department_id:
+        #     approvals = approvals.filter(file__department__id=department_id) 
+
+        # Optional: Filter to only show approvals relevant to the logged-in user
+        approvals = approvals.filter(file__uploaded_by=user)
+        serializer = FileUploadApprovalSerializer(approvals, many=True)
+        return Response(serializer.data)
+    
 class FileApprovalDetailsViewSet(APIView):
-   permission_classes=[FileDetailsPermission]
+   permission_classes=[IsAuthenticated]
    def post(self, request):
         file_id= request.data.get("file_id")
         is_approved= request.data.get("is_approved")
