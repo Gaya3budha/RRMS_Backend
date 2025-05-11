@@ -85,6 +85,16 @@ class Designation(models.Model):
 
     def __str__(self):
         return self.designationName
+    
+class DesignationHierarchy(models.Model):
+    parent_designation = models.ForeignKey(Designation, related_name='parent', on_delete=models.CASCADE)
+    child_designation = models.ForeignKey(Designation, related_name='children', on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('parent_designation', 'child_designation')
+
+    def __str__(self):
+        return f"{self.parent_designation} -> {self.child_designation}"
 
 # Designation Master
 class DesignationMaster(models.Model):

@@ -1,7 +1,7 @@
 import logging
 from rest_framework import serializers
 
-from .models import  Role,Department, DistrictMaster, Division, StateMaster, Designation, GeneralLookUp,UnitMaster, FileType, FileClassification, CaseStatus
+from .models import  Role,Department, DistrictMaster, Division, StateMaster, Designation,DesignationHierarchy, GeneralLookUp,UnitMaster, FileType, FileClassification, CaseStatus
 
 class StateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -41,6 +41,17 @@ class DesignationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Designation
         fields = ['designationId','designationName','division','divisionIds','departmentIds', 'department']
+
+class DesignationHierarchySerializer(serializers.ModelSerializer):
+    parent_designation_name = serializers.StringRelatedField(source='parent_designation', read_only=True)
+    child_designation_name = serializers.StringRelatedField(source='child_designation', read_only=True)
+
+
+    class Meta:
+        model = DesignationHierarchy
+        fields = [
+            'id','parent_designation','parent_designation_name','child_designation','child_designation_name'
+        ]
 
 class UnitSerializer(serializers.ModelSerializer):
     class Meta:

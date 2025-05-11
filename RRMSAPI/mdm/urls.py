@@ -1,5 +1,5 @@
 from django.urls import path, include
-from .views import  LookupByCategoryView,DepartmentViewSet, RoleView,DivisionViewSet,DistrictMasterView, StateMasterView, UnitMasterView, DesignationViewSet
+from .views import  LookupByCategoryView,DepartmentViewSet, DesignationHierarchyViewSet,RoleView,DivisionViewSet,DistrictMasterView, StateMasterView, UnitMasterView, DesignationViewSet
 from rest_framework.routers import SimpleRouter  
 
 router = SimpleRouter(trailing_slash=False) 
@@ -11,6 +11,7 @@ router = SimpleRouter(trailing_slash=False)
 router.register(r'departments', DepartmentViewSet, basename = 'departments')
 router.register(r'divisions', DivisionViewSet, basename = 'division')
 router.register(r'designations', DesignationViewSet, basename = 'designation')
+router.register(r'designation-hierarchy',DesignationHierarchyViewSet,basename='desg-hierarchy')
 
 urlpatterns = [
     path('', include(router.urls)),

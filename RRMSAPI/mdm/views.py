@@ -1,12 +1,12 @@
 from django.shortcuts import render
 from rest_framework import status
-from .models import Role, Department,Division,GeneralLookUp, DistrictMaster, StateMaster,UnitMaster, Designation, FileType, FileClassification, CaseStatus
+from .models import Role,DesignationHierarchy, Department,Division,GeneralLookUp, DistrictMaster, StateMaster,UnitMaster, Designation, FileType, FileClassification, CaseStatus
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .permissions import HasRequiredPermission, IsSuperAdminOrReadOnly
 from rest_framework import viewsets
-from .serializers import RoleSerializer,DepartmentSeriallizer,LookupCustomSerializer, DivisionSerializer, DesignationSerializer
+from .serializers import DesignationHierarchySerializer,DepartmentSeriallizer,LookupCustomSerializer, DivisionSerializer, DesignationSerializer
 from rest_framework.permissions import IsAdminUser
 from .utils import CATEGORY_LABELS
 from rest_framework.generics import ListAPIView
@@ -148,6 +148,11 @@ class DesignationViewSet(viewsets.ModelViewSet):
         instance.active = 'N'
         instance.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+class DesignationHierarchyViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsSuperAdminOrReadOnly]
+    queryset = DesignationHierarchy.objects.all()
+    serializer_class = DesignationHierarchySerializer
 
 class UnitMasterView(APIView):
     permission_classes = [IsAuthenticated, HasRequiredPermission] 
