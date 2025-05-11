@@ -649,7 +649,7 @@ class SendAccessApprovalReminder(APIView):
                 recipient=reviewer,
                 requestedBy=request.user,
                 message=(
-                    f"Reminder: {request.user.first_name} uploaded a file for approval "
+                    f"Reminder: {request.user.first_name} Requested access for a file uploaded in "
                     f"(Case: {approval.file.caseDetails.caseNo})"
                 ),
                 type='ACCESS_REQUEST_REMINDER',
@@ -696,7 +696,35 @@ class WithdrawUploadApprovalView(APIView):
         approval.delete()
 
         return Response({"message": "Upload approval Request withdrawn successfully."})
-    
+
+class WithdrawAccessApprovalView(APIView):
+    def post(self, request, access_id):
+        approval = get_object_or_404(FileAccessRequest, id=access_id, requested_by=request.user)
+
+        if approval.requested_by != request.user:
+            return Response({"error": "Only the uploader can withdraw requests."}, status=403)
+        
+        if approval.status != 'pending':
+            return Response({"error": "Only pending approvals can be withdrawn."}, status=400)
+
+        file_detail = approval.file
+
+        # Delete related notifications
+        Notification.objects.filter(
+            content_type=ContentType.objects.get_for_model(approval),
+            object_id=approval.id,
+            type__in=['UPLOAD_APPROVAL', 'UPLOAD_APPROVAL_REMINDER']
+        ).delete()
+
+
+        # # Now update the approval
+        # approval.status = 'WITHDRAWN'
+        # approval.file = None  # ← Set to None before saving, to prevent the error
+        # approval.save()
+        approval.delete()
+
+        return Response({"message": "Upload approval Request withdrawn successfully."})
+      
 class UploadApprovalListView(APIView):
     def post(self, request):
         user = request.user
