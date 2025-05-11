@@ -1,7 +1,7 @@
 from rest_framework.permissions import BasePermission
 from django.core.exceptions import ObjectDoesNotExist
 from .models import Role
-from users.models import UserDivisionRole
+# from users.models import UserDivisionRole
 from rest_framework import permissions
 
 class IsSuperAdminOrReadOnly(BasePermission):
@@ -26,30 +26,30 @@ class HasRequiredPermission(BasePermission):
             return False
         
         
-        try:
-            user_division_role = UserDivisionRole.objects.get(
-                user=request.user,
-                division_id=division_id
-            )
-        except UserDivisionRole.DoesNotExist:
-            return False
+        # try:
+        #     user_division_role = UserDivisionRole.objects.get(
+        #         user=request.user,
+        #         division_id=division_id
+        #     )
+        # except UserDivisionRole.DoesNotExist:
+        #     return False
         
-        role = user_division_role.role
+        # role = user_division_role.role
 
-        if not role:
-            return False
+        # if not role:
+        #     return False
 
-        user_permissions = {perm.codename for perm in role.permissions.all()}
+        # user_permissions = {perm.codename for perm in role.permissions.all()}
 
-        required_permission = self.get_required_permission(request, view)
+        # required_permission = self.get_required_permission(request, view)
 
-        if not required_permission:
-            return True 
+        # if not required_permission:
+        #     return True 
         
-        if required_permission in user_permissions:
-            return True
-        else:
-            return False
+        # if required_permission in user_permissions:
+        #     return True
+        # else:
+        #     return False
 
 
     def get_required_permission(self, request, view):

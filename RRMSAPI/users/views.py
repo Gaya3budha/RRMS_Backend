@@ -3,11 +3,12 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import UserSerializer, CustomTokenObtainPairSerializer, UserDivisionRoleCreateSerializer
+from .serializers import UserSerializer, CustomTokenObtainPairSerializer
 from rest_framework.exceptions import AuthenticationFailed
-from .models import User, ActiveUser, UserDivisionRole
-from rest_framework.permissions import IsAdminUser
+from .models import User, ActiveUser
+# from rest_framework.permissions import IsAdminUser
 from mdm.models import Role
+from mdm.permissions import IsSuperAdminOrReadOnly
 from datetime import date
 
 
@@ -15,31 +16,32 @@ from datetime import date
 class UserListView(APIView):
     def get(self,request,*args,**kwargs):
         user = request.user
-        division_id = request.query_params.get('division_id')
+        # division_id = request.query_params.get('division_id')
 
-        if not division_id:
-            return Response({"detail": "divisionId is required."}, status=status.HTTP_400_BAD_REQUEST)
+        # if not division_id:
+        #     return Response({"detail": "divisionId is required."}, status=status.HTTP_400_BAD_REQUEST)
         
         if user.is_superuser:
             users=User.objects.all()
-        else:
-            is_admin_of_division = UserDivisionRole.objects.filter(
-                user=user,
-                division__pk=division_id,
-                role__roleName='Admin'  # or use role ID if preferred
-            ).exists()
+        # else:
+        #     is_admin_of_division = UserDivisionRole.objects.filter(
+        #         user=user,
+        #         division__pk=division_id,
+        #         role__roleName='Admin'  # or use role ID if preferred
+        #     ).exists()
 
-            if is_admin_of_division:
-                users = User.objects.filter(
-                    userdivisionrole__division__pk = division_id
-                ).distinct()
-            else:
-                return Response({"detail": "Not authorized for this division."}, status=status.HTTP_403_FORBIDDEN)
+        #     if is_admin_of_division:
+        #         users = User.objects.filter(
+        #             userdivisionrole__division__pk = division_id
+        #         ).distinct()
+        #     else:
+        #         return Response({"detail": "Not authorized for this division."}, status=status.HTTP_403_FORBIDDEN)
         
         serializer = UserSerializer(users, many= True, context={'request': request})
         return Response(serializer.data,status = status.HTTP_200_OK)
 
 class CreateUserView(APIView):
+    permission_classes = [IsSuperAdminOrReadOnly]
     def post(self,request,*args,**kwargs):
         serializer = UserSerializer(data=request.data)
 
@@ -49,21 +51,21 @@ class CreateUserView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-class UserDivisionRoleCreateAPIView(APIView):
-   def post(self, request, *args, **kwargs):
-        data = request.data.copy()
+# class UserDivisionRoleCreateAPIView(APIView):
+#    def post(self, request, *args, **kwargs):
+#         data = request.data.copy()
         
-        user_id = data.get('user')
-        if not user_id:
-            return Response({"error": "User ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+#         user_id = data.get('user')
+#         if not user_id:
+#             return Response({"error": "User ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        serializer = UserDivisionRoleCreateSerializer(data=data)
+#         serializer = UserDivisionRoleCreateSerializer(data=data)
         
-        if serializer.is_valid():
-            serializer.save(user_id=user_id)  # pass user_id explicitly
-            return Response({"message": "Divsion added successfully", "data": serializer.data}, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#         if serializer.is_valid():
+#             serializer.save(user_id=user_id)  # pass user_id explicitly
+#             return Response({"message": "Divsion added successfully", "data": serializer.data}, status=status.HTTP_201_CREATED)
+#         else:
+#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
 class UpdateUserView(APIView):
     def patch(self,request,kgid_user,*args,**kwargs):
