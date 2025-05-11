@@ -90,8 +90,7 @@ class DivisionViewSet(viewsets.ModelViewSet):
     serializer_class = DivisionSerializer
 
     def get_queryset(self):
-        queryset = Division.objects.all()
-        queryset = queryset.filter(active='Y')
+        queryset = Division.objects.filter(active='Y')
         department_id = self.request.query_params.get('departmentId')
 
         if department_id:

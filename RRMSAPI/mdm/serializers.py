@@ -25,7 +25,7 @@ class DistrictSerializer(serializers.ModelSerializer):
 
 class DivisionSerializer(serializers.ModelSerializer):
     department = serializers.StringRelatedField(source='departmentId', read_only=True)
-    departmentId = serializers.PrimaryKeyRelatedField(queryset=Department.objects.all(), write_only=True)
+    departmentId = serializers.PrimaryKeyRelatedField(queryset=Department.objects.all())
 
     class Meta:
         model = Division
@@ -35,8 +35,8 @@ class DesignationSerializer(serializers.ModelSerializer):
     division = DivisionSerializer(many=True,read_only=True)
     department = DepartmentSeriallizer(many=True,read_only=True)
 
-    divisionIds = serializers.PrimaryKeyRelatedField(source='division',queryset=Division.objects.all(), write_only=True, many=True)
-    departmentIds = serializers.PrimaryKeyRelatedField(source='department',queryset=Department.objects.all(), write_only=True, many=True)
+    divisionIds = serializers.PrimaryKeyRelatedField(source='division',queryset=Division.objects.all(), many=True)
+    departmentIds = serializers.PrimaryKeyRelatedField(source='department',queryset=Department.objects.all(), many=True)
 
     class Meta:
         model = Designation
