@@ -19,7 +19,8 @@ class HasCustomPermission(BasePermission):
         # division_id = (request.data.get('division_id') or request.query_params.get('division_id'))
 
         # divsions_roles=UserDivisionRole.objects.get(user = user,division_id=division_id)
-        # return divsions_roles.role.permissions.filter(codename=required_permission).exists()
+        role = user.role
+        return role.permissions.filter(codename=required_permission).exists()
 
 class FileDetailsPermission(BasePermission):
     def has_object_permission(self,request,obj):

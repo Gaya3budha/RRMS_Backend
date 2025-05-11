@@ -141,8 +141,6 @@ class SearchCaseFilesView(APIView):
 
         user = request.user
 
-        user_divisions= UserDivisionRole.objects.get(user = user, division_id = searchParams['division_id'])
-
         request_raised_subquery = FileAccessRequest.objects.filter(
                     file=OuterRef('pk'),
                     requested_by=user
@@ -154,8 +152,7 @@ class SearchCaseFilesView(APIView):
                     )
         favourite_subquery = FavouriteFiles.objects.filter(user=request.user,file=OuterRef('pk'))
         
-        print('user_divisions:',user_divisions.role_id)
-        if user.is_staff or user_divisions.role_id in [1,4]:
+        if user.is_staff or user.role.roleId in [1,4]:
             file_filter = Q()  # Admin sees all
         else:
            
