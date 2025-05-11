@@ -112,20 +112,37 @@ class NotificationSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 class FileAccessRequestSerializer(serializers.ModelSerializer):
-    requested_by_name = serializers.CharField(source='requested_by.firtsName', read_only=True)
-    requested_to_name = serializers.CharField(source='requested_to.firstName', read_only=True)
+    division_name = serializers.CharField(source='division.divisionName', read_only=True)
+    requested_by_first_name = serializers.CharField(source='requested_by.first_name', read_only=True)
+    requested_by_last_name = serializers.CharField(source='requested_by.last_name', read_only=True)
+    reviewed_by_first_name = serializers.CharField(source='reviewed_by.first_name', read_only=True)
+    reviewed_by_last_name = serializers.CharField(source='reviewed_by.last_name', read_only=True)
+    approved_by_first_name = serializers.CharField(source='approved_by.first_name', read_only=True)
+    approved_by_last_name = serializers.CharField(source='approved_by.last_name', read_only=True)
     file_name = serializers.CharField(source='file.fileName', read_only=True)
-    created_at = serializers.DateTimeField(format="%d-%m-%Y %I:%M %p")
-
+    case_no = serializers.CharField(source='case_details_id.caseNo', read_only=True)
+    
     class Meta:
         model = FileAccessRequest
         fields = [
             'id',
+            'division',
+            'division_name',
+            'file',
             'file_name',
-            'requested_by_name',
-            'requested_to_name',
+            'requested_by',
+            'requested_by_first_name',
+            'requested_by_last_name',
+            'reviewed_by',
+            'reviewed_by_first_name',
+            'reviewed_by_last_name',
+            'approved_by',
+            'approved_by_first_name',
+            'approved_by_last_name',
+            'case_no',
             'is_approved',
             'comments',
             'created_at',
+            'approved_at',
             'status'
         ]

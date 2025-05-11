@@ -425,7 +425,9 @@ class FilePreviewAPIView(APIView):
                             requested_by=request.user,
                             requested_to=requested_to_user,
                             comments = comments,
-                            division_id=objFile.division_id
+                            division_id=objFile.division_id,
+                            reviewed_by = requested_to_user,
+                            case_details_id = CaseInfoDetails.objects.get(CaseInfoDetailsId=case_id)
                         )
 
                     return Response({
@@ -449,22 +451,39 @@ class FilePreviewAPIView(APIView):
         except FileNotFoundError:
             raise Http404("File path invalid or missing")
   
-class FileAccessRequestListAPIView(ListAPIView):
-    queryset = FileAccessRequest.objects.all().order_by('-created_at')
-    serializer_class = FileAccessRequestSerializer
+class FileAccessRequestListAPIView(APIView):
+    # queryset = FileAccessRequest.objects.all().order_by('-created_at')
+    # serializer_class = FileAccessRequestSerializer
     permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
-        user = self.request.user
-        division_id = self.request.query_params.get("division_id")
+    def post(self,request):
+        user = request.user
+        division_id = request.data.get("division_id")
 
-        user_divisions= UserDivisionRole.objects.get(user = user, division = division_id)
+        approvals = FileAccessRequest.objects.filter(status="pending")
+
         print("division_id",division_id)
-        if user.is_superuser or user_divisions.role_id == 1:  # assuming role_id=1 is admin
-            return FileAccessRequest.objects.all().order_by('-created_at')
+        if user.role.roleId == 1:  # Admin role
+            # Admin can see all approvals where they are assigned for review
+            approvals = approvals.filter(reviewed_by=user)
+        elif user.role.roleId == 4:  # Viewer role
+            # Viewer can also see the approvals where they are assigned for review
+            approvals = approvals.filter(reviewed_by=user)
+        else:  # Regular User
+            # Regular user can only see the requests they have submitted
+            approvals = approvals.filter(requested_by=user)
+
+        if division_id:
+            approvals = approvals.filter(file__division__divisionId=division_id)
+
+        # Optional: Filter by department_id if needed
+        # if department_id:
+        #     approvals = approvals.filter(file__division__departmentId=department_id)
 
         # Content Managers can see requests where they are the requested_to user
-        return FileAccessRequest.objects.filter(requested_to=user).order_by('-created_at')
+        serializer = FileAccessRequestSerializer(approvals, many=True)
+
+        return Response(serializer.data)
 
 class RevokeFileAccessRequestAPIView(APIView):
     permission_classes = [IsAuthenticated,FileDetailsPermission]

@@ -13,10 +13,16 @@ User = get_user_model()
 @receiver(post_save, sender=FileAccessRequest)
 def notify_on_access_request(sender, instance, created, **kwargs):
     if created:
+        content_type = ContentType.objects.get_for_model(FileAccessRequest)
+
         Notification.objects.create(
             recipient=instance.requested_to,
             message=f"{instance.requested_by} has requested access to file: {instance.file.fileName}",
-            file=instance.file
+            requestedBy=instance.requested_by,
+            division=instance.division,
+            type='ACCESS_REQUEST',
+            content_type=content_type,
+            object_id=instance.id,
         )
 
 @receiver(post_save, sender=FileDetails)
@@ -42,39 +48,7 @@ def notify_admin_on_upload(sender, instance, created, **kwargs):
         ).exclude(id=uploader.id).distinct()
 
         print('eligible_users',eligible_users)
-        # user_division_role = UserDivisionRole.objects.filter(user=uploader).first()
-
-        # if user_division_role:
-        #     user_division = user_division_role.division
-        #     print("instance.caseDetails- ",instance.caseDetails)
-            
-            # Notify only viewers (roleid = 4) 
-            # cm_users = UserDivisionRole.objects.filter(role__roleId=4, division=user_division)
-            # reviewers_and_admins = UserDivisionRole.objects.filter(
-            #     role__roleId__in=[1, 4],  # admin + Content Manager
-            #     division=user_division
-            # )
-
-
-            # 
-
-            # for cm in reviewers_and_admins:
-            #     _user = cm.user
-
-            #     
-            #     Notification.objects.create(
-            #         recipient=_user,
-            #         message=(
-            #             f"Files has been uploaded for case no: "
-            #             f"{instance.caseDetails.caseNo} by {instance.uploaded_by}"
-            #         ),
-            #         # file=instance,
-            #         division = user_division,
-            #         type="UPLOAD_APPROVAL",
-            #         content_type=content_type,
-            #         object_id=upload_approval.id,
-            #     )
-            #     
+        
         notified_users= set()
         for user in eligible_users:
             upload_approval = FileUploadApproval.objects.create(

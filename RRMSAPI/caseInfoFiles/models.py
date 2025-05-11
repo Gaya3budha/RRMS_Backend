@@ -96,6 +96,9 @@ class FileAccessRequest(models.Model):
     division = models.ForeignKey(Division, null=True,blank=True,on_delete=models.CASCADE)
     department = models.IntegerField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='access_approver')
+    case_details_id= models.ForeignKey(CaseInfoDetails,on_delete=models.CASCADE,null=True,blank=True)
+
 
 class FavouriteFiles(models.Model):
     user = models.ForeignKey(User,on_delete=models.CASCADE, related_name = 'favorited_by')
