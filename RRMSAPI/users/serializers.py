@@ -1,7 +1,7 @@
 import logging
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from mdm.models import Role, Designation
+from mdm.models import Role, Designation, DesignationHierarchy
 from mdm.serializers import DivisionSerializer,DesignationSerializer,RoleSerializer
 from .models import User
 
@@ -98,7 +98,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['email']=user.email
         token['full_name']=f"{user.first_name} {user.last_name}"
         token['is_superadmin']=user.is_superuser
-        divisions_roles_data = []
+        token['role']=user.role.roleName if user.role else None
+        token['designation'] = user.designation.designationName if user.designation else None
+        # divisions_roles_data = []
         
         # Fetch user's division-role-designation mappings
         # user_division_roles = user.userdivisionrole_set.all()
@@ -120,6 +122,19 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         #     })
         
         # token['divisions_roles'] = divisions_roles_data
+        if user.designation:
+            # Find the hierarchy where the user's designation is the child
+            hierarchy = DesignationHierarchy.objects.filter(child_designation=user.designation).first()
+            
+            if hierarchy:
+                supervisor = hierarchy.parent_designation
+                # Serialize the supervisor's data
+                token['supervisor_designation'] = supervisor.designationName
+            else:
+                token['supervisor_designation'] = None
+        else:
+            token['supervisor_designation'] = None
+
         return token
     
 # class UserDivisionRoleCreateSerializer(serializers.ModelSerializer):
