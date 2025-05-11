@@ -1,6 +1,6 @@
 from django.db import models
 from users.models import User
-from mdm.models import CaseStatus, FileClassification, FileType, DivisionMaster, GeneralLookUp
+from mdm.models import CaseStatus, FileClassification, FileType, Division, GeneralLookUp
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 
@@ -23,7 +23,7 @@ class CaseInfoDetails(models.Model):
     caseStatus = models.IntegerField( null = True, blank= True)
     lastmodified_by = models.ForeignKey(User, on_delete=models.CASCADE, null = True,blank = True)
     lastmodified_Date = models.DateTimeField(auto_now_add=True, null = True,blank = True)
-    division  = models.ForeignKey(DivisionMaster,blank= True, null=True,on_delete=models.CASCADE) 
+    division  = models.ForeignKey(Division,blank= True, null=True,on_delete=models.CASCADE) 
 
     class Meta:
         permissions = [
@@ -51,7 +51,7 @@ class FileDetails(models.Model):
     uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE, null = True,blank = True)
     created_at = models.DateTimeField(auto_now_add=True, null = True,blank = True)
     is_approved = models.BooleanField(default=False)
-    division= models.ForeignKey(DivisionMaster, null= True, blank=True,on_delete=models.CASCADE)
+    division= models.ForeignKey(Division, null= True, blank=True,on_delete=models.CASCADE)
     documentType = models.ForeignKey(GeneralLookUp,on_delete=models.CASCADE,null= True, blank= True,related_name="document_type")
     comments = models.CharField(max_length=100,null=True,blank=True)
     def __str__(self):
@@ -71,7 +71,7 @@ class FileUploadApproval(models.Model):
     reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='upload_approver')
     reviewed_at = models.DateTimeField(null=True, blank=True)
     department = models.IntegerField(null=True, blank=True)
-    division = models.ForeignKey(DivisionMaster, null=True,blank=True,on_delete=models.CASCADE)
+    division = models.ForeignKey(Division, null=True,blank=True,on_delete=models.CASCADE)
     is_approved = models.BooleanField(default=False)
     comments = models.TextField(null= True, blank = True)
     created_at = models.DateField(auto_now_add=True,null=True,blank=True)
@@ -93,7 +93,7 @@ class FileAccessRequest(models.Model):
     is_approved = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     approved_at = models.DateTimeField(null = True, blank =True)
-    division = models.ForeignKey(DivisionMaster, null=True,blank=True,on_delete=models.CASCADE)
+    division = models.ForeignKey(Division, null=True,blank=True,on_delete=models.CASCADE)
     department = models.IntegerField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
 
@@ -101,7 +101,7 @@ class FavouriteFiles(models.Model):
     user = models.ForeignKey(User,on_delete=models.CASCADE, related_name = 'favorited_by')
     file = models.ForeignKey('FileDetails',on_delete=models.CASCADE, related_name = 'favourites')
     added_at = models.DateTimeField(auto_now_add=True)
-    division = models.ForeignKey(DivisionMaster,null=True,blank=True,on_delete=models.CASCADE)
+    division = models.ForeignKey(Division,null=True,blank=True,on_delete=models.CASCADE)
 
     class Meta:
         unique_together = ('user', 'file')
@@ -123,7 +123,7 @@ class Notification(models.Model):
         ("GENERIC", "Generic"),
     ]
     recipient = models.ForeignKey(User, on_delete=models.CASCADE)
-    division = models.ForeignKey(DivisionMaster,null = True, blank=True, on_delete=models.CASCADE)
+    division = models.ForeignKey(Division,null = True, blank=True, on_delete=models.CASCADE)
     message = models.TextField()
     type = models.CharField(max_length=30, choices=NOTIFICATION_TYPES, default="GENERIC")
     department = models.IntegerField(null= True,blank=True)

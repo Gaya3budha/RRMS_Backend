@@ -12,7 +12,7 @@ from django.db.models import Q
 from django.http import FileResponse, Http404
 from rest_framework.permissions import IsAuthenticated
 from mdm.permissions import HasRequiredPermission
-from mdm.models import FileClassification, GeneralLookUp, DivisionMaster
+from mdm.models import FileClassification, GeneralLookUp, Division, Designation
 # from users.models import UserDivisionRole
 from rest_framework.parsers import MultiPartParser, FormParser
 from .permissions import HasCustomPermission,FileDetailsPermission
@@ -50,7 +50,7 @@ class FavouriteFilesView(APIView):
 
     def post(self, request, file_id):
         division_id = request.query_params.get("division_id")
-        division = DivisionMaster.objects.get(divisionId = division_id)
+        division = Division.objects.get(divisionId = division_id)
         try:
             file = FileDetails.objects.get(fileId=file_id)
             fav, created = FavouriteFiles.objects.get_or_create(user=request.user, file=file, division = division)
@@ -208,7 +208,7 @@ class CaseInfoDetailsView(APIView):
 
             caseInfo = case_serailizer.save(lastmodified_by= request.user)
 
-            div_name=DivisionMaster.objects.get(divisionId=division_id)
+            div_name=Division.objects.get(divisionId=division_id)
 
             uploaded_files = request.FILES.getlist("Files")
 
@@ -244,7 +244,7 @@ class CaseInfoDetailsView(APIView):
                     fileType = GeneralLookUp.objects.get(lookupId=file_details_data[i]['fileType']),
                     classification = GeneralLookUp.objects.get(lookupId=file_details_data[i]['classification']),
                     uploaded_by = request.user,
-                    division = DivisionMaster.objects.get(divisionId=request.data.get('division_id')),
+                    division = Division.objects.get(divisionId=request.data.get('division_id')),
                     documentType =GeneralLookUp.objects.get(lookupId=file_details_data[i]['documentType'])
                 )
 
@@ -631,21 +631,34 @@ class WithdrawUploadApprovalView(APIView):
         return Response({"message": "Upload approval Request withdrawn successfully."})
     
 class UploadApprovalListView(APIView):
-    def get(self, request):
+    def post(self, request):
         user = request.user
-        division_id = request.query_params.get('division_id')
-        # department_id = request.query_params.get('department_id')
+        division_id = request.data.get('division_id')
+        department_id = request.data.get('department_id')
 
         approvals = FileUploadApproval.objects.filter(status="PENDING")
 
-        user_roles = UserDivisionRole.objects.filter(user=user)
-        admin_roles = user_roles.filter(role__roleId=1)
-        cm_roles = user_roles.filter(role__roleId=4)
+        # user_roles = UserDivisionRole.objects.filter(user=user)
+        # admin_roles = user_roles.filter(role__roleId=1)
+        # cm_roles = user_roles.filter(role__roleId=4)
+        print('division_id',division_id)
+        designations=Designation.objects.filter(division__divisionId__in=[division_id])
+
+        print('designations- approval method',designations)
+        admin_roles = User.objects.filter(
+                        designation__in = designations,
+                        role__roleId__in=[1]  # Admin (1) or Viewer (4) role
+                    ).distinct()
+        
+        cm_roles = User.objects.filter(
+                        designation__in = designations,
+                        role__roleId__in=[4] # Admin (1) or Viewer (4) role
+                    ).distinct()
 
         if admin_roles.exists():
             # If user is admin, show all approvals in their divisions
-            admin_divisions = admin_roles.values_list('division_id', flat=True)
-            approvals = approvals.filter(division_id__in=admin_divisions)
+            admin_divisions = Division.objects.filter(designation__user__in=admin_roles).values_list('divisionId', flat=True).distinct()
+            approvals = approvals.filter(division__divisionId__in=admin_divisions)
         elif cm_roles.exists():
             # If reviewer, show only those assigned to them
             approvals = approvals.filter(reviewed_by=user)
@@ -655,7 +668,7 @@ class UploadApprovalListView(APIView):
 
         # Filter by division
         if division_id:
-            approvals = approvals.filter(file__division__id=division_id)
+            approvals = approvals.filter(file__division__divisionId=division_id)
 
         serializer = FileUploadApprovalSerializer(approvals, many=True)
         return Response(serializer.data)

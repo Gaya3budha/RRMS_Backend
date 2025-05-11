@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Role,DivisionMaster, FileType, FileClassification, CaseStatus, DesignationMaster, UnitMaster
+from .models import Role,Division, FileType, FileClassification, CaseStatus, DesignationMaster, UnitMaster
 from django.contrib.auth.models import  Permission
 from django.contrib.auth.models import Group
 
@@ -13,7 +13,7 @@ admin.site.register(CaseStatus)
 admin.site.unregister(Group)
 admin.site.register(UnitMaster)
 
-@admin.register(DivisionMaster)
+@admin.register(Division)
 class DivisionMasterAdmin(admin.ModelAdmin):
     search_fields = ['divsionId','divisionName','active']
 

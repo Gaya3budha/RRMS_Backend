@@ -32,7 +32,7 @@ class Department(models.Model):
     def __str__(self):
         return self.departmentName
     
-# DivisionMaster Table
+# Division Table
 class Division(models.Model):
     divisionId = models.AutoField(primary_key = True)
     departmentId=models.ForeignKey(Department,on_delete= models.CASCADE)
@@ -43,15 +43,15 @@ class Division(models.Model):
     def __str__(self):
         return self.divisionName
     
-# DivisionMaster Table
-class DivisionMaster(models.Model):
-    divisionId = models.AutoField(primary_key = True)
-    divisionName = models.CharField(unique = True, max_length = 250)
-    active = models.CharField(default = 'Y')
-    lastModifiedDate = models.DateTimeField(auto_now = True)
+# # DivisionMaster Table
+# class DivisionMaster(models.Model):
+#     divisionId = models.AutoField(primary_key = True)
+#     divisionName = models.CharField(unique = True, max_length = 250)
+#     active = models.CharField(default = 'Y')
+#     lastModifiedDate = models.DateTimeField(auto_now = True)
 
-    def __str__(self):
-        return self.divisionName
+#     def __str__(self):
+#         return self.divisionName
 
 # State Master
 class StateMaster(models.Model):

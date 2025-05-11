@@ -20,11 +20,10 @@ class HasRequiredPermission(BasePermission):
         if request.user.is_superuser:
             return True
         
-        division_id = (request.data.get('division_id') or request.query_params.get('division_id'))
+        # division_id = (request.data.get('division_id') or request.query_params.get('division_id'))
 
-        if not division_id:
-            return False
-        
+        # if not division_id:
+        #     return False
         
         # try:
         #     user_division_role = UserDivisionRole.objects.get(
@@ -34,22 +33,21 @@ class HasRequiredPermission(BasePermission):
         # except UserDivisionRole.DoesNotExist:
         #     return False
         
-        # role = user_division_role.role
+        role = request.user.role
 
         # if not role:
         #     return False
 
-        # user_permissions = {perm.codename for perm in role.permissions.all()}
+        user_permissions = {perm.codename for perm in role.permissions.all()}
+        required_permission = self.get_required_permission(request, view)
 
-        # required_permission = self.get_required_permission(request, view)
-
-        # if not required_permission:
-        #     return True 
+        if not required_permission:
+            return True 
         
-        # if required_permission in user_permissions:
-        #     return True
-        # else:
-        #     return False
+        if required_permission in user_permissions:
+            return True
+        else:
+            return False
 
 
     def get_required_permission(self, request, view):
