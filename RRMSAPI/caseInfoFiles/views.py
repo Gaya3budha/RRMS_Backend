@@ -636,40 +636,33 @@ class UploadApprovalListView(APIView):
         division_id = request.data.get('division_id')
         department_id = request.data.get('department_id')
 
+        # Start with all the pending approvals
         approvals = FileUploadApproval.objects.filter(status="PENDING")
 
-        # user_roles = UserDivisionRole.objects.filter(user=user)
-        # admin_roles = user_roles.filter(role__roleId=1)
-        # cm_roles = user_roles.filter(role__roleId=4)
-        print('division_id',division_id)
-        designations=Designation.objects.filter(division__divisionId__in=[division_id])
+        # Fetch the designations based on the division_id
+        designations = Designation.objects.filter(division__divisionId=division_id)
+        print('designations- approval method', designations)
 
-        print('designations- approval method',designations)
-        admin_roles = User.objects.filter(
-                        designation__in = designations,
-                        role__roleId__in=[1]  # Admin (1) or Viewer (4) role
-                    ).distinct()
-        
-        cm_roles = User.objects.filter(
-                        designation__in = designations,
-                        role__roleId__in=[4] # Admin (1) or Viewer (4) role
-                    ).distinct()
-
-        if admin_roles.exists():
-            # If user is admin, show all approvals in their divisions
-            admin_divisions = Division.objects.filter(designation__user__in=admin_roles).values_list('divisionId', flat=True).distinct()
-            approvals = approvals.filter(division__divisionId__in=admin_divisions)
-        elif cm_roles.exists():
-            # If reviewer, show only those assigned to them
+        # Check if the logged-in user is an Admin (role_id = 1), Viewer (role_id = 4), or regular user
+        if user.role.roleId == 1:  # Admin role
+            # Admin can see all approvals where they are assigned for review
             approvals = approvals.filter(reviewed_by=user)
-        else:
-            approvals = approvals.filter(file__uploaded_by=user)
+        elif user.role.roleId == 4:  # Viewer role
+            # Viewer can also see the approvals where they are assigned for review
+            approvals = approvals.filter(reviewed_by=user)
+        else:  # Regular User
+            # Regular user can only see the requests they have submitted
+            approvals = approvals.filter(requested_by=user)
 
-
-        # Filter by division
+        # Filter by division if provided
         if division_id:
             approvals = approvals.filter(file__division__divisionId=division_id)
 
+        # Optional: Filter by department_id if needed
+        if department_id:
+            approvals = approvals.filter(file__division__departmentId=department_id)
+
+        # Serialize and return the data
         serializer = FileUploadApprovalSerializer(approvals, many=True)
         return Response(serializer.data)
     
