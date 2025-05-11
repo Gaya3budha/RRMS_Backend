@@ -2,6 +2,8 @@ from .models import CaseInfoDetails, FileDetails, FavouriteFiles, Notification, 
 from rest_framework import serializers
 import hashlib
 import os
+from mdm.serializers import DivisionSerializer
+from users.serializers import UserSerializer
 from mdm.models import StateMaster, DistrictMaster, UnitMaster
 from cryptography.fernet import Fernet
 
@@ -100,8 +102,11 @@ class FavouriteSerializer(serializers.ModelSerializer):
 
 
 class NotificationSerializer(serializers.ModelSerializer):
-    file = FileDetailsSerializer()
-    
+    # file = FileDetailsSerializer()
+    division = DivisionSerializer()
+    requestedBy = UserSerializer()
+    recipient = UserSerializer()
+
     class Meta:
         model = Notification
         fields = "__all__"
