@@ -98,6 +98,9 @@ class FileAccessRequest(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='access_approver')
     case_details_id= models.ForeignKey(CaseInfoDetails,on_delete=models.CASCADE,null=True,blank=True)
+    revoke_startdate=models.DateField(null=True,blank=True)
+    revoke_enddate=models.DateField(null = True, blank = True)
+    is_revoked = models.BooleanField(default=False)
 
 
 class FavouriteFiles(models.Model):

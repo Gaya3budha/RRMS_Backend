@@ -36,7 +36,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True)
     # divisionmaster = models.ForeignKey(DivisionMaster, on_delete=models.SET_NULL, null=True, blank=True)
     # division = models.ManyToManyField(DivisionMaster, through = 'UserDivisionRole')
-    designation = models.ForeignKey(Designation,  on_delete=models.SET_NULL, null=True, blank=True)
+    designation = models.ManyToManyField(Designation,related_name='designation', blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 

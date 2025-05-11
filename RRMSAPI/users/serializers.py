@@ -9,25 +9,13 @@ from .models import User
 logger = logging.getLogger(__name__)
 
 
-# class UserDivisionRoleSerializer(serializers.ModelSerializer):
-#     divisionId = serializers.PrimaryKeyRelatedField(source='division', queryset=DivisionMaster.objects.all())
-#     roleId = serializers.PrimaryKeyRelatedField(source='role', queryset=Role.objects.all())
-#     designationId = serializers.PrimaryKeyRelatedField(source='designation', queryset=DesignationMaster.objects.all())
-
-#     class Meta:
-#         model = UserDivisionRole
-#         fields = ['divisionId', 'roleId', 'designationId']
-
 class UserSerializer(serializers.ModelSerializer):
     roleId = serializers.PrimaryKeyRelatedField(queryset=Role.objects.all(), source='role')
-    # divisionId = serializers.PrimaryKeyRelatedField(queryset=DivisionMaster.objects.all(), source='divisionmaster')
-    # designationId = serializers.PrimaryKeyRelatedField(queryset=DesignationMaster.objects.all(), source='designationmaster')
-
-    # divisions_roles = UserDivisionRoleSerializer(source='userdivisionrole_set', many=True)
-    designation_detail = DesignationSerializer(source='designation', read_only=True)
     designation = serializers.PrimaryKeyRelatedField(
-        queryset=Designation.objects.all(), write_only=True, required=True
+        queryset=Designation.objects.all(), write_only=True, required=True, many =True
     )
+    designation_detail = DesignationSerializer(source='designation', read_only=True, many=True)
+
 
 
     class Meta:
@@ -38,6 +26,7 @@ class UserSerializer(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
+        designations = validated_data.pop('designation', [])
         # divisions_roles_data = validated_data.pop('userdivisionrole_set', [])
         user = User(
             email=validated_data['email'],
@@ -48,20 +37,15 @@ class UserSerializer(serializers.ModelSerializer):
             password=validated_data['password'],
             role=validated_data['role'],
             # divisionmaster=validated_data['divisionmaster'],
-            designation=validated_data['designation']
+            # designation=validated_data['designation']
         )
 
         user.set_password(validated_data['password'])  # password is saved as hash
         user.save()
 
-        # for division_role_data in divisions_roles_data:
-        #     UserDivisionRole.objects.create(
-        #         user=user,
-        #         division=division_role_data['division'],
-        #         role=division_role_data['role'],
-        #         designation=division_role_data['designation']
-        #     )
-
+        if designations:
+            user.designation.set(designations)
+      
         return user
 
     def to_representation(self, instance):
@@ -99,60 +83,58 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['full_name']=f"{user.first_name} {user.last_name}"
         token['is_superadmin']=user.is_superuser
         token['role']=user.role.roleName if user.role else None
-        token['designation'] = user.designation.designationName if user.designation else None
-        token['designationId'] = user.designation.designationId if user.designation else None
+        # token['designation'] = user.designation.designationName if user.designation else None
+        # token['designationId'] = user.designation.designationId if user.designation else None
+        if user.designation.exists():
+            token['designations'] = [
+                {
+                    'designationName': d.designationName,
+                    'designationId': d.designationId
+                }
+                for d in user.designation.all()
+            ]
+        else:
+            token['designations'] = []
        
-        # divisions_roles_data = []
-        
-        # Fetch user's division-role-designation mappings
-        # user_division_roles = user.userdivisionrole_set.all()
-       
-        # for ur in user_division_roles:
-        #     division_name = ur.division.divisionName if ur.division else ""
-        #     role_name = ur.role.roleName if ur.role else ""
-        #     designation_name = ur.designation.designationName if ur.designation else ""
-        #     permissions_list = [perm.codename for perm in ur.role.permissions.all()] if ur.role else []
-
-        #     divisions_roles_data.append({
-        #         "division_id": ur.division.divisionId if ur.division else None,
-        #         "division_name": division_name,
-        #         "role_id": ur.role.roleId if ur.role else None,
-        #         "role_name": role_name,
-        #         "designation_id": ur.designation.designationId if ur.designation else None,
-        #         "designation_name": designation_name,
-        #         "permissions": permissions_list
-        #     })
-        
-        # token['divisions_roles'] = divisions_roles_data
         if user.role:
             token['permissions'] = list(user.role.permissions.values_list('codename', flat=True))
         else:
             token['permissions'] = []
-        if user.designation:
-            
-            token['divisionIds'] = list(user.designation.division.values_list('divisionId', flat=True))
-            token['departmentIds'] = list(user.designation.department.values_list('departmentId', flat=True))
+        if user.designation.exists():
+            token['divisions'] = [
+                {
+                    'divisionIds': list(d.division.values_list('divisionId', flat=True)),
+                    'departmentIds': list(d.department.values_list('departmentId', flat=True))
+                }
+                for d in user.designation.all()
+            ]
 
+            # Handling supervisor info for each designation
+            token['supervisors'] = []
+            for d in user.designation.all():
+                hierarchy = DesignationHierarchy.objects.filter(child_designation=d).first()
+                supervisor_data = {}
+                
+                if hierarchy:
+                    supervisor = hierarchy.parent_designation
+                    supervisor_data = {
+                        'supervisor_designation': supervisor.designationName,
+                        'supervisor_divisionIds': list(supervisor.division.values_list('divisionId', flat=True)),
+                        'supervisor_departmentIds': list(supervisor.department.values_list('departmentId', flat=True))
+                    }
+                else:
+                    supervisor_data = {
+                        'supervisor_designation': None,
+                        'supervisor_divisionIds': [],
+                        'supervisor_departmentIds': []
+                    }
+                
+                token['supervisors'].append(supervisor_data)
 
-            # Find the hierarchy where the user's designation is the child
-            hierarchy = DesignationHierarchy.objects.filter(child_designation=user.designation).first()
-            
-            if hierarchy:
-                supervisor = hierarchy.parent_designation
-                # Serialize the supervisor's data
-                token['supervisor_designation'] = supervisor.designationName
-                token['supervisor_divisionIds'] = list(supervisor.division.values_list('divisionId', flat=True))
-                token['supervisor_departmentIds'] = list(supervisor.department.values_list('departmentId', flat=True))
-            else:
-                token['supervisor_designation'] = None
-                token['supervisor_divisionIds'] = []
-                token['supervisor_departmentIds'] = []
         else:
-            token['supervisor_designation'] = None
-            token['divisionIds'] = []
-            token['departmentIds'] = []
-            token['supervisor_divisionIds'] = []
-            token['supervisor_departmentIds'] = []
+            token['designations'] = []
+            token['divisions'] = []
+            token['supervisors'] = []
 
         return token
     

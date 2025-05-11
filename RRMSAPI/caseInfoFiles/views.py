@@ -528,7 +528,8 @@ class ApproveorDenyConfidentialAPIView(APIView):
 
     def post(self, request, pk):
         is_approved = request.data.get('is_approved')
-        comment = request.data.get('comment', '') 
+        comment = request.data.get('comment', '')
+        revoke_enddate = request.data.get('end_date',None) 
 
         access_request = get_object_or_404(FileAccessRequest, pk=pk)
 
@@ -548,6 +549,8 @@ class ApproveorDenyConfidentialAPIView(APIView):
         access_request.comment = comment
         access_request.approved_by = request.user
         access_request.approved_at = timezone.now()
+        access_request.revoke_startdate= timezone.now()
+        access_request.revoke_enddate = revoke_enddate
         access_request.save()
 
         if is_approved_bool:
@@ -555,11 +558,22 @@ class ApproveorDenyConfidentialAPIView(APIView):
             file_obj.is_approved = True
             file_obj.save()
 
+        Notification.objects.filter(
+            type="ACCESS_REQUEST",
+            object_id=access_request.id,
+            content_type=ContentType.objects.get_for_model(FileUploadApproval),
+        ).update(is_read=True, read_at=timezone.now())
+
         Notification.objects.create(
             recipient=access_request.requested_by,
-            message= f"Request {'approved' if is_approved_bool else 'denied'} successfully.",
-            file=access_request.file
+            requestedBy=request.user,
+            division=access_request.division,
+            message=f"Your file has been {'approved' if is_approved else 'denied'} with comments: {comment}",
+            type="GENERIC",
+            content_type=ContentType.objects.get_for_model(FileUploadApproval),
+            object_id=access_request.id
         )
+        
 
         return Response({
             "responseData": {
