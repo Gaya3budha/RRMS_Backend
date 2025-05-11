@@ -22,7 +22,27 @@ class Role(models.Model):
     def __str__(self):
         return self.roleName
 
+# Department Table
+class Department(models.Model):
+    departmentId = models.AutoField(primary_key = True)
+    departmentName = models.CharField(unique=True,max_length=150)
+    active = models.CharField(default='Y')
+    lastModifiedDate = models.DateField(auto_now=True)
 
+    def __str__(self):
+        return self.departmentName
+    
+# DivisionMaster Table
+class Division(models.Model):
+    divisionId = models.AutoField(primary_key = True)
+    departmentId=models.ForeignKey(Department,on_delete= models.CASCADE)
+    divisionName = models.CharField(unique = True, max_length = 250)
+    active = models.CharField(default = 'Y')
+    lastModifiedDate = models.DateTimeField(auto_now = True)
+
+    def __str__(self):
+        return self.divisionName
+    
 # DivisionMaster Table
 class DivisionMaster(models.Model):
     divisionId = models.AutoField(primary_key = True)
@@ -54,6 +74,17 @@ class DistrictMaster(models.Model):
 
     def __str__(self):
         return self.districtName
+    
+class Designation(models.Model):
+    designationId = models.AutoField(primary_key = True)
+    designationName = models.CharField( max_length = 100)
+    active = models.CharField(default = 'Y')
+    lastModifiedDate = models.DateTimeField(auto_now = True)
+    division = models.ManyToManyField(Division)
+    department = models.ManyToManyField(Department)
+
+    def __str__(self):
+        return self.designationName
 
 # Designation Master
 class DesignationMaster(models.Model):

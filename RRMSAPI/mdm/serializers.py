@@ -1,12 +1,17 @@
 import logging
 from rest_framework import serializers
 
-from .models import  Role, DistrictMaster, DivisionMaster, StateMaster, DesignationMaster, GeneralLookUp,UnitMaster, FileType, FileClassification, CaseStatus
+from .models import  Role,Department, DistrictMaster, Division, StateMaster, Designation, GeneralLookUp,UnitMaster, FileType, FileClassification, CaseStatus
 
 class StateSerializer(serializers.ModelSerializer):
     class Meta:
         model = StateMaster
         fields = ['stateId','stateName','active','lastModifiedDate']
+
+class DepartmentSeriallizer(serializers.ModelSerializer):
+    class Meta:
+        model =Department
+        fields = ['departmentId','departmentName']
 
 class RoleSerializer(serializers.ModelSerializer):
     class Meta:
@@ -19,14 +24,23 @@ class DistrictSerializer(serializers.ModelSerializer):
         fields = ['districtId','districtName','localName','active','lastModifiedDate']
 
 class DivisionSerializer(serializers.ModelSerializer):
+    department = serializers.StringRelatedField(source='departmentId', read_only=True)
+    departmentId = serializers.PrimaryKeyRelatedField(queryset=Department.objects.all(), write_only=True)
+
     class Meta:
-        model = DivisionMaster
-        fields = ['divisionId','divisionName','active','lastModifiedDate']
+        model = Division
+        fields = ['divisionId', 'divisionName', 'departmentId', 'department']
 
 class DesignationSerializer(serializers.ModelSerializer):
+    division = DivisionSerializer(many=True,read_only=True)
+    department = DepartmentSeriallizer(many=True,read_only=True)
+
+    divisionIds = serializers.PrimaryKeyRelatedField(source='division',queryset=Division.objects.all(), write_only=True, many=True)
+    departmentIds = serializers.PrimaryKeyRelatedField(source='department',queryset=Department.objects.all(), write_only=True, many=True)
+
     class Meta:
-        model = DesignationMaster
-        fields = ['designationId','designationName','active','lastModifiedDate']
+        model = Designation
+        fields = ['designationId','designationName','division','divisionIds','departmentIds', 'department']
 
 class UnitSerializer(serializers.ModelSerializer):
     class Meta:
@@ -34,20 +48,20 @@ class UnitSerializer(serializers.ModelSerializer):
         fields = ['unitId','unitName','stateId','districtId','typeId','parentUnit','actualStrength',
         'sanctionedStrength','talukID','address1','address2','active','lastModifiedDate']
 
-class FileTypeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = FileType
-        fields = ['fileTypeId','fileTypeName','active','lastModifiedDate']
+# class FileTypeSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = FileType
+#         fields = ['fileTypeId','fileTypeName','active','lastModifiedDate']
 
-class FileClassificationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = FileClassification
-        fields = ['fileClassificationId','fileClassificationName','active','lastModifiedDate']
+# class FileClassificationSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = FileClassification
+#         fields = ['fileClassificationId','fileClassificationName','active','lastModifiedDate']
 
-class CaseStatusSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CaseStatus
-        fields = ['statusId','statusName','active','lastModifiedDate']
+# class CaseStatusSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = CaseStatus
+#         fields = ['statusId','statusName','active','lastModifiedDate']
 
 class LookupCustomSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(source='lookupid')

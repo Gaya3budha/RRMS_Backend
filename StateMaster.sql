@@ -11,7 +11,7 @@ Create Table TmpStateMaster(
 );
 
 INSERT into TmpStateMaster (StateID, StateName, NationalityID, LocalName, Active, LastModifiedDate, LastModifiedBy, MachineAddress) VALUES
- (1, N'Andeman & nicobar', 80, N'Andeman & nicobar', N'Y', CAST(N'2022-07-14T10:02:57.520' AS TIMESTAMPTZ), 0, N'InitalLoad'),
+ (1, N'Andeman & Nicobar', 80, N'Andeman & nicobar', N'Y', CAST(N'2022-07-14T10:02:57.520' AS TIMESTAMPTZ), 0, N'InitalLoad'),
 (2, N'Andhra pradesh', 80, N'Andhra pradesh', N'Y', CAST(N'2022-07-14T10:02:57.520' AS TIMESTAMPTZ), 0, N'InitalLoad'),
 (3, N'Arunachal pradesh', 80, N'Arunachal pradesh', N'Y', CAST(N'2022-07-14T10:02:57.520' AS TIMESTAMPTZ), 0, N'InitalLoad'),
 (4, N'Assam', 80, N'Assam', N'Y', CAST(N'2022-07-14T10:02:57.520' AS TIMESTAMPTZ), 0, N'InitalLoad'),

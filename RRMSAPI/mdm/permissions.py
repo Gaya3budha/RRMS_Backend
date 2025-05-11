@@ -2,7 +2,16 @@ from rest_framework.permissions import BasePermission
 from django.core.exceptions import ObjectDoesNotExist
 from .models import Role
 from users.models import UserDivisionRole
+from rest_framework import permissions
 
+class IsSuperAdminOrReadOnly(BasePermission):
+    def has_permission(self, request, view):
+        # Allow GET, HEAD, OPTIONS for everyone
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        # Allow POST, PUT, DELETE only for superusers
+        return request.user and request.user.is_authenticated and request.user.is_superuser
+    
 class HasRequiredPermission(BasePermission):
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
