@@ -569,15 +569,12 @@ class SendUploadApprovalReminder(APIView):
                 "error": "Reminder already sent recently. can send a reminder again next day."
             }, status=400)
         
-        reviewers = UserDivisionRole.objects.filter(
-            division=approval.division,
-            role__roleId__in=[1, 4]
-        )
+        
+        reviewer = approval.reviewed_by
 
-        print('request.user-',request.user)
-        for reviewer in reviewers:
+        if reviewer:
             Notification.objects.create(
-                recipient=reviewer.user,
+                recipient=reviewer,
                 requestedBy=request.user,
                 message=(
                     f"Reminder: {request.user.first_name} uploaded a file for approval "
@@ -585,7 +582,8 @@ class SendUploadApprovalReminder(APIView):
                 ),
                 type='UPLOAD_APPROVAL_REMINDER',
                 content_type=content_type,
-                object_id=approval.id
+                object_id=approval.id,
+                division = approval.division
             )
 
         return Response({"message": "Reminder sent successfully."})
@@ -702,6 +700,7 @@ class NotificationListView(APIView):
         user = request.user
 
         division_id = request.query_params.get('division_id')
+        allowed_types = ["UPLOAD_APPROVAL", "ACCESS_REQUEST", "GENERIC", "UPLOAD_APPROVAL_REMINDER"]
 
         if not division_id:
             return Response({"detail": "Division ID is required."}, status=400)
@@ -709,12 +708,20 @@ class NotificationListView(APIView):
         # user_division_role = UserDivisionRole.objects.filter(user=user).first()
     
         if user.is_staff:
-            notifications = Notification.objects.all().order_by('-created_at').distinct()
+            notifications = Notification.objects.filter(
+                type__in=allowed_types
+            ).order_by('-created_at').distinct()
         elif user.role.roleId==1:
-            notifications = Notification.objects.filter(division=division_id).order_by('-created_at')
+            notifications = Notification.objects.filter(
+                division__divisionId=division_id,
+                type__in=allowed_types
+            ).order_by('-created_at')
         else:
             notifications = Notification.objects.filter(
-                            recipient=user, division = division_id).order_by('-created_at')
+                recipient=user,
+                division__divisionId=division_id,
+                type__in=allowed_types
+            ).order_by('-created_at')
         # else:
         #     return Response({"detail": "Not authorized."}, status=403)
 
