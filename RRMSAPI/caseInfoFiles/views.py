@@ -16,7 +16,7 @@ from mdm.models import FileClassification, GeneralLookUp, Division, Designation
 # from users.models import UserDivisionRole
 from rest_framework.parsers import MultiPartParser, FormParser
 from .permissions import HasCustomPermission,FileDetailsPermission
-from rest_framework.generics import ListAPIView
+from rest_framework.generics import ListAPIView, RetrieveAPIView
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 import json
@@ -663,6 +663,11 @@ class UploadApprovalListView(APIView):
         serializer = FileUploadApprovalSerializer(approvals, many=True)
         return Response(serializer.data)
     
+class UploadApprovalDetailView(RetrieveAPIView):
+    queryset = FileUploadApproval.objects.all()
+    serializer_class = FileUploadApprovalSerializer
+    lookup_field = 'id' 
+
 class FileApprovalDetailsViewSet(APIView):
    permission_classes=[IsAuthenticated]
    def post(self, request):
@@ -673,6 +678,15 @@ class FileApprovalDetailsViewSet(APIView):
         file.is_approved = is_approved
         file.comments = comments
         file.save()
+
+        try:
+            access_request = FileAccessRequest.objects.get(file=file, requested_by=file.uploaded_by)
+            access_request.is_approved = is_approved
+            access_request.reviewed_by = request.user
+            access_request.reviewed_at = timezone.now()
+            access_request.save()
+        except FileAccessRequest.DoesNotExist:
+            pass  # Optional: log if needed
 
         Notification.objects.create(
             recipient=file.uploaded_by,
