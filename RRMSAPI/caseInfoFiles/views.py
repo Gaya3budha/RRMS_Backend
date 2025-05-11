@@ -384,11 +384,18 @@ class FilePreviewAPIView(APIView):
             filePath = objFile.filePath
             print('file path:',filePath)
 
-            # user_div_roles = request.user.userdivisionrole_set.filter(division_id=objFile.division_id)
-            # print('user_div_roles',user_div_roles)
-            # user_division_ids = request.user.userdivisionrole_set.values_list('division_id', flat=True)
+            user_role_id = request.user.role.roleId
 
-            # has_access = user_div_roles.filter(role_id__in=[1,4]).exists()
+            # Direct access if user is uploader, Admin, or Viewer
+            if request.user == objFile.uploaded_by or user_role_id in [1, 4]:
+                record_file_access(request.user, objFile)
+
+                if not os.path.exists(filePath):
+                    raise FileNotFoundError("File not found on disk")
+
+                mime_type, _ = mimetypes.guess_type(filePath)
+                return FileResponse(open(filePath, 'rb'), content_type=mime_type or 'application/octet-stream')
+
             if objFile.classification_id == 6 and objFile.uploaded_by_id != request.user.id:
                 # objFile.division_id in user_division_ids and not has_access
 
@@ -600,6 +607,52 @@ class SendUploadApprovalReminder(APIView):
                     f"(Case: {approval.file.caseDetails.caseNo})"
                 ),
                 type='UPLOAD_APPROVAL_REMINDER',
+                content_type=content_type,
+                object_id=approval.id,
+                division = approval.division
+            )
+
+        return Response({"message": "Reminder sent successfully."})
+
+class SendAccessApprovalReminder(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self,request,access_id):
+        approval = get_object_or_404(FileAccessRequest, id=access_id)
+
+        # logic to check only the uploaded users can send reminder
+        if approval.requested_by != request.user:
+            return Response({"error": "Only the uploader can send reminders."}, status=403)
+        
+        if approval.status != "pending":
+            return Response({"error": "Only for pending files reminders can be sent."}, status=400)
+        
+        content_type = ContentType.objects.get_for_model(FileAccessRequest)
+
+        last_reminder = Notification.objects.filter(
+            type='ACCESS_REQUEST_REMINDER',
+            content_type=content_type,
+            object_id=approval.id,
+            requestedBy=request.user
+        ).order_by('-created_at').first()
+
+        if last_reminder and (timezone.now() - last_reminder.created_at < timedelta(days=1)):
+            return Response({
+                "error": "Reminder already sent recently. can send a reminder again next day."
+            }, status=400)
+        
+        
+        reviewer = approval.reviewed_by
+
+        if reviewer:
+            Notification.objects.create(
+                recipient=reviewer,
+                requestedBy=request.user,
+                message=(
+                    f"Reminder: {request.user.first_name} uploaded a file for approval "
+                    f"(Case: {approval.file.caseDetails.caseNo})"
+                ),
+                type='ACCESS_REQUEST_REMINDER',
                 content_type=content_type,
                 object_id=approval.id,
                 division = approval.division
