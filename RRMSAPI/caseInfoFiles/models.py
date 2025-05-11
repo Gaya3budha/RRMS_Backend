@@ -74,6 +74,7 @@ class FileUploadApproval(models.Model):
     division = models.ForeignKey(DivisionMaster, null=True,blank=True,on_delete=models.CASCADE)
     is_approved = models.BooleanField(default=False)
     comments = models.TextField(null= True, blank = True)
+    created_at = models.DateField(auto_now_add=True,null=True,blank=True)
 
 
 class FileAccessRequest(models.Model):

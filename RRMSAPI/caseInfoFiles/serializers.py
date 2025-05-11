@@ -19,7 +19,7 @@ class FileUploadApprovalSerializer(serializers.ModelSerializer):
         fields = [
             'id','status','file','file_name','case_details_id','case_no','requested_by','requested_by_first_name',
             'requested_by_last_name','reviewed_by','reviewed_by_first_name','reviewed_by_last_name','reviewed_at',
-            'department','division','division_name','is_approved','comments'
+            'department','division','division_name','is_approved','comments','created_at'
         ]
 
 class CaseInfoDetailsSerializer(serializers.ModelSerializer):
