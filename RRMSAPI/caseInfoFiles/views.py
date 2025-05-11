@@ -669,29 +669,55 @@ class UploadApprovalDetailView(RetrieveAPIView):
 class FileApprovalDetailsViewSet(APIView):
    permission_classes=[IsAuthenticated]
    def post(self, request):
-        file_id= request.data.get("file_id")
+        upload_approval_id = request.data.get("upload_approval_id")
         is_approved= request.data.get("is_approved")
         comments = request.data.get("comments")
-        file = get_object_or_404(FileDetails, pk=file_id)
+
+        upload_approval = get_object_or_404(FileUploadApproval, id=upload_approval_id)
+        file = upload_approval.file
+
         file.is_approved = is_approved
         file.comments = comments
-        file.save()
+        file.save(update_fields=["is_approved", "comments"])
 
-        try:
-            access_request = FileAccessRequest.objects.get(file=file, requested_by=file.uploaded_by)
-            access_request.is_approved = is_approved
-            access_request.reviewed_by = request.user
-            access_request.reviewed_at = timezone.now()
-            access_request.save()
-        except FileAccessRequest.DoesNotExist:
-            pass  # Optional: log if needed
+        upload_approval.status = "APPROVED" if is_approved else "DENIED"
+        upload_approval.is_approved = is_approved
+        upload_approval.reviewed_by = request.user
+        upload_approval.reviewed_at = timezone.now()
+        upload_approval.approved_by=request.user
+        upload_approval.save()
+        
+        Notification.objects.filter(
+            type="UPLOAD_APPROVAL",
+            object_id=upload_approval.id,
+            content_type=ContentType.objects.get_for_model(FileUploadApproval),
+        ).update(is_read=True, read_at=timezone.now())
+
+        other_pending_approvals = FileUploadApproval.objects.filter(
+            file=file,
+            status="PENDING"
+        ).exclude(id=upload_approval.id)
+
+        other_pending_approvals.update(status = "APPROVED" if is_approved else "DENIED",reviewed_at = timezone.now(),is_approved = is_approved,
+                                       approved_by=request.user)
+
+        for other_approval in other_pending_approvals:
+            Notification.objects.filter(
+                type="UPLOAD_APPROVAL",
+                object_id=other_approval.id,
+                content_type=ContentType.objects.get_for_model(FileUploadApproval),
+            ).update(is_read=True, read_at=timezone.now())
 
         Notification.objects.create(
-            recipient=file.uploaded_by,
-            message= f"File {'approved' if is_approved else 'denied'} with comments -{comments}",
-            file= file
+            recipient=upload_approval.requested_by,
+            requestedBy=request.user,
+            division=file.division,
+            message=f"Your file has been {'approved' if is_approved else 'denied'} with comments: {comments}",
+            type="GENERIC",
+            content_type=ContentType.objects.get_for_model(FileUploadApproval),
+            object_id=upload_approval.id
         )
-        return Response({"status": "File approved"}, status=status.HTTP_200_OK)
+        return Response({"status": "File Processed"}, status=status.HTTP_200_OK)
 
 class NotificationListView(APIView):
     permission_classes = [permissions.IsAuthenticated]

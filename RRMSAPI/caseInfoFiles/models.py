@@ -75,7 +75,7 @@ class FileUploadApproval(models.Model):
     is_approved = models.BooleanField(default=False)
     comments = models.TextField(null= True, blank = True)
     created_at = models.DateField(auto_now_add=True,null=True,blank=True)
-
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='upload_approvals_taken')
 
 class FileAccessRequest(models.Model):
     STATUS_CHOICES = [
