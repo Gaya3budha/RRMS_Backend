@@ -30,20 +30,20 @@ def notify_admin_on_upload(sender, instance, created, **kwargs):
     if  created and not instance.is_approved:
         uploader = instance.uploaded_by
 
-        designation = uploader.designation
-        print(designation)
+        # designation_id = instance.designation_id
+        # print('designation',designation_id)
         division = instance.division
         print('division',division)
 
         department = division.departmentId 
         print('department',department)
 
-        designations =Designation.objects.filter(division= division.divisionId)
+        # designations =Designation.objects.filter(division= division.divisionId)
 
-        print('designations',designations)
+        # print('designations',designations)
         
         eligible_users = User.objects.filter(
-            designation__in = designations,
+            designation__division=division,
             role__roleId__in=[1, 4]  # Admin (1) or Viewer (4) role
         ).exclude(id=uploader.id).distinct()
 
