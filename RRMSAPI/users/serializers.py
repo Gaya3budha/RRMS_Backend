@@ -100,6 +100,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['is_superadmin']=user.is_superuser
         token['role']=user.role.roleName if user.role else None
         token['designation'] = user.designation.designationName if user.designation else None
+        token['designationId'] = user.designation.designationId if user.designation else None
+       
         # divisions_roles_data = []
         
         # Fetch user's division-role-designation mappings
@@ -122,7 +124,16 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         #     })
         
         # token['divisions_roles'] = divisions_roles_data
+        if user.role:
+            token['permissions'] = list(user.role.permissions.values_list('codename', flat=True))
+        else:
+            token['permissions'] = []
         if user.designation:
+            
+            token['divisionIds'] = list(user.designation.division.values_list('divisionId', flat=True))
+            token['departmentIds'] = list(user.designation.department.values_list('departmentId', flat=True))
+
+
             # Find the hierarchy where the user's designation is the child
             hierarchy = DesignationHierarchy.objects.filter(child_designation=user.designation).first()
             
@@ -130,10 +141,18 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 supervisor = hierarchy.parent_designation
                 # Serialize the supervisor's data
                 token['supervisor_designation'] = supervisor.designationName
+                token['supervisor_divisionIds'] = list(supervisor.division.values_list('divisionId', flat=True))
+                token['supervisor_departmentIds'] = list(supervisor.department.values_list('departmentId', flat=True))
             else:
                 token['supervisor_designation'] = None
+                token['supervisor_divisionIds'] = []
+                token['supervisor_departmentIds'] = []
         else:
             token['supervisor_designation'] = None
+            token['divisionIds'] = []
+            token['departmentIds'] = []
+            token['supervisor_divisionIds'] = []
+            token['supervisor_departmentIds'] = []
 
         return token
     
