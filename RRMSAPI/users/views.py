@@ -137,18 +137,14 @@ class GetLoggedInUsersView(APIView):
 
 class GetDivisionrAdminsView(APIView):
     def post(self, request):
-        current_user =request.data.get("division_id")
+        divsion_id =request.data.get("division_id")
         role_id =request.data.get("role_id")
 
         print("role_id",role_id)
-        print("division_id",current_user)
-        # given_role_users = User.objects.filter(role_id = role_id, divisionmaster_id = current_user)
-        given_role_users= UserDivisionRole.objects.filter(role=role_id, division= current_user)
+        print("division_id",divsion_id)
 
-        user_ids = given_role_users.values_list('user_id', flat=True)
-        users = User.objects.filter(id__in=user_ids)
+        users = User.objects.filter(role__roleId=4,designation__division__divisionId=divsion_id)
 
-        print("given role users of a division:",given_role_users)
         print("users",users)
         serialized_users = UserSerializer(users, many=True)
 
