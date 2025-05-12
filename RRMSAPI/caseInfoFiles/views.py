@@ -748,7 +748,7 @@ class UploadApprovalListView(APIView):
         department_id = request.data.get('department_id')
 
         # Start with all the pending approvals
-        approvals = FileUploadApproval.objects.filter(status="PENDING")
+        approvals = FileUploadApproval.objects.all()
 
         # Fetch the designations based on the division_id
         designations = Designation.objects.filter(division__divisionId=division_id)
