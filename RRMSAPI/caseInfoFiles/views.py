@@ -24,6 +24,7 @@ import hashlib
 import os
 import mimetypes
 import traceback
+from datetime import timedelta
 
 UPLOAD_DIR = os.path.join(settings.MEDIA_ROOT, "uploads","CID")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -36,7 +37,8 @@ class LatestUserFilesView(ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return FileDetails.objects.filter(uploaded_by=self.request.user).order_by('-created_at')[:20]  # Adjust limit as needed
+        three_days_ago = timezone.now() - timedelta(days=3)
+        return FileDetails.objects.filter(uploaded_by=self.request.user,created_at__gte=three_days_ago).order_by('-created_at')[:20]  # Adjust limit as needed
 
 
 class FavouriteFilesView(APIView):

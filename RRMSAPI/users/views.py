@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import UserSerializer, CustomTokenObtainPairSerializer
 from rest_framework.exceptions import AuthenticationFailed
-from .models import User, ActiveUser
+from .models import User, ActiveUser, Designation
 # from rest_framework.permissions import IsAdminUser
 from mdm.models import Role
 from mdm.permissions import IsSuperAdminOrReadOnly
@@ -79,16 +79,24 @@ class UpdateUserView(APIView):
             # checking if roleId is present in request body or not
             if 'roleId' in request.data:
                 role_id = request.data['roleId']
+                try:
+                    new_role = Role.objects.get(roleId=role_id)
+                    updated_data['role'] = new_role
+                except Role.DoesNotExist:
+                    return Response({"error": "Role not found"}, status=status.HTTP_404_NOT_FOUND)
 
-                # fetching the passed roleId in role table
-                new_role = Role.objects.get(roleId=role_id)
+            # Handle designation update (many-to-many)
+            if 'designationIds' in request.data:
+                designation_ids = request.data['designationIds']
+                if isinstance(designation_ids, list):
+                    designations = Designation.objects.filter(id__in=designation_ids)
+                    user.designation.set(designations)
+                else:
+                    return Response({"error": "designationIds must be a list"}, status=status.HTTP_400_BAD_REQUEST)
 
-                # assigning to dict object
-                updated_data['role']= new_role
-
-                
-                for key, value in updated_data.items():
-                    setattr(user, key, value)
+            # Apply any other updates (currently only role is handled via updated_data)
+            for key, value in updated_data.items():
+                setattr(user, key, value)
 
                 user.save()
 

@@ -7,22 +7,7 @@ from users.serializers import UserSerializer
 from mdm.models import StateMaster, DistrictMaster, UnitMaster
 from cryptography.fernet import Fernet
 
-class FileUploadApprovalSerializer(serializers.ModelSerializer):
-    division_name = serializers.CharField(source='division.divisionName', read_only=True)
-    requested_by_first_name = serializers.CharField(source='requested_by.first_name', read_only=True)
-    requested_by_last_name = serializers.CharField(source='requested_by.last_name', read_only=True)
-    reviewed_by_first_name = serializers.CharField(source='reviewed_by.first_name', read_only=True)
-    reviewed_by_last_name = serializers.CharField(source='reviewed_by.last_name', read_only=True)
-    file_name = serializers.CharField(source='file.fileName', read_only=True)
-    case_no = serializers.CharField(source='case_details_id.caseNo', read_only=True)
 
-    class Meta:
-        model = FileUploadApproval
-        fields = [
-            'id','status','file','file_name','case_details_id','case_no','requested_by','requested_by_first_name',
-            'requested_by_last_name','reviewed_by','reviewed_by_first_name','reviewed_by_last_name','reviewed_at',
-            'department','division','division_name','is_approved','comments','created_at'
-        ]
 
 class CaseInfoDetailsSerializer(serializers.ModelSerializer):
 
@@ -58,6 +43,23 @@ class FileDetailsSerializer(serializers.ModelSerializer):
         model = FileDetails
         fields = ['fileId','CaseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','classification','uploaded_by','documentType','classification_name','is_favourited', 'filetype_name']  
         # 'classification_name','is_favourited', 'filetype_name'
+
+class FileUploadApprovalSerializer(serializers.ModelSerializer):
+    division_name = serializers.CharField(source='division.divisionName', read_only=True)
+    requested_by_first_name = serializers.CharField(source='requested_by.first_name', read_only=True)
+    requested_by_last_name = serializers.CharField(source='requested_by.last_name', read_only=True)
+    reviewed_by_first_name = serializers.CharField(source='reviewed_by.first_name', read_only=True)
+    reviewed_by_last_name = serializers.CharField(source='reviewed_by.last_name', read_only=True)
+    file_name = serializers.CharField(source='file.fileName', read_only=True)
+    case_no = serializers.CharField(source='case_details_id.caseNo', read_only=True)
+    file = FileDetailsSerializer()
+    class Meta:
+        model = FileUploadApproval
+        fields = [
+            'id','status','file','file_name','case_details_id','case_no','requested_by','requested_by_first_name',
+            'requested_by_last_name','reviewed_by','reviewed_by_first_name','reviewed_by_last_name','reviewed_at',
+            'department','division','division_name','is_approved','comments','created_at'
+        ]
 
 class CaseInfoSearchSerializers(serializers.ModelSerializer):
     stateName = serializers.SerializerMethodField()
