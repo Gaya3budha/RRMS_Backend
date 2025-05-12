@@ -469,7 +469,7 @@ class FileAccessRequestListAPIView(APIView):
         user = request.user
         division_id = request.data.get("division_id")
 
-        approvals = FileAccessRequest.objects.filter(status="pending")
+        approvals = FileAccessRequest.objects.all()
 
         print("division_id",division_id)
         if user.role.roleId == 1:  # Admin role
