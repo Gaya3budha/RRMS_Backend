@@ -1,17 +1,21 @@
 from django.urls import path, include
-from .views import  LookupByCategoryView,DepartmentViewSet, DesignationHierarchyViewSet,RoleView,DivisionViewSet,DistrictMasterView, StateMasterView, UnitMasterView, DesignationViewSet
+from .views import  LookupByCategoryView,FileClassificationViewSet,CorrespondenceFilesViewSet,CaseFilesViewSet,FileTypesViewSet,DepartmentViewSet, DesignationHierarchyViewSet,CaseStatusViewSet,RoleView,DivisionViewSet,DistrictMasterView, StateMasterView, UnitMasterView, DesignationViewSet
 from rest_framework.routers import SimpleRouter  
 
 router = SimpleRouter(trailing_slash=False) 
 # router.register(r'roles', RoleViewSet)
 # router.register(r'divisions', DivisionViewSet, basename = 'division')
-# router.register(r'fileTypes', FileTypesViewSet, basename = 'file-type')
-# router.register(r'fileClassification', FileClassificationViewSet, basename = 'file-classification')
-# router.register(r'caseStatus', CaseStatusViewSet, basename = 'case-status')
 router.register(r'departments', DepartmentViewSet, basename = 'departments')
 router.register(r'divisions', DivisionViewSet, basename = 'division')
 router.register(r'designations', DesignationViewSet, basename = 'designation')
 router.register(r'designation-hierarchy',DesignationHierarchyViewSet,basename='desg-hierarchy')
+router.register(r'caseStatus', CaseStatusViewSet, basename = 'case-status')
+router.register(r'fileClassification', FileClassificationViewSet, basename = 'file-classification')
+router.register(r'fileTypes', FileTypesViewSet, basename = 'file-type')
+router.register(r'caseFiles', CaseFilesViewSet, basename = 'case-files')
+router.register(r'correspondenceFiles', CorrespondenceFilesViewSet, basename = 'corrs-files')
+
+
 
 urlpatterns = [
     path('', include(router.urls)),

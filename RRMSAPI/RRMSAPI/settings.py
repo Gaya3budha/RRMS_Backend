@@ -190,3 +190,6 @@ SIMPLE_JWT = {
     'SIGNING_KEY': 'SECRET@123',  # You can use Django's SECRET_KEY here
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
 }
+
+USE_TZ = True
+TIME_ZONE = 'UTC'

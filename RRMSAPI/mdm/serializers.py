@@ -59,20 +59,41 @@ class UnitSerializer(serializers.ModelSerializer):
         fields = ['unitId','unitName','stateId','districtId','typeId','parentUnit','actualStrength',
         'sanctionedStrength','talukID','address1','address2','active','lastModifiedDate']
 
-# class FileTypeSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = FileType
-#         fields = ['fileTypeId','fileTypeName','active','lastModifiedDate']
+class FileTypeSerializer(serializers.ModelSerializer):
+    fileTypeId = serializers.IntegerField(source='lookupId',read_only=True)
+    fileTypeName = serializers.CharField(source='lookupName')
+    class Meta:
+        model = GeneralLookUp
+        fields = ['fileTypeId','fileTypeName']
 
-# class FileClassificationSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = FileClassification
-#         fields = ['fileClassificationId','fileClassificationName','active','lastModifiedDate']
+class CaseFilesSerializer(serializers.ModelSerializer):
+    caseFileId = serializers.IntegerField(source='lookupId',read_only=True)
+    caseFileName = serializers.CharField(source='lookupName')
+    class Meta:
+        model = GeneralLookUp
+        fields = ['caseFileId','caseFileName']
 
-# class CaseStatusSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = CaseStatus
-#         fields = ['statusId','statusName','active','lastModifiedDate']
+class CorrFilesSerializer(serializers.ModelSerializer):
+    corrId = serializers.IntegerField(source='lookupId',read_only=True)
+    corrFileName = serializers.CharField(source='lookupName')
+    class Meta:
+        model = GeneralLookUp
+        fields = ['corrId','corrFileName']
+
+class FileClassificationSerializer(serializers.ModelSerializer):
+    fileClassificationId = serializers.IntegerField(source='lookupId',read_only=True)
+    fileClassificationName = serializers.CharField(source='lookupName')
+    class Meta:
+        model = GeneralLookUp
+        fields = ['fileClassificationId','fileClassificationName']
+
+class CaseStatusSerializer(serializers.ModelSerializer):
+    statusId = serializers.IntegerField(source='lookupId',read_only=True)
+    statusName = serializers.CharField(source='lookupName')
+
+    class Meta:
+        model = GeneralLookUp
+        fields = ['statusId','statusName']
 
 class LookupCustomSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(source='lookupid')

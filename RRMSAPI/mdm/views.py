@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .permissions import HasRequiredPermission, IsSuperAdminOrReadOnly
 from rest_framework import viewsets
-from .serializers import DesignationHierarchySerializer,DepartmentSeriallizer,LookupCustomSerializer, DivisionSerializer, DesignationSerializer
+from .serializers import DesignationHierarchySerializer,CorrFilesSerializer,CaseFilesSerializer,FileTypeSerializer,FileClassificationSerializer,CaseStatusSerializer,DepartmentSeriallizer,LookupCustomSerializer, DivisionSerializer, DesignationSerializer
 from rest_framework.permissions import IsAdminUser
 from .utils import CATEGORY_LABELS
 from rest_framework.generics import ListAPIView
@@ -165,44 +165,99 @@ class UnitMasterView(APIView):
 
         return Response({"responseData":list(units),"statusCode" :status.HTTP_200_OK})
 
-# class FileTypesViewSet(viewsets.ModelViewSet):
-#     # queryset = FileType.objects.all()
-#     serializer_class = FileTypeSerializer
+class FileTypesViewSet(viewsets.ModelViewSet):
+    # queryset = FileType.objects.all()
+    serializer_class = FileTypeSerializer
 
-#     def get_queryset(self):
-#         return FileType.objects.filter(active = 'Y')
+    def get_queryset(self):
+        return GeneralLookUp.objects.filter(active = 'Y',CategoryId=2).order_by("lookupId")
 
-#     def destroy(self, request, *args, **kwargs):
-#         instance = self.get_object()
-#         instance.active = 'N'
-#         instance.save()
-#         return Response(status=status.HTTP_204_NO_CONTENT)
+    def perform_create(self, serializer):
+        serializer.save(CategoryId=2, active='Y')
 
-# class FileClassificationViewSet(viewsets.ModelViewSet):
-#     # queryset = FileClassification.objects.all()
-#     serializer_class = FileClassificationSerializer
+    def perform_update(self, serializer):
+        serializer.save()
 
-#     def get_queryset(self):
-#         return FileClassification.objects.filter(active = 'Y').values('fileClassificationId','fileClassificationName','active')
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.active = 'N'
+        instance.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    
+class CaseFilesViewSet(viewsets.ModelViewSet):
+    # queryset = FileType.objects.all()
+    serializer_class = CaseFilesSerializer
 
-#     def destroy(self, request, *args, **kwargs):
-#         instance = self.get_object()
-#         instance.active = 'N'
-#         instance.save()
-#         return Response(status=status.HTTP_204_NO_CONTENT)
+    def get_queryset(self):
+        return GeneralLookUp.objects.filter(active = 'Y',CategoryId=3).order_by("lookupId")
 
-# class CaseStatusViewSet(viewsets.ModelViewSet):
-#     # queryset = CaseStatus.objects.all()
-#     serializer_class = CaseStatusSerializer
+    def perform_create(self, serializer):
+        serializer.save(CategoryId=3, active='Y')
 
-#     def get_queryset(self):
-#         return CaseStatus.objects.filter(active = 'Y').values('statusId','statusName','active')
+    def perform_update(self, serializer):
+        serializer.save()
 
-#     def destroy(self, request, *args, **kwargs):
-#         instance = self.get_object()
-#         instance.active = 'N'
-#         instance.save()
-#         return Response(status=status.HTTP_204_NO_CONTENT)
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.active = 'N'
+        instance.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    
+class CorrespondenceFilesViewSet(viewsets.ModelViewSet):
+    # queryset = FileType.objects.all()
+    serializer_class = CorrFilesSerializer
+
+    def get_queryset(self):
+        return GeneralLookUp.objects.filter(active = 'Y',CategoryId=4).order_by("lookupId")
+
+    def perform_create(self, serializer):
+        serializer.save(CategoryId=4, active='Y')
+
+    def perform_update(self, serializer):
+        serializer.save()
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.active = 'N'
+        instance.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+class FileClassificationViewSet(viewsets.ModelViewSet):
+    # queryset = FileClassification.objects.all()
+    serializer_class = FileClassificationSerializer
+
+    def get_queryset(self):
+        return GeneralLookUp.objects.filter(active = 'Y',CategoryId=7).order_by("lookupId")
+
+    def perform_create(self, serializer):
+        serializer.save(CategoryId=7, active='Y')
+
+    def perform_update(self, serializer):
+        serializer.save()
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.active = 'N'
+        instance.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+class CaseStatusViewSet(viewsets.ModelViewSet):
+    serializer_class = CaseStatusSerializer
+
+    def get_queryset(self):
+        return GeneralLookUp.objects.filter(active = 'Y',CategoryId=6).order_by("lookupId")
+
+    def perform_create(self, serializer):
+        serializer.save(CategoryId=6, active='Y')
+
+    def perform_update(self, serializer):
+        serializer.save()
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.active = 'N'
+        instance.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
     
 
 class LookupByCategoryView(ListAPIView):
