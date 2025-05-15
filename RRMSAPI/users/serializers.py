@@ -20,7 +20,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id','email', 'first_name', 'last_name', 'roleId','mobileno', 'kgid', 'password', 'designation','designation_detail']
+        fields = ['id','email', 'first_name', 'last_name', 'roleId','mobileno', 'kgid', 'password', 'set_password','designation','designation_detail','set_password']
         extra_kwargs = {
             'password': {'write_only': True},
         }
@@ -36,6 +36,7 @@ class UserSerializer(serializers.ModelSerializer):
             kgid=validated_data['kgid'],
             password=validated_data['password'],
             role=validated_data['role'],
+            set_password=validated_data['set_password'],
             # divisionmaster=validated_data['divisionmaster'],
             # designation=validated_data['designation']
         )
@@ -72,9 +73,6 @@ class UserSerializer(serializers.ModelSerializer):
         return representation
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-    # kgid = serializers.CharField()
-    # password = serializers.CharField()
-
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
@@ -82,9 +80,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['email']=user.email
         token['full_name']=f"{user.first_name} {user.last_name}"
         token['is_superadmin']=user.is_superuser
+        token['set_password']=user.set_password
         token['role']=user.role.roleName if user.role else None
-        # token['designation'] = user.designation.designationName if user.designation else None
-        # token['designationId'] = user.designation.designationId if user.designation else None
         if user.designation.exists():
             token['designations'] = [
                 {
@@ -137,14 +134,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             token['supervisors'] = []
 
         return token
-    
-# class UserDivisionRoleCreateSerializer(serializers.ModelSerializer):
-#     divisionId = serializers.PrimaryKeyRelatedField(source='division', queryset=DivisionMaster.objects.all())
-#     roleId = serializers.PrimaryKeyRelatedField(source='role', queryset=Role.objects.all())
-#     designationId = serializers.PrimaryKeyRelatedField(source='designation', queryset=DesignationMaster.objects.all())
 
-#     class Meta:
-#         model = UserDivisionRole
-#         fields = ['divisionId', 'roleId', 'designationId']
     
 

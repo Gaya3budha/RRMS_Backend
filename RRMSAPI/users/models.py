@@ -39,7 +39,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     designation = models.ManyToManyField(Designation,related_name='designation', blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-
+    set_password = models.BooleanField(default = False)
     objects = CustomUserManager()
 
     USERNAME_FIELD = 'kgid'
