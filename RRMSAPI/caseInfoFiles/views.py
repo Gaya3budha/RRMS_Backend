@@ -92,47 +92,47 @@ class SearchCaseFilesView(APIView):
             query &= Q(stateId__icontains= searchParams['stateId'])
             filters_applied = True
 
-        if "districtId" in searchParams:
+        if "districtId" in searchParams and searchParams["districtId"] not in [None, ""]:
             query &= Q(districtId__icontains= searchParams['districtId'])
             filters_applied = True
         
-        if "unitId" in searchParams:
+        if "unitId" in searchParams and searchParams["unitId"] not in [None, ""]:
             query &= Q(unitId__icontains= searchParams['unitId'])
             filters_applied = True
 
-        if "office" in searchParams:
+        if "office" in searchParams and searchParams["office"] not in [None, ""]:
             query &= Q(Office__icontains= searchParams['office'])
             filters_applied = True
 
-        if "letterNo" in searchParams:
+        if "letterNo" in searchParams and searchParams["letterNo"] not in [None, ""]:
             query &= Q(letterNo__icontains= searchParams['letterNo'])
             filters_applied = True
 
-        if "caseNo" in searchParams:
+        if "caseNo" in searchParams and searchParams["caseNo"] not in [None, ""]:
             query &= Q(caseNo__icontains= searchParams['caseNo'])
             filters_applied = True
 
-        if "firNo" in searchParams:
+        if "firNo" in searchParams and searchParams["firNo"] not in [None, ""]:
             query &= Q(firNo__icontains= searchParams['firNo'])
             filters_applied = True
 
-        if "caseDate" in searchParams:
+        if "caseDate" in searchParams and searchParams["caseDate"] not in [None, ""]:
             query &= Q(caseDate__icontains= searchParams['caseDate'])
             filters_applied = True
 
-        if 'hashtag' in searchParams:
+        if 'hashtag' in searchParams and searchParams["hashtag"] not in [None, ""]:
             query &= Q(files__hashTag__icontains=searchParams['hashtag'])
             filters_applied = True
 
-        if 'subject' in searchParams:
+        if 'subject' in searchParams and searchParams["subject"] not in [None, ""]:
             query &= Q(files__subject__icontains= searchParams['subject'])
             filters_applied = True
 
-        if 'classification' in searchParams:
+        if 'classification' in searchParams and searchParams["classification"] not in [None, ""]:
             query &= Q(files__classification__lookupId__icontains= searchParams['classification'])
             filters_applied = True
 
-        if 'fileType' in searchParams:
+        if 'fileType' in searchParams and searchParams["fileType"] not in [None, ""]:
             query &= Q(files__fileType__lookupId__icontains= searchParams['fileType'])
             filters_applied = True
 

@@ -4,7 +4,7 @@ import hashlib
 import os
 from mdm.serializers import DivisionSerializer
 from users.serializers import UserSerializer
-from mdm.models import StateMaster, DistrictMaster, UnitMaster,GeneralLookUp
+from mdm.models import StateMaster, DistrictMaster, UnitMaster, GeneralLookUp
 from cryptography.fernet import Fernet
 
 
@@ -41,7 +41,7 @@ class FileDetailsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FileDetails
-        fields = ['fileId','CaseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','classification','uploaded_by','documentType','classification_name','is_favourited', 'filetype_name','']  
+        fields = ['fileId','CaseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','classification','uploaded_by','documentType','classification_name','is_favourited', 'filetype_name']  
         # 'classification_name','is_favourited', 'filetype_name'
 
 class FileUploadApprovalSerializer(serializers.ModelSerializer):
