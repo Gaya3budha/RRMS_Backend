@@ -4,7 +4,7 @@ import hashlib
 import os
 from mdm.serializers import DivisionSerializer
 from users.serializers import UserSerializer
-from mdm.models import StateMaster, DistrictMaster, UnitMaster
+from mdm.models import StateMaster, DistrictMaster, UnitMaster,GeneralLookUp
 from cryptography.fernet import Fernet
 
 
@@ -41,7 +41,7 @@ class FileDetailsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FileDetails
-        fields = ['fileId','CaseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','classification','uploaded_by','documentType','classification_name','is_favourited', 'filetype_name']  
+        fields = ['fileId','CaseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','classification','uploaded_by','documentType','classification_name','is_favourited', 'filetype_name','']  
         # 'classification_name','is_favourited', 'filetype_name'
 
 class FileUploadApprovalSerializer(serializers.ModelSerializer):
@@ -65,14 +65,15 @@ class CaseInfoSearchSerializers(serializers.ModelSerializer):
     stateName = serializers.SerializerMethodField()
     districtName = serializers.SerializerMethodField()
     unitName = serializers.SerializerMethodField()
-    caseDate = serializers.DateTimeField(format="%d-%m-%Y %I:%M %p")
+    caseTypeName = serializers.SerializerMethodField()
+    caseDate = serializers.DateTimeField(format="%d-%m-%Y")
 
 
     files = FileDetailsSearchSerializer(many= True, read_only= True)
 
     class Meta:
         model = CaseInfoDetails
-        fields = ['CaseInfoDetailsId','stateId','stateName','districtId','districtName','unitId','unitName','Office','caseDate','caseNo','firNo','letterNo','caseType','author','toAddr','files']
+        fields = ['CaseInfoDetailsId','stateId','stateName','districtId','districtName','unitId','unitName','Office','caseDate','caseNo','firNo','letterNo','caseType','caseTypeName','author','toAddr','files']
 
     def get_stateName(self, obj):
         try:
@@ -93,6 +94,13 @@ class CaseInfoSearchSerializers(serializers.ModelSerializer):
             unit = UnitMaster.objects.get(unitId = obj.unitId)
             return unit.unitName
         except UnitMaster.DoesNotExist:
+            return None
+        
+    def get_caseTypeName(self, obj):
+        try:
+            caseType = GeneralLookUp.objects.get(lookupId = obj.caseType)
+            return caseType.lookupName
+        except GeneralLookUp.DoesNotExist:
             return None
 
 class FavouriteSerializer(serializers.ModelSerializer):
