@@ -76,6 +76,9 @@ class UpdateUserView(APIView):
             # blank dictinary object
             updated_data = {}
 
+            updated_data['password']=request.data['password']
+            updated_data['set_password']=request.data['set_password']
+
             # checking if roleId is present in request body or not
             if 'roleId' in request.data:
                 role_id = request.data['roleId']
