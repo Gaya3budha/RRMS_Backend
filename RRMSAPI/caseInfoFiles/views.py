@@ -120,21 +120,6 @@ class SearchCaseFilesView(APIView):
             query &= Q(caseDate__icontains= searchParams['caseDate'])
             filters_applied = True
 
-        if 'hashtag' in searchParams and searchParams["hashtag"] not in [None, ""]:
-            query &= Q(files__hashTag__icontains=searchParams['hashtag'])
-            filters_applied = True
-
-        if 'subject' in searchParams and searchParams["subject"] not in [None, ""]:
-            query &= Q(files__subject__icontains= searchParams['subject'])
-            filters_applied = True
-
-        if 'classification' in searchParams and searchParams["classification"] not in [None, ""]:
-            query &= Q(files__classification__lookupId__icontains= searchParams['classification'])
-            filters_applied = True
-
-        if 'fileType' in searchParams and searchParams["fileType"] not in [None, ""]:
-            query &= Q(files__fileType__lookupId__icontains= searchParams['fileType'])
-            filters_applied = True
 
         if filters_applied:
             case_details_qs = CaseInfoDetails.objects.filter(query).distinct()
@@ -161,6 +146,41 @@ class SearchCaseFilesView(APIView):
             file_filter = Q(is_approved=True) | Q(uploaded_by=user) | Exists(access_request_subquery)
 
         print("access- ",file_filter)
+        if 'hashtag' in searchParams and searchParams["hashtag"] not in [None, ""]:
+            query &= Q(files__hashTag__icontains=searchParams['hashtag'])
+            filters_applied = True
+
+        if 'subject' in searchParams and searchParams["subject"] not in [None, ""]:
+            query &= Q(files__subject__icontains= searchParams['subject'])
+            filters_applied = True
+
+        if 'classification' in searchParams and searchParams["classification"] not in [None, ""]:
+            query &= Q(files__classification__lookupId__icontains= searchParams['classification'])
+            filters_applied = True
+
+        if 'fileType' in searchParams and searchParams["fileType"] not in [None, ""]:
+            query &= Q(files__fileType__lookupId__icontains= searchParams['fileType'])
+            filters_applied = True
+
+        if 'fileExt' in searchParams and searchParams["fileExt"]:
+            file_ext = searchParams['fileExt']
+            extensions = []
+
+            if file_ext.lower() == 'image':
+                extensions = ['.jpg', '.jpeg', '.png']
+            elif file_ext.lower() == 'document':
+                extensions = ['.pdf', '.docx', '.xlsx']
+            elif file_ext.lower() == 'audio':
+                extensions = ['.MP3','.mp3', '.WAV', '.FLAC']
+            elif file_ext.lower() == 'video':
+                extensions = ['.MP4','.mp4', '.MOV', '.mov','.WebM','.webm']
+
+            if extensions:
+                ext_query = Q()
+                for ext in extensions:
+                    ext_query |= Q(fileName__iendswith=ext)
+                file_filter &= ext_query
+
         file_queryset = FileDetails.objects.select_related('classification').filter(file_filter).annotate(
             is_favourited=Exists(favourite_subquery),
             is_request_raised = Exists(request_raised_subquery),
