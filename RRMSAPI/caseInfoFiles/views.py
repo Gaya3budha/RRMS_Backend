@@ -119,6 +119,22 @@ class SearchCaseFilesView(APIView):
         if "caseDate" in searchParams and searchParams["caseDate"] not in [None, ""]:
             query &= Q(caseDate__icontains= searchParams['caseDate'])
             filters_applied = True
+        
+        if "caseType" in searchParams and searchParams["caseType"] not in [None, ""]:
+            query &= Q(caseType__icontains= searchParams['caseType'])
+            filters_applied = True
+        
+        if "caseStatus" in searchParams and searchParams["caseStatus"] not in [None, ""]:
+            query &= Q(caseStatus__icontains= searchParams['caseStatus'])
+            filters_applied = True
+
+        if "author" in searchParams and searchParams["author"] not in [None, ""]:
+            query &= Q(author__icontains= searchParams['author'])
+            filters_applied = True
+
+        if "toAddr" in searchParams and searchParams["toAddr"] not in [None, ""]:
+            query &= Q(toAddr__icontains= searchParams['toAddr'])
+            filters_applied = True
 
 
         if filters_applied:
@@ -160,6 +176,10 @@ class SearchCaseFilesView(APIView):
 
         if 'fileType' in searchParams and searchParams["fileType"] not in [None, ""]:
             query &= Q(files__fileType__lookupId__icontains= searchParams['fileType'])
+            filters_applied = True
+
+        if 'docType' in searchParams and searchParams["docType"] not in [None, ""]:
+            query &= Q(files__documentType__lookupId__icontains= searchParams['docType'])
             filters_applied = True
 
         if 'fileExt' in searchParams and searchParams["fileExt"]:

@@ -32,7 +32,7 @@ class FileDetailsSearchSerializer(serializers.ModelSerializer):
     class Meta:
         model = FileDetails
         fields = ['fileId','CaseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','filetype_name','classification','classification_name','uploaded_by','is_approved','is_favourited','is_access_request_approved','is_request_raised','documentType','comments']
-
+    
 class FileDetailsSerializer(serializers.ModelSerializer):
     CaseInfoDetailsId = serializers.IntegerField(source='CaseInfoDetails.CaseInfoDetailsId',read_only = True)
     is_favourited = serializers.BooleanField(read_only=True)
@@ -44,6 +44,19 @@ class FileDetailsSerializer(serializers.ModelSerializer):
         fields = ['fileId','CaseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','classification','uploaded_by','documentType','classification_name','is_favourited', 'filetype_name']  
         # 'classification_name','is_favourited', 'filetype_name'
 
+class FavouriteFileDetailsSerializer(serializers.ModelSerializer):
+    caseInfoDetailsId = serializers.SerializerMethodField()
+    is_favourited = serializers.BooleanField(read_only=True)
+    classification_name = serializers.CharField(source='classification.fileClassificationName', read_only=True)
+    filetype_name = serializers.CharField(source='fileType.fileTypeName', read_only=True)
+
+    class Meta:
+        model = FileDetails
+        fields = ['fileId','caseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','classification','uploaded_by','documentType','classification_name','is_favourited', 'filetype_name','classification_name','is_favourited', 'filetype_name']
+
+    def get_caseInfoDetailsId(self, obj):
+        return getattr(obj.caseDetails, 'CaseInfoDetailsId', None)
+    
 class FileUploadApprovalSerializer(serializers.ModelSerializer):
     division_name = serializers.CharField(source='division.divisionName', read_only=True)
     requested_by_first_name = serializers.CharField(source='requested_by.first_name', read_only=True)
@@ -104,7 +117,7 @@ class CaseInfoSearchSerializers(serializers.ModelSerializer):
             return None
 
 class FavouriteSerializer(serializers.ModelSerializer):
-    file = FileDetailsSerializer(read_only = True)
+    file = FavouriteFileDetailsSerializer(read_only = True)
 
     class Meta:
         model = FavouriteFiles
