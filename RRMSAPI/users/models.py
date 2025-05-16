@@ -34,16 +34,14 @@ class User(AbstractBaseUser, PermissionsMixin):
     last_name = models.CharField(max_length=100)
     mobileno = models.CharField(max_length=15, unique=True, blank=True, null=True) 
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True)
-    # divisionmaster = models.ForeignKey(DivisionMaster, on_delete=models.SET_NULL, null=True, blank=True)
-    # division = models.ManyToManyField(DivisionMaster, through = 'UserDivisionRole')
     designation = models.ManyToManyField(Designation,related_name='designation', blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-    set_password = models.BooleanField(default = False)
+    is_passwordset = models.BooleanField(default = False)
     objects = CustomUserManager()
 
     USERNAME_FIELD = 'kgid'
-    REQUIRED_FIELDS = ['first_name', 'last_name','email','role','divisionmaster','designationmaster']
+    REQUIRED_FIELDS = ['first_name', 'last_name','email','role']
 
     # Modify the 'groups' relationship by specifying a custom 'related_name'
     groups = models.ManyToManyField(

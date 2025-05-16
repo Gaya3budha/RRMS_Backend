@@ -20,7 +20,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id','email', 'first_name', 'last_name', 'roleId','mobileno', 'kgid', 'password', 'set_password','designation','designation_detail','set_password']
+        fields = ['id','email', 'first_name', 'last_name', 'roleId','mobileno', 'kgid', 'password', 'set_password','designation','designation_detail']
         extra_kwargs = {
             'password': {'write_only': True},
         }
@@ -36,9 +36,7 @@ class UserSerializer(serializers.ModelSerializer):
             kgid=validated_data['kgid'],
             password=validated_data['password'],
             role=validated_data['role'],
-            set_password=validated_data['set_password'],
-            # divisionmaster=validated_data['divisionmaster'],
-            # designation=validated_data['designation']
+            # set_password=validated_data['set_password'],
         )
 
         user.set_password(validated_data['password'])  # password is saved as hash
@@ -52,24 +50,6 @@ class UserSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
 
-        # Check if it's a GET request by checking the context (the request method)
-        # if self.context.get('request') and self.context['request'].method == 'GET':
-            # representation['roleName'] = instance.role.roleName if instance.role else None
-            # representation['divisionName'] = instance.divisionmaster.divisionName if instance.divisionmaster else None
-            # representation['designationName'] = instance.designationmaster.designationName if instance.designationmaster else None
-            # if self.context.get('request') and self.context['request'].method == 'GET':
-            # representation['divisions_roles'] = [
-            #     {
-            #         "divisionId": role.division.pk,
-            #         "divisionName": role.division.divisionName,
-            #         "roleId": role.role.pk,
-            #         "roleName": role.role.roleName,
-            #         "designationId": role.designation.pk,
-            #         "designationName": role.designation.designationName
-            #     }
-            #     for role in instance.userdivisionrole_set.all()
-            # ]
-
         return representation
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -80,7 +60,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['email']=user.email
         token['full_name']=f"{user.first_name} {user.last_name}"
         token['is_superadmin']=user.is_superuser
-        token['set_password']=user.set_password
+        # token['set_password']=user.set_password
         token['role']=user.role.roleName if user.role else None
         if user.designation.exists():
             token['designations'] = [

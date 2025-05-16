@@ -1,7 +1,7 @@
 -- scripts to insert into roles table
 insert into mdm_role values(1,'Admin','Y',current_date,current_date),
 (2,'User','Y',current_date,current_date),
-(4,'ContentManager','Y',current_date,current_date);
+(3,'ContentManager','Y',current_date,current_date);
 
 insert into public.mdm_department values(1,'Forest Cell','Y',current_date);
 insert into public.mdm_department values(2,'Cyber Crime and Narcotics','Y',current_date);
