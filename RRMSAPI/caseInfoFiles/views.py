@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework import status, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import CaseInfoDetailsSerializer,FileUploadApprovalSerializer,FileAccessRequestSerializer,FileDetailsSerializer,NotificationSerializer, CaseInfoSearchSerializers, FavouriteSerializer
+from .serializers import CaseInfoDetailsSerializer,FavouriteFileDetailsSerializer,FileUploadApprovalSerializer,FileAccessRequestSerializer,FileDetailsSerializer,NotificationSerializer, CaseInfoSearchSerializers, FavouriteSerializer
 from .models import FileDetails, CaseInfoDetails, FavouriteFiles, Notification, FileAccessRequest, FileUploadApproval
 from django.shortcuts import get_object_or_404
 from django.db.models import Prefetch, OuterRef, Exists, Case, When, Value, BooleanField
@@ -33,7 +33,7 @@ User = get_user_model()
 
 # Create your views here.
 class LatestUserFilesView(ListAPIView):
-    serializer_class = FileDetailsSerializer
+    serializer_class = FavouriteFileDetailsSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
