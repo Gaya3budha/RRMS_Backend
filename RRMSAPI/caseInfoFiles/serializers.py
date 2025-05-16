@@ -49,10 +49,10 @@ class FavouriteFileDetailsSerializer(serializers.ModelSerializer):
     is_favourited = serializers.BooleanField(read_only=True)
     classificationName = serializers.SerializerMethodField()
     filetypeName = serializers.SerializerMethodField()
-
+    documentTypeName = serializers.SerializerMethodField()
     class Meta:
         model = FileDetails
-        fields = ['fileId','caseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','classification','uploaded_by','documentType','is_favourited', 'filetypeName','is_favourited','classificationName']
+        fields = ['fileId','caseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','classification','uploaded_by','documentType','is_favourited', 'filetypeName','is_favourited','classificationName','documentTypeName']
 
     def get_caseInfoDetailsId(self, obj):
         return getattr(obj.caseDetails, 'CaseInfoDetailsId', None)
@@ -63,6 +63,9 @@ class FavouriteFileDetailsSerializer(serializers.ModelSerializer):
     
     def get_filetypeName(self, obj):
         return getattr(obj.fileType, 'lookupName', None)
+    
+    def get_documentTypeName(self, obj):
+        return getattr(obj.documentType, 'lookupName', None)
 
     
 class FileUploadApprovalSerializer(serializers.ModelSerializer):
