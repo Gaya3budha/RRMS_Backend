@@ -135,6 +135,14 @@ class SearchCaseFilesView(APIView):
         if "toAddr" in searchParams and searchParams["toAddr"] not in [None, ""]:
             query &= Q(toAddr__icontains= searchParams['toAddr'])
             filters_applied = True
+        
+        if "fromYear" in searchParams and searchParams["fromYear"] not in [None, ""]:
+            query &= Q(year__gte= searchParams['fromYear'])
+            filters_applied = True
+
+        if "toYear" in searchParams and searchParams["toYear"] not in [None, ""]:
+            query &= Q(year__lte= searchParams['toYear'])
+            filters_applied = True
 
 
         if filters_applied:
