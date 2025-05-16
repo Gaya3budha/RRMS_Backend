@@ -1,6 +1,6 @@
 from django.urls import path
 from django.contrib import admin
-from .views import CaseInfoDetailsView,SearchCaseFilesView,UploadApprovalDetailView,WithdrawAccessApprovalView,SendAccessApprovalReminder,SendUploadApprovalReminder,WithdrawUploadApprovalView,MarkNotificationAsReadAPIView,UploadApprovalListView,RevokeFileAccessRequestAPIView, FileApprovalDetailsViewSet,FilePreviewAPIView,FileAccessRequestListAPIView,ApproveorDenyConfidentialAPIView,NotificationListView, FavouriteFilesView,FavouriteFilesView,LatestUserFilesView
+from .views import CaseInfoDetailsView,SearchCaseFilesView,FileDetailsView,UploadApprovalDetailView,WithdrawAccessApprovalView,SendAccessApprovalReminder,SendUploadApprovalReminder,WithdrawUploadApprovalView,MarkNotificationAsReadAPIView,UploadApprovalListView,RevokeFileAccessRequestAPIView, FileApprovalDetailsViewSet,FilePreviewAPIView,FileAccessRequestListAPIView,ApproveorDenyConfidentialAPIView,NotificationListView, FavouriteFilesView,FavouriteFilesView,LatestUserFilesView
 
 admin.site.site_header = "RRMS Super Admin Portal"
 admin.site.site_title = "RRMS"
@@ -10,6 +10,7 @@ urlpatterns = [
     path('save', CaseInfoDetailsView.as_view(), name='case-data'),
     path('update/<int:pk>', CaseInfoDetailsView.as_view(), name='update-case-data'),
     path('search', SearchCaseFilesView.as_view(), name='search-case'),
+    path('updateFileData/<int:pk>',FileDetailsView.as_view(),name='update-file-data'),
     path('filePreview', FilePreviewAPIView.as_view(), name='file-preview'),
     path('files/<int:file_id>/favourite', FavouriteFilesView.as_view(), name='add-favourite'),
     path('files/<int:file_id>/unfavourite', FavouriteFilesView.as_view(), name='remove-favourite'),

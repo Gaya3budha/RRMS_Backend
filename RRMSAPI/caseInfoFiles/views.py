@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework import status, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import CaseInfoDetailsSerializer,FavouriteFileDetailsSerializer,FileUploadApprovalSerializer,FileAccessRequestSerializer,FileDetailsSerializer,NotificationSerializer, CaseInfoSearchSerializers, FavouriteSerializer
+from .serializers import CaseInfoDetailsSerializer,FileDetailsUpdateSerializer,FavouriteFileDetailsSerializer,FileUploadApprovalSerializer,FileAccessRequestSerializer,FileDetailsSerializer,NotificationSerializer, CaseInfoSearchSerializers, FavouriteSerializer
 from .models import FileDetails, CaseInfoDetails, FavouriteFiles, Notification, FileAccessRequest, FileUploadApproval
 from django.shortcuts import get_object_or_404
 from django.db.models import Prefetch, OuterRef, Exists, Case, When, Value, BooleanField
@@ -221,7 +221,17 @@ class SearchCaseFilesView(APIView):
 
         caseSerializer = CaseInfoSearchSerializers(caseDetails, many = True)
         return Response({"responseData":{"response":caseSerializer.data,"status":status.HTTP_200_OK}})
-       
+
+class FileDetailsView(APIView):
+    permission_classes = [IsAuthenticated, HasRequiredPermission]
+    def put(self, request, pk):
+        file = get_object_or_404(FileDetails, pk=pk)
+        serializer = FileDetailsUpdateSerializer(file, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "File details updated successfully", "data": serializer.data}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 class CaseInfoDetailsView(APIView):
     permission_classes = [IsAuthenticated, HasRequiredPermission]
     parser_classes = [MultiPartParser, FormParser]

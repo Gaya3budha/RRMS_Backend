@@ -96,6 +96,17 @@ class FileUploadApprovalSerializer(serializers.ModelSerializer):
             'department','division','division_name','is_approved','comments','created_at'
         ]
 
+class FileDetailsUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FileDetails
+        fields = ['fileId', 'classification', 'documentType', 'fileType', 'hashTag']
+        extra_kwargs = {
+            'classification': {'required': False},
+            'documentType': {'required': False},
+            'fileType': {'required': False},
+            'hashTag': {'required': False},
+        }
+
 class CaseInfoSearchSerializers(serializers.ModelSerializer):
     stateName = serializers.SerializerMethodField()
     districtName = serializers.SerializerMethodField()

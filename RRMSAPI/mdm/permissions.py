@@ -40,7 +40,7 @@ class HasRequiredPermission(BasePermission):
 
         user_permissions = {perm.codename for perm in role.permissions.all()}
         required_permission = self.get_required_permission(request, view)
-
+        print('required_permission',required_permission)
         if not required_permission:
             return True 
         
