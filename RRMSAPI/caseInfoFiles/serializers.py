@@ -25,13 +25,24 @@ class FileDetailsSearchSerializer(serializers.ModelSerializer):
     CaseInfoDetailsId = serializers.IntegerField(source='CaseInfoDetails.CaseInfoDetailsId',read_only = True)
     is_favourited = serializers.BooleanField(read_only=True)
     is_access_request_approved = serializers.BooleanField()
-    classification_name = serializers.CharField(source='classification.fileClassificationName', read_only=True)
     is_request_raised = serializers.BooleanField()
-    filetype_name = serializers.CharField(source='fileType.fileTypeName', read_only=True)
-
+    classificationName = serializers.SerializerMethodField()
+    filetypeName = serializers.SerializerMethodField()
+    documentTypeName = serializers.SerializerMethodField()
+    
     class Meta:
         model = FileDetails
-        fields = ['fileId','CaseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','filetype_name','classification','classification_name','uploaded_by','is_approved','is_favourited','is_access_request_approved','is_request_raised','documentType','comments']
+        fields = ['fileId','CaseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','filetypeName','classification','classificationName','uploaded_by','is_approved','is_favourited','is_access_request_approved','is_request_raised','documentType','documentTypeName','comments']
+    
+    def get_classificationName(self, obj):
+        return getattr(obj.classification, 'lookupName', None)
+        
+    
+    def get_filetypeName(self, obj):
+        return getattr(obj.fileType, 'lookupName', None)
+    
+    def get_documentTypeName(self, obj):
+        return getattr(obj.documentType, 'lookupName', None)
     
 class FileDetailsSerializer(serializers.ModelSerializer):
     CaseInfoDetailsId = serializers.IntegerField(source='CaseInfoDetails.CaseInfoDetailsId',read_only = True)
@@ -91,14 +102,21 @@ class CaseInfoSearchSerializers(serializers.ModelSerializer):
     unitName = serializers.SerializerMethodField()
     caseTypeName = serializers.SerializerMethodField()
     caseDate = serializers.DateTimeField(format="%d-%m-%Y")
-
+    caseStatusName = serializers.SerializerMethodField()
 
     files = FileDetailsSearchSerializer(many= True, read_only= True)
 
     class Meta:
         model = CaseInfoDetails
-        fields = ['CaseInfoDetailsId','stateId','stateName','year','districtId','districtName','unitId','unitName','Office','caseDate','caseNo','firNo','letterNo','caseType','caseTypeName','author','toAddr','files']
+        fields = ['CaseInfoDetailsId','stateId','stateName','year','districtId','districtName','unitId','unitName','Office','caseDate','caseNo','firNo','letterNo','caseType','caseTypeName','author','toAddr','caseStatus','caseStatusName','files']
 
+    def get_caseStatusName(self, obj):
+        try:
+            state = GeneralLookUp.objects.get(lookupId = obj.caseType)
+            return state.lookupName
+        except GeneralLookUp.DoesNotExist:
+            return None
+        
     def get_stateName(self, obj):
         try:
             state = StateMaster.objects.get(stateId = obj.stateId)
