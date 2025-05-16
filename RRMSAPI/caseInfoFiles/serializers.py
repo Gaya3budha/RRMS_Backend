@@ -47,15 +47,23 @@ class FileDetailsSerializer(serializers.ModelSerializer):
 class FavouriteFileDetailsSerializer(serializers.ModelSerializer):
     caseInfoDetailsId = serializers.SerializerMethodField()
     is_favourited = serializers.BooleanField(read_only=True)
-    classification_name = serializers.CharField(source='classification.fileClassificationName', read_only=True)
-    filetype_name = serializers.CharField(source='fileType.fileTypeName', read_only=True)
+    classificationName = serializers.SerializerMethodField()
+    filetypeName = serializers.SerializerMethodField()
 
     class Meta:
         model = FileDetails
-        fields = ['fileId','caseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','classification','uploaded_by','documentType','classification_name','is_favourited', 'filetype_name','classification_name','is_favourited', 'filetype_name']
+        fields = ['fileId','caseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','classification','uploaded_by','documentType','is_favourited', 'filetypeName','is_favourited','classificationName']
 
     def get_caseInfoDetailsId(self, obj):
         return getattr(obj.caseDetails, 'CaseInfoDetailsId', None)
+    
+    def get_classificationName(self, obj):
+        return getattr(obj.classification, 'lookupName', None)
+        
+    
+    def get_filetypeName(self, obj):
+        return getattr(obj.fileType, 'lookupName', None)
+
     
 class FileUploadApprovalSerializer(serializers.ModelSerializer):
     division_name = serializers.CharField(source='division.divisionName', read_only=True)
