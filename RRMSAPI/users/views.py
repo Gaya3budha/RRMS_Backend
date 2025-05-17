@@ -154,7 +154,7 @@ class GetDivisionrAdminsView(APIView):
         print("role_id",role_id)
         print("division_id",divsion_id)
 
-        users = User.objects.filter(role__roleId=4,designation__division__divisionId=divsion_id)
+        users = User.objects.filter(role__roleId=3,designation__division__divisionId=divsion_id)
 
         print("users",users)
         serialized_users = UserSerializer(users, many=True)
