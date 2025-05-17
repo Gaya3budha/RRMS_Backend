@@ -35,22 +35,39 @@ insert into mdm_designationmaster values(1,'Director General of Police','Y',curr
 
 
 -- generalLokup Script
-insert into public.mdm_generallookup values(1,'Investigation',1,'Y',CURRENT_DATE,1);
-insert into public.mdm_generallookup values(2,'Enquiry',1,'Y',CURRENT_DATE,2);
-insert into public.mdm_generallookup values(3,'Case Files',2,'Y',CURRENT_DATE,1);
-insert into public.mdm_generallookup values(4,'Correspondence',2,'Y',CURRENT_DATE,2);
-insert into public.mdm_generallookup values(5,'Public',7,'Y',CURRENT_DATE,1);
-insert into public.mdm_generallookup values(6,'Confidential',7,'Y',CURRENT_DATE,2);
-insert into public.mdm_generallookup values(20,'Image',5,'Y',CURRENT_DATE,1);
-insert into public.mdm_generallookup values(21,'Document',5,'Y',CURRENT_DATE,2);
-insert into public.mdm_generallookup values(22,'Audio',5,'Y',CURRENT_DATE,3);
-insert into public.mdm_generallookup values(23,'Video',5,'Y',CURRENT_DATE,4);
+insert into public.mdm_generallookup values(1,'Investigation',1,1,'Y',CURRENT_DATE);
+insert into public.mdm_generallookup values(2,'Enquiry',1,2,'Y',CURRENT_DATE);
+insert into public.mdm_generallookup values(3,'Case Files',2,1,'Y',CURRENT_DATE);
+insert into public.mdm_generallookup values(4,'Correspondence',2,2,'Y',CURRENT_DATE);
+insert into public.mdm_generallookup values(5,'Public',7,1,'Y',CURRENT_DATE);
+insert into public.mdm_generallookup values(6,'Confidential',7,2,'Y',CURRENT_DATE);
 
-insert into public.mdm_generallookup("lookupName","CategoryId",active,"lastmodifiedDate") 
-select "fileTypeName",3,'Y',current_date from public.mdm_filetype
+insert into public.mdm_generallookup values(7,'Letters',4,1,'Y',CURRENT_DATE);
+insert into public.mdm_generallookup values(8,'Note Sheet',4,2,'Y',CURRENT_DATE);
 
-insert into public.mdm_generallookup("lookupName","CategoryId",active,"lastmodifiedDate") 
-select "statusName",6,'Y',current_date from public.mdm_casestatus
+insert into public.mdm_generallookup values(9,'Orders',4,3,'Y',CURRENT_DATE);
+insert into public.mdm_generallookup values(10,'Correspondence',7,4,'Y',CURRENT_DATE);
+
+insert into public.mdm_generallookup values(12,'FIR',3,1,'Y',CURRENT_DATE);
+insert into public.mdm_generallookup values(13,'Complaint copy',3,2,'Y',CURRENT_DATE);
+insert into public.mdm_generallookup values(14,'Notice to the complainant',3,3,'Y',CURRENT_DATE);
+insert into public.mdm_generallookup values(15,'Notice to the witness',3,4,'Y',CURRENT_DATE);
+insert into public.mdm_generallookup values(16,'Notice to the accused',3,5,'Y',CURRENT_DATE);
+insert into public.mdm_generallookup values(17,'Statement of complainant',3,6,'Y',CURRENT_DATE);
+insert into public.mdm_generallookup values(18,'Statement of witness',3,7,'Y',CURRENT_DATE);
+insert into public.mdm_generallookup values(19,'Statement of accused',3,8,'Y',CURRENT_DATE);
+insert into public.mdm_generallookup values(20,'Arrest Documents',3,9,'Y',CURRENT_DATE);
+
+
+insert into public.mdm_generallookup values(21,'Under Investigation',6,1,'Y',CURRENT_DATE);
+insert into public.mdm_generallookup values(22,'FInal report',6,2,'Y',CURRENT_DATE);
+insert into public.mdm_generallookup values(23,'Charge Sheet [A]',6,3,'Y',CURRENT_DATE);
+insert into public.mdm_generallookup values(24,'Charge Sheet [B]',6,4,'Y',CURRENT_DATE);
+insert into public.mdm_generallookup values(25,'Charge Sheet [C]',6,5,'Y',CURRENT_DATE);
+insert into public.mdm_generallookup values(26,'Pending Trail',6,6,'Y',CURRENT_DATE);
+insert into public.mdm_generallookup values(27,'Disposal',6,7,'Y',CURRENT_DATE);
+insert into public.mdm_generallookup values(28,'Under Enquiry',6,8,'Y',CURRENT_DATE);
+
 
 
 insert into public.mdm_division values(1,'Traffic & Transport Division','Y',current_date,1);

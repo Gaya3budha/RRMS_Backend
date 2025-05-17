@@ -816,7 +816,7 @@ class UploadApprovalListView(APIView):
         if user.role.roleId == 1:  # Admin role
             # Admin can see all approvals where they are assigned for review
             approvals = approvals.filter(reviewed_by=user)
-        elif user.role.roleId == 4:  # Viewer role
+        elif user.role.roleId == 3:  # content manager role
             # Viewer can also see the approvals where they are assigned for review
             approvals = approvals.filter(reviewed_by=user)
         else:  # Regular User
