@@ -163,7 +163,7 @@ class SearchCaseFilesView(APIView):
                     )
         favourite_subquery = FavouriteFiles.objects.filter(user=request.user,file=OuterRef('pk'))
         
-        if user.is_staff or user.role.roleId in [1,4]:
+        if user.is_staff or user.role.roleId in [1,3]:
             file_filter = Q()  # Admin sees all
         else:
            

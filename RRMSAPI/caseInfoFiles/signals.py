@@ -44,7 +44,7 @@ def notify_admin_on_upload(sender, instance, created, **kwargs):
         
         eligible_users = User.objects.filter(
             designation__division=division,
-            role__roleId__in=[1, 4]  # Admin (1) or Viewer (4) role
+            role__roleId__in=[3]  # Admin (1) or Viewer (4) role
         ).exclude(id=uploader.id).distinct()
 
         print('eligible_users',eligible_users)
