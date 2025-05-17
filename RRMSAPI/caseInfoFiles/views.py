@@ -447,7 +447,7 @@ class FilePreviewAPIView(APIView):
             user_role_id = request.user.role.roleId
 
             # Direct access if user is uploader, Admin, or Viewer
-            if request.user == objFile.uploaded_by or user_role_id in [1, 4]:
+            if request.user == objFile.uploaded_by or user_role_id in [1, 3]:
                 record_file_access(request.user, objFile)
 
                 if not os.path.exists(filePath):
