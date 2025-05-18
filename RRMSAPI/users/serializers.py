@@ -115,5 +115,15 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         return token
 
+class UserSearchSerializer(serializers.ModelSerializer):
+    roleName = serializers.CharField(source='role.roleName', read_only=True)
+    designation = serializers.PrimaryKeyRelatedField(
+        queryset=Designation.objects.all(), write_only=True, required=True, many =True
+    )
+    designation_detail = DesignationSerializer(source='designation', read_only=True, many=True)
+
+    class Meta:
+        model = User
+        fields = ['kgid','email','first_name','last_name','mobileno','role','roleName','designation','designation_detail']
     
 

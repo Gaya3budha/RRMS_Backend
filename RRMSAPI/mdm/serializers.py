@@ -33,14 +33,14 @@ class DivisionSerializer(serializers.ModelSerializer):
 
 class DesignationSerializer(serializers.ModelSerializer):
     division = DivisionSerializer(many=True,read_only=True)
-    department = DepartmentSeriallizer(many=True,read_only=True)
+    # department = DepartmentSeriallizer(many=True,read_only=True)
 
-    divisionIds = serializers.PrimaryKeyRelatedField(source='division',queryset=Division.objects.all(), many=True)
-    departmentIds = serializers.PrimaryKeyRelatedField(source='department',queryset=Department.objects.all(), many=True)
+    # divisionIds = serializers.PrimaryKeyRelatedField(source='division',queryset=Division.objects.all(), many=True)
+    # departmentIds = serializers.PrimaryKeyRelatedField(source='department',queryset=Department.objects.all(), many=True)
 
     class Meta:
         model = Designation
-        fields = ['designationId','designationName','division','divisionIds','departmentIds', 'department']
+        fields = ['designationId','designationName','division']
 
 class DesignationHierarchySerializer(serializers.ModelSerializer):
     parent_designation_name = serializers.StringRelatedField(source='parent_designation', read_only=True)

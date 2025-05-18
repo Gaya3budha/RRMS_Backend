@@ -68,6 +68,16 @@ insert into public.mdm_generallookup values(26,'Pending Trail',6,6,'Y',CURRENT_D
 insert into public.mdm_generallookup values(27,'Disposal',6,7,'Y',CURRENT_DATE);
 insert into public.mdm_generallookup values(28,'Under Enquiry',6,8,'Y',CURRENT_DATE);
 
+insert into public.mdm_generallookup values(29,'Image',5,'Y',CURRENT_DATE,1);
+insert into public.mdm_generallookup values(30,'Document',5,'Y',CURRENT_DATE,2);
+insert into public.mdm_generallookup values(31,'Audio',5,'Y',CURRENT_DATE,3);
+insert into public.mdm_generallookup values(32,'Video',5,'Y',CURRENT_DATE,4);
+
+insert into public.mdm_generallookup("lookupName","CategoryId",active,"lastmodifiedDate") 
+select "fileTypeName",3,'Y',current_date from public.mdm_filetype
+
+insert into public.mdm_generallookup("lookupName","CategoryId",active,"lastmodifiedDate") 
+select "statusName",6,'Y',current_date from public.mdm_casestatus
 
 
 insert into public.mdm_division values(1,'Traffic & Transport Division','Y',current_date,1);

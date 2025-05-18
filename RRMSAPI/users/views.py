@@ -3,13 +3,14 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import UserSerializer, CustomTokenObtainPairSerializer
+from .serializers import UserSerializer, CustomTokenObtainPairSerializer, UserSearchSerializer
 from rest_framework.exceptions import AuthenticationFailed
 from .models import User, ActiveUser, Designation
 # from rest_framework.permissions import IsAdminUser
 from mdm.models import Role
 from mdm.permissions import IsSuperAdminOrReadOnly
 from datetime import date
+from django.db.models import Q
 
 
 # Create your views here.
@@ -164,3 +165,44 @@ class GetDivisionrAdminsView(APIView):
         })
 
 
+class SearchUsersAPIView(APIView):
+    def post(self, request):
+        searchParams = request.data
+        query = Q()
+        filters_applied = False
+
+        if "departmentId" in searchParams and searchParams["departmentId"] not in [None, ""]:
+            query &= Q(designation__department__departmentId__icontains = searchParams['departmentId'])
+            filters_applied = True
+
+        if "divisionId" in searchParams and searchParams["divisionId"] not in [None, ""]:
+            query &= Q(designation__division__divisionId__icontains= searchParams['divisionId'])
+            filters_applied = True
+
+        if "designationId" in searchParams and searchParams["designationId"] not in [None, ""]:
+            query &= Q(designation__designationId__icontains= searchParams['designationId'])
+            filters_applied = True
+        
+        if "firstName" in searchParams and searchParams["firstName"] not in [None, ""]:
+            query &= Q(first_name__icontains= searchParams['firstName'])
+            filters_applied = True
+
+        if "lastName" in searchParams and searchParams["lastName"] not in [None, ""]:
+            query &= Q(last_name__icontains= searchParams['lastName'])
+            filters_applied = True
+
+        if "mobileNo" in searchParams and searchParams["mobileNo"] not in [None, ""]:
+            query &= Q(mobileno__icontains= searchParams['mobileNo'])
+            filters_applied = True
+        
+        if "kgid" in searchParams and searchParams["kgid"] not in [None, ""]:
+            query &= Q(kgid__icontains= searchParams['kgid'])
+            filters_applied = True
+
+        if filters_applied:
+            queryset = User.objects.filter(query).prefetch_related('designation__division','designation__department').distinct()
+        else:
+            queryset = User.objects.none()
+
+        serializer = UserSearchSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
