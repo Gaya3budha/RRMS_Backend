@@ -99,12 +99,13 @@ class FileUploadApprovalSerializer(serializers.ModelSerializer):
 class FileDetailsUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = FileDetails
-        fields = ['fileId', 'classification', 'documentType', 'fileType', 'hashTag']
+        fields = ['fileId', 'classification', 'documentType', 'fileType', 'hashTag','subject']
         extra_kwargs = {
             'classification': {'required': False},
             'documentType': {'required': False},
             'fileType': {'required': False},
             'hashTag': {'required': False},
+            'subject':{'required' : False}
         }
 
 class CaseInfoSearchSerializers(serializers.ModelSerializer):
