@@ -1009,23 +1009,28 @@ class NotificationListView(APIView):
         if not division_id:
             return Response({"detail": "Division ID is required."}, status=400)
         
-        # user_division_role = UserDivisionRole.objects.filter(user=user).first()
     
-        if user.is_staff:
-            notifications = Notification.objects.filter(
-                type__in=allowed_types
-            ).order_by('-created_at').distinct()
-        elif user.role.roleId==1:
-            notifications = Notification.objects.filter(
-                division__divisionId=division_id,
-                type__in=allowed_types
-            ).order_by('-created_at')
-        else:
-            notifications = Notification.objects.filter(
+        notifications = Notification.objects.filter(
                 recipient=user,
                 division__divisionId=division_id,
                 type__in=allowed_types
             ).order_by('-created_at')
+        
+        # if user.is_staff:
+        #     notifications = Notification.objects.filter(
+        #         type__in=allowed_types
+        #     ).order_by('-created_at').distinct()
+        # elif user.role.roleId==1:
+        #     notifications = Notification.objects.filter(
+        #         division__divisionId=division_id,
+        #         type__in=allowed_types
+        #     ).order_by('-created_at')
+        # else:
+        #     notifications = Notification.objects.filter(
+        #         recipient=user,
+        #         division__divisionId=division_id,
+        #         type__in=allowed_types
+        #     ).order_by('-created_at')
         # else:
         #     return Response({"detail": "Not authorized."}, status=403)
 
