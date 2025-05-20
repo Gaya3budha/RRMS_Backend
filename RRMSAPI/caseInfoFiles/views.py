@@ -420,6 +420,64 @@ class CaseInfoDetailsView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+class CaseFileUploadView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request, casedetailsId):
+        try:
+            caseData = get_object_or_404(CaseInfoDetails, pk=casedetailsId)
+            file_details_json = request.data.get("fileDetails")
+
+            if isinstance(file_details_json, str):
+                file_details_data = json.loads(file_details_json)
+
+            files = request.FILES.getlist("Files")
+            if not files:
+                return Response({"error": "No files uploaded"}, status=400)
+            
+            if len(files) != len(file_details_data):
+                return Response({"error": "Mismatch between file details and files"}, status=400)
+
+            file_responses = []
+            for i, file in enumerate(files):
+                content = file.read()
+                file_hash = hashlib.sha256(content).hexdigest()
+
+                if FileDetails.objects.filter(fileHash=file_hash, caseDetails=caseData).exists():
+                    continue  # skip duplicate
+
+                file_name = file.name
+                file_path = os.path.join(UPLOAD_DIR, file_name)
+                os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                with open(file_path, "wb") as f:
+                    f.write(content)
+
+                file_detail = FileDetails.objects.create(
+                    caseDetails=caseData,
+                    fileName=file_name,
+                    filePath=file_path,
+                    fileHash=file_hash,
+                    hashTag=file_details_data[i]["hashTag"],
+                    subject=file_details_data[i]["subject"],
+                    fileType=GeneralLookUp.objects.get(lookupId=file_details_data[i]["fileType"]),
+                    classification=GeneralLookUp.objects.get(lookupId=file_details_data[i]["classification"]),
+                    documentType=GeneralLookUp.objects.get(lookupId=file_details_data[i]["documentType"]),
+                    uploaded_by=request.user,
+                    division=caseData.division
+                )
+
+                record_file_access(request.user, file_detail)
+                file_responses.append(FileDetailsSerializer(file_detail).data)
+
+            return Response({
+                "files": file_responses,
+                "message": "Files uploaded successfully"
+            }, status=201)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
 class FilePreviewAPIView(APIView):
     permission_classes = [IsAuthenticated, HasCustomPermission]
     required_permission = 'add_filepreviewapi'

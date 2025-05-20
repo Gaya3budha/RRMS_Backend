@@ -52,22 +52,7 @@ class CreateUserView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-# class UserDivisionRoleCreateAPIView(APIView):
-#    def post(self, request, *args, **kwargs):
-#         data = request.data.copy()
-        
-#         user_id = data.get('user')
-#         if not user_id:
-#             return Response({"error": "User ID is required."}, status=status.HTTP_400_BAD_REQUEST)
-
-#         serializer = UserDivisionRoleCreateSerializer(data=data)
-        
-#         if serializer.is_valid():
-#             serializer.save(user_id=user_id)  # pass user_id explicitly
-#             return Response({"message": "Divsion added successfully", "data": serializer.data}, status=status.HTTP_201_CREATED)
-#         else:
-#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+  
 class UpdateUserView(APIView):
     def patch(self,request,kgid_user,*args,**kwargs):
         try:
