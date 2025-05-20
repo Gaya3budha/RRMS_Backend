@@ -124,6 +124,6 @@ class UserSearchSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['kgid','email','first_name','last_name','mobileno','role','roleName','designation','designation_detail']
+        fields = ['kgid','email','first_name','last_name','mobileno','role','roleName','designation','designation_detail','is_active']
     
 
