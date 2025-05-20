@@ -25,6 +25,8 @@ import os
 import mimetypes
 import traceback
 from datetime import timedelta
+import mammoth
+import pandas as pd
 
 UPLOAD_DIR = os.path.join(settings.MEDIA_ROOT, "uploads","CID")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -489,63 +491,46 @@ class FilePreviewAPIView(APIView):
         case_id = request.data.get("case_id")
         division_id = request.data.get("division_id")
 
-        if not file_hash:
+        if not file_hash or not case_id:
             return Response({
                 "responseData": {
-                    "error": "fileHash is required",
+                    "error": "fileHash and case details id are required",
                     "status": status.HTTP_400_BAD_REQUEST
                 }
             }, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            objFile = FileDetails.objects.select_related('classification').get(fileHash=file_hash, caseDetails_id = case_id )
+            objFile = FileDetails.objects.select_related('classification').get(fileHash=file_hash, 
+                                                                               caseDetails_id = case_id )
             filePath = objFile.filePath
-            print('file path:',filePath)
+            file_ext = os.path.splitext(filePath)[1].lower()
 
             user_role_id = request.user.role.roleId
 
             # Direct access if user is uploader, Admin, or Viewer
-            if request.user == objFile.uploaded_by or user_role_id in [1, 3]:
-                record_file_access(request.user, objFile)
+            if request.user != objFile.uploaded_by and user_role_id not in [1, 3]:
+                if objFile.classification_id==6:
+                    is_approved = FileAccessRequest.objects.filter(file=objFile, requested_by=request.user,
+                                    is_approved=True, division_id=objFile.division_id).exists()
+                    
+                    if not is_approved:
+                        already_requested = FileAccessRequest.objects.filter(
+                            file=objFile,
+                            requested_by=request.user,
+                            division_id=objFile.division_id
+                        ).exists()
 
-                if not os.path.exists(filePath):
-                    raise FileNotFoundError("File not found on disk")
-
-                mime_type, _ = mimetypes.guess_type(filePath)
-                return FileResponse(open(filePath, 'rb'), content_type=mime_type or 'application/octet-stream')
-
-            if objFile.classification_id == 6 and objFile.uploaded_by_id != request.user.id:
-                # objFile.division_id in user_division_ids and not has_access
-
-                # Check if user already has access
-                is_approved = FileAccessRequest.objects.filter(
-                    file=objFile,
-                    requested_by=request.user,
-                    is_approved=True,
-                    division_id=objFile.division_id
-                ).exists()
-
-                print('is_Approved',is_approved)
-
-                if not is_approved:
-                    already_requested = FileAccessRequest.objects.filter(
-                        file=objFile,
-                        requested_by=request.user,
-                        division_id=objFile.division_id
-                    ).exists()
-
-                    if not already_requested:
-                        if not requested_to_id:
-                            return Response({
-                                "responseData": {
-                                    "error": "requested_to is required for private files",
-                                    "status": status.HTTP_400_BAD_REQUEST
-                                }
-                            }, status=status.HTTP_400_BAD_REQUEST)
-
-                        requested_to_id = request.data.get("requested_to")
+                        if not already_requested:
+                            if not requested_to_id:
+                                return Response({
+                                    "responseData": {
+                                        "error": "requested_to is required for private files",
+                                        "status": status.HTTP_400_BAD_REQUEST
+                                    }
+                                }, status=status.HTTP_400_BAD_REQUEST)
+                            
                         requested_to_user = get_object_or_404(User, id=requested_to_id)
-                        access_request = FileAccessRequest.objects.create(
+                        FileAccessRequest.objects.create(
                             file=objFile,
                             requested_by=request.user,
                             requested_to=requested_to_user,
@@ -555,26 +540,87 @@ class FilePreviewAPIView(APIView):
                             case_details_id = CaseInfoDetails.objects.get(CaseInfoDetailsId=case_id)
                         )
 
-                    return Response({
-                        "responseData": {
-                            "message": "Access request sent. Waiting for approval.",
-                            "status": status.HTTP_202_ACCEPTED
-                        }
-                    })
-
+                        return Response({
+                            "responseData": {
+                                "message": "Access request sent. Waiting for approval.",
+                                "status": status.HTTP_202_ACCEPTED
+                            }
+                        })
+                    
             record_file_access(request.user, objFile)
 
             if not os.path.exists(filePath):
-                raise FileNotFoundError("File not found on disk")
+                    raise FileNotFoundError("File not found on disk")
+            
+            if file_ext in ['.png', '.jpg', '.jpeg', '.pdf', '.mp4', '.webm', '.mp3', '.wav']:
+                mime_type, _ = mimetypes.guess_type(filePath)
+                response = FileResponse(open(filePath, 'rb'), content_type=mime_type or 'application/octet-stream')
+                response['Content-Disposition'] = 'inline; filename="{}"'.format(os.path.basename(filePath))
+                return response
+            
+            elif file_ext == '.docx' or file_ext=='.doc':
+                with open(filePath, "rb") as docx_file:
+                    result = mammoth.convert_to_html(docx_file)
+                    html_content = result.value
+                    return Response({
+                        "type": "html",
+                        "html": html_content
+                    }, status=200)
 
-            mime_type, _ = mimetypes.guess_type(filePath)
-            return FileResponse(open(filePath, 'rb'), content_type=mime_type or 'application/octet-stream')
+            elif file_ext == '.xlsx':
+                df = pd.read_excel(filePath)
+                html_content = df.to_html(index=False, border=0)
+                return Response({
+                    "type": "html",
+                    "html": html_content
+                }, status=200)
 
+            else:
+                return Response({
+                    "responseData": {
+                        "error": "Unsupported file type for preview",
+                        "status": status.HTTP_415_UNSUPPORTED_MEDIA_TYPE
+                    }
+                }, status=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
+            
         except FileDetails.DoesNotExist:
-            raise Http404("No file with given hash")
+            raise Http404("File not found")
 
         except FileNotFoundError:
-            raise Http404("File path invalid or missing")
+            raise Http404("File missing from server")
+
+        #         mime_type, _ = mimetypes.guess_type(filePath)
+        #         return FileResponse(open(filePath, 'rb'), content_type=mime_type or 'application/octet-stream')
+
+        #     if objFile.classification_id == 6 and objFile.uploaded_by_id != request.user.id:
+        #         # objFile.division_id in user_division_ids and not has_access
+
+       
+
+        #         print('is_Approved',is_approved)
+
+        
+
+        
+
+        #                 
+       
+
+                    
+
+        #     record_file_access(request.user, objFile)
+
+        #     if not os.path.exists(filePath):
+        #         raise FileNotFoundError("File not found on disk")
+
+        #     mime_type, _ = mimetypes.guess_type(filePath)
+        #     return FileResponse(open(filePath, 'rb'), content_type=mime_type or 'application/octet-stream')
+
+        # except FileDetails.DoesNotExist:
+        #     raise Http404("No file with given hash")
+
+        # except FileNotFoundError:
+        #     raise Http404("File path invalid or missing")
   
 class FileAccessRequestListAPIView(APIView):
     # queryset = FileAccessRequest.objects.all().order_by('-created_at')
