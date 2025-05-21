@@ -58,7 +58,7 @@ class UpdateUserView(APIView):
         try:
             # getting the user based on kgid
             user = User.objects.get(kgid = kgid_user)
-
+            data = request.data
             # blank dictinary object
             updated_data = {}
 
@@ -66,40 +66,44 @@ class UpdateUserView(APIView):
             # updated_data['set_password']=request.data['set_password']
 
             # checking if roleId is present in request body or not
-            if 'roleId' in request.data:
-                role_id = request.data['roleId']
+            if 'roleId' in data:
                 try:
-                    new_role = Role.objects.get(roleId=role_id)
-                    updated_data['role'] = new_role
+                    new_role = Role.objects.get(roleId=data['roleId'])
+                    user.role = new_role
                 except Role.DoesNotExist:
                     return Response({"error": "Role not found"}, status=status.HTTP_404_NOT_FOUND)
 
             # Handle designation update (many-to-many)
-            if 'designationIds' in request.data:
-                designation_ids = request.data['designationIds']
+            if 'designationIds' in data:
+                designation_ids = data['designationIds']
+
                 if isinstance(designation_ids, list):
-                    designations = Designation.objects.filter(id__in=designation_ids)
+                    designations = Designation.objects.filter(designationId__in=designation_ids)
                     user.designation.set(designations)
                 else:
                     return Response({"error": "designationIds must be a list"}, status=status.HTTP_400_BAD_REQUEST)
 
+            if 'password' in data:
+                user.set_password(data['password'])
+            
+            if 'isActive' in data:
+                user.is_active = data['isActive']
+            
+            excluded = ['id', 'password', 'role', 'designation', 'roleId', 'designationIds', 'is_active']
+            updatable_fields = [field.name for field in User._meta.fields if field.name not in excluded]
+
             # Apply any other updates (currently only role is handled via updated_data)
-            for key, value in updated_data.items():
-                setattr(user, key, value)
+            for key, value in data.items():
+                if key in updatable_fields:
+                    setattr(user, key, value)
 
-                user.save()
+            user.save()
 
-                serializer = UserSerializer(user,  context={'request': request})
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            else:
-                return Response({"error": "roleId field is required"}, status=status.HTTP_400_BAD_REQUEST)
+            serializer = UserSerializer(user,  context={'request': request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
 
         except User.DoesNotExist:
             return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-
-        except Role.DoesNotExist:
-            return Response({"error": "Role not found"}, status=status.HTTP_404_NOT_FOUND)
-
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     #  serializer_class = CustomTokenObtainPairSerializer
