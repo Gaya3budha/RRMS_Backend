@@ -7,11 +7,20 @@ from django.contrib.auth import get_user_model
 # Create your models here.
 # User Table
 class CustomUserManager(BaseUserManager):
-    def create_user(self,kgid,email,password=None, **extra_fields):
+    def create_user(self,kgid,email,password=None,role=None,designation=None, **extra_fields):
         if not kgid:
             raise ValueError('KGID is mandatory')
         email = self.normalize_email(email)
-        user = self.model(email=email, kgid = kgid, **extra_fields)
+        user = self.model(email=email, kgid = kgid, role=role, designation=designation, **extra_fields)
+
+        if role and getattr(role, "name", None) == "Admin":
+            admin_count = User.objects.filter(is_superuser=True).count()
+            if admin_count >= 5:
+                raise ValidationError("Cannot create more than 5 admin users.")
+
+            user.is_staff = True
+            user.is_superuser = True
+            
         user.set_password(password)
         user.save(using=self._db)
         return user
