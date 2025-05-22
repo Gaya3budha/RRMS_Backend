@@ -1,6 +1,8 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 from mdm.models import Role,Designation
+from django.core.exceptions import ValidationError
+from django.contrib.auth import get_user_model
 
 # Create your models here.
 # User Table
@@ -15,6 +17,12 @@ class CustomUserManager(BaseUserManager):
         return user
 
     def create_superuser(self,kgid,email,password=None,role=None,designation=None, **extra_fields):
+        User = get_user_model()
+
+    # Count current superusers (or you can check is_staff=True if you want to restrict both staff and superusers)
+        admin_count = User.objects.filter(is_superuser=True).count()
+        if admin_count >= 5:
+            raise ValidationError("Cannot create more than 5 admin users.")
         user = self.create_user(kgid,email, password, **extra_fields)
         user.is_staff = True
         user.is_superuser = True
