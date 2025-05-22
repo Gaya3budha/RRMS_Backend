@@ -114,6 +114,13 @@ class SMTPViewSet(viewsets.ModelViewSet):
         print("count",queryset.count())
         return queryset
     
+    def perform_create(self, serializer):
+        serializer.save(
+            created_by=self.request.user.id,
+            modified_by=self.request.user.id,  # Optional: Track on creation
+            modified_at=timezone.now()
+        )
+    
     def perform_update(self, serializer):
         serializer.save(
             modified_by=self.request.user.id,
