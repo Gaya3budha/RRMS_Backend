@@ -3,6 +3,7 @@ from users.models import User
 from mdm.models import CaseStatus, FileClassification, FileType, Division, GeneralLookUp
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.urls import reverse
 
 # Create your models here.
 
@@ -77,6 +78,9 @@ class FileUploadApproval(models.Model):
     created_at = models.DateField(auto_now_add=True,null=True,blank=True)
     approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='upload_approvals_taken')
 
+    def get_absolute_url(self):
+        return reverse("upload-approval-detail-view", kwargs={"id": self.pk})
+    
 class FileAccessRequest(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
@@ -102,6 +106,8 @@ class FileAccessRequest(models.Model):
     revoke_enddate=models.DateField(null = True, blank = True)
     is_revoked = models.BooleanField(default=False)
 
+    def get_absolute_url(self):
+        return reverse("access-request-action", kwargs={"pk": self.pk})
 
 class FavouriteFiles(models.Model):
     user = models.ForeignKey(User,on_delete=models.CASCADE, related_name = 'favorited_by')

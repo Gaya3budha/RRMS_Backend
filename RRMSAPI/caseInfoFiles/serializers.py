@@ -170,10 +170,32 @@ class NotificationSerializer(serializers.ModelSerializer):
     division = DivisionSerializer()
     requestedBy = UserSerializer()
     recipient = UserSerializer()
+    redirect_url = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
 
     class Meta:
         model = Notification
         fields = "__all__"
+        extra_fields = ['redirect_url', 'status']
+
+    def get_status(self, obj):
+        if obj.reference_object and hasattr(obj.reference_object, 'status'):
+            return obj.reference_object.status.lower()
+        return "all"
+
+    def get_redirect_url(self, obj):
+        ref_obj = obj.reference_object
+        if ref_obj:
+            print(f"Reference object: {ref_obj}")
+            if hasattr(ref_obj, "get_absolute_url"):
+                base_url = ref_obj.get_absolute_url()
+                tab = self.get_status(obj)
+                return f"{base_url}?tab={tab}"
+            else:
+                print("Reference object does not have get_absolute_url()")
+        else:
+            print("Reference object is None")
+        return "/notifications"
 
 class FileAccessRequestSerializer(serializers.ModelSerializer):
     division_name = serializers.CharField(source='division.divisionName', read_only=True)
