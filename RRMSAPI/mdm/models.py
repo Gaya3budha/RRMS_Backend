@@ -1,6 +1,5 @@
 from django.db import models
 from django.contrib.auth.models import  Permission
-
 # Create your models here.
 # # Permission Table
 # class Permission(models.Model):
@@ -163,3 +162,19 @@ class GeneralLookUp(models.Model):
     lookupOrder = models.IntegerField(null = True, blank=True)
     active = models.CharField(default ='Y')
     lastmodifiedDate = models.DateTimeField(auto_now= True)
+
+class SMTPSettings(models.Model):
+    smtpId = models.AutoField(primary_key= True)
+    smtpServerName = models.CharField(max_length=255)
+    portNo =models.IntegerField()
+    encryption = models.CharField(max_length=50)  # e.g., 'SSL', 'TLS', 'None'
+    username = models.CharField(max_length=255)
+    password = models.CharField(max_length=255)
+    isActive = models.BooleanField(default=True)
+    created_at=models.DateTimeField(auto_now=True)
+    created_by = models.IntegerField()
+    modified_at = models.DateTimeField(null=True, blank=True)
+    modified_by = models.IntegerField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.smtpServerName} ({'Active' if self.isActive else 'Inactive'})"

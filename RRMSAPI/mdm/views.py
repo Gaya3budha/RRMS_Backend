@@ -1,15 +1,16 @@
 from django.shortcuts import render
 from rest_framework import status
-from .models import Role,DesignationHierarchy, Department,Division,GeneralLookUp, DistrictMaster, StateMaster,UnitMaster, Designation, FileType, FileClassification, CaseStatus
+from .models import Role,SMTPSettings,DesignationHierarchy, Department,Division,GeneralLookUp, DistrictMaster, StateMaster,UnitMaster, Designation, FileType, FileClassification, CaseStatus
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .permissions import HasRequiredPermission, IsSuperAdminOrReadOnly
 from rest_framework import viewsets
-from .serializers import DesignationHierarchySerializer,CorrFilesSerializer,CaseFilesSerializer,FileTypeSerializer,FileClassificationSerializer,CaseStatusSerializer,DepartmentSeriallizer,LookupCustomSerializer, DivisionSerializer, DesignationSerializer
+from .serializers import DesignationHierarchySerializer,SMTPSerializer,CorrFilesSerializer,CaseFilesSerializer,FileTypeSerializer,FileClassificationSerializer,CaseStatusSerializer,DepartmentSeriallizer,LookupCustomSerializer, DivisionSerializer, DesignationSerializer
 from rest_framework.permissions import IsAdminUser
 from .utils import CATEGORY_LABELS
 from rest_framework.generics import ListAPIView
+from django.utils import timezone
 
 # Create your views here.
 class StateMasterView(APIView):
@@ -57,34 +58,6 @@ class DistrictMasterView(APIView):
         return Response({"responseData":list(districts),"statusCode" :status.HTTP_200_OK})
 
 class DivisionViewSet(viewsets.ModelViewSet):
-    # # queryset = DivisionMaster.objects.all()
-    # serializer_class = DivisionSerializer
-    # # permission_classes = [HasRequiredPermission]
-
-    # def get_queryset(self):
-    #     user = self.request.user
-    #     if user.is_staff:  # admin user
-    #             return DivisionMaster.objects.filter(active='Y')
-    #     else:
-    #             division_id = self.request.query_params.get('division_id')
-    #             if division_id:
-    #                 return DivisionMaster.objects.filter(divisionId=division_id, active='Y')
-    #             else:
-    #                 return DivisionMaster.objects.none()
-    #     # return DivisionMaster.objects.none()
-
-    # def get_permissions(self):
-    #     if self.request.user and self.request.user.is_staff:
-    #         permission_classes = [IsAdminUser]
-    #     else:
-    #         permission_classes = [HasRequiredPermission]
-    #     return [permission() for permission in permission_classes]
-    
-    # def destroy(self, request, *args, **kwargs):
-    #     instance = self.get_object()
-    #     instance.active = 'N'
-    #     instance.save()
-    #     return Response(status=status.HTTP_204_NO_CONTENT)
     permission_classes = [IsSuperAdminOrReadOnly]
     queryset = Division.objects.all()
     serializer_class = DivisionSerializer
@@ -105,24 +78,6 @@ class DivisionViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 class DesignationViewSet(viewsets.ModelViewSet):
-    # # queryset = DesignationMaster.objects.all()
-    # serializer_class = DesignationSerializer
-    # # permission_classes = [IsAdminUser]
-    # def get_queryset(self):
-    #     return DesignationMaster.objects.filter(active = 'Y')
-
-    # def get_permissions(self):
-    #     if self.request.user and self.request.user.is_staff:
-    #         permission_classes = [IsAdminUser]
-    #     else:
-    #         permission_classes = [HasRequiredPermission]
-    #     return [permission() for permission in permission_classes]
-    
-    # def destroy(self, request, *args, **kwargs):
-    #     instance = self.get_object()
-    #     instance.active = 'N'
-    #     instance.save()
-    #     return Response(status=status.HTTP_204_NO_CONTENT)
     permission_classes = [IsSuperAdminOrReadOnly]
     queryset = Designation.objects.all()
     serializer_class = DesignationSerializer
@@ -148,6 +103,30 @@ class DesignationViewSet(viewsets.ModelViewSet):
         instance.active = 'N'
         instance.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+class SMTPViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsSuperAdminOrReadOnly]
+    queryset = SMTPSettings.objects.all()
+    serializer_class = SMTPSerializer
+
+    def get_queryset(self):
+        queryset = SMTPSettings.objects.filter(isActive = True)
+        print("count",queryset.count())
+        return queryset
+    
+    def perform_update(self, serializer):
+        serializer.save(
+            modified_by=self.request.user.id,
+            modified_at=timezone.now()
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.isActive = False
+        instance.modified_by = request.user.id
+        instance.modified_at = timezone.now()
+        instance.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
     
 class DesignationHierarchyViewSet(viewsets.ModelViewSet):
     permission_classes = [IsSuperAdminOrReadOnly]
@@ -166,7 +145,6 @@ class UnitMasterView(APIView):
         return Response({"responseData":list(units),"statusCode" :status.HTTP_200_OK})
 
 class FileTypesViewSet(viewsets.ModelViewSet):
-    # queryset = FileType.objects.all()
     serializer_class = FileTypeSerializer
 
     def get_queryset(self):
@@ -185,7 +163,6 @@ class FileTypesViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
     
 class CaseFilesViewSet(viewsets.ModelViewSet):
-    # queryset = FileType.objects.all()
     serializer_class = CaseFilesSerializer
 
     def get_queryset(self):
@@ -204,7 +181,6 @@ class CaseFilesViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
     
 class CorrespondenceFilesViewSet(viewsets.ModelViewSet):
-    # queryset = FileType.objects.all()
     serializer_class = CorrFilesSerializer
 
     def get_queryset(self):
@@ -223,7 +199,6 @@ class CorrespondenceFilesViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 class FileClassificationViewSet(viewsets.ModelViewSet):
-    # queryset = FileClassification.objects.all()
     serializer_class = FileClassificationSerializer
 
     def get_queryset(self):

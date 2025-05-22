@@ -1,7 +1,7 @@
 import logging
 from rest_framework import serializers
 
-from .models import  Role,Department, DistrictMaster, Division, StateMaster, Designation,DesignationHierarchy, GeneralLookUp,UnitMaster, FileType, FileClassification, CaseStatus
+from .models import  Role,SMTPSettings,Department, DistrictMaster, Division, StateMaster, Designation,DesignationHierarchy, GeneralLookUp,UnitMaster, FileType, FileClassification, CaseStatus
 
 class StateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -65,6 +65,11 @@ class FileTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = GeneralLookUp
         fields = ['fileTypeId','fileTypeName']
+
+class SMTPSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SMTPSettings
+        fields = '__all__'
 
 class CaseFilesSerializer(serializers.ModelSerializer):
     caseFileId = serializers.IntegerField(source='lookupId',read_only=True)

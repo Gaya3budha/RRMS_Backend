@@ -1,5 +1,5 @@
 from django.urls import path, include
-from .views import  LookupByCategoryView,FileClassificationViewSet,CorrespondenceFilesViewSet,CaseFilesViewSet,FileTypesViewSet,DepartmentViewSet, DesignationHierarchyViewSet,CaseStatusViewSet,RoleView,DivisionViewSet,DistrictMasterView, StateMasterView, UnitMasterView, DesignationViewSet
+from .views import  LookupByCategoryView,FileClassificationViewSet,SMTPViewSet,CorrespondenceFilesViewSet,CaseFilesViewSet,FileTypesViewSet,DepartmentViewSet, DesignationHierarchyViewSet,CaseStatusViewSet,RoleView,DivisionViewSet,DistrictMasterView, StateMasterView, UnitMasterView, DesignationViewSet
 from rest_framework.routers import SimpleRouter  
 
 router = SimpleRouter(trailing_slash=False) 
@@ -14,6 +14,8 @@ router.register(r'fileClassification', FileClassificationViewSet, basename = 'fi
 router.register(r'fileTypes', FileTypesViewSet, basename = 'file-type')
 router.register(r'caseFiles', CaseFilesViewSet, basename = 'case-files')
 router.register(r'correspondenceFiles', CorrespondenceFilesViewSet, basename = 'corrs-files')
+router.register(r'smtp', SMTPViewSet, basename = 'smtp')
+
 
 
 
