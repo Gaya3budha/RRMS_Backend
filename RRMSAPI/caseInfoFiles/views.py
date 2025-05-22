@@ -27,6 +27,7 @@ import traceback
 from datetime import timedelta
 import mammoth
 import pandas as pd
+from docx2pdf import convert
 
 UPLOAD_DIR = os.path.join(settings.MEDIA_ROOT, "uploads","CID")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -479,6 +480,10 @@ class CaseFileUploadView(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=500)
+def convert_docx_to_pdf(docx_path):
+    output_dir = os.path.dirname(docx_path)
+    convert(docx_path, output_dir)
+    return os.path.splitext(docx_path)[0] + '.pdf'
 
 class FilePreviewAPIView(APIView):
     permission_classes = [IsAuthenticated, HasCustomPermission]
@@ -548,7 +553,7 @@ class FilePreviewAPIView(APIView):
                         })
                     
             record_file_access(request.user, objFile)
-
+            print(filePath)
             if not os.path.exists(filePath):
                     raise FileNotFoundError("File not found on disk")
             
@@ -558,18 +563,39 @@ class FilePreviewAPIView(APIView):
                 response['Content-Disposition'] = 'inline; filename="{}"'.format(os.path.basename(filePath))
                 return response
             
-            elif file_ext == '.docx' or file_ext=='.doc':
-                with open(filePath, "rb") as docx_file:
-                    result = mammoth.convert_to_html(docx_file)
-                    html_content = result.value
-                    return Response({
-                        "type": "html",
-                        "html": html_content
-                    }, status=200)
+            elif file_ext == '.docx':
+                print(filePath)
+                pdf_path = convert_docx_to_pdf(filePath)
+
+                if not os.path.exists(pdf_path):
+                    raise FileNotFoundError("PDF conversion failed or file not found.")
+
+                return FileResponse(open(pdf_path, 'rb'), content_type='application/pdf')
 
             elif file_ext == '.xlsx':
+                print(filePath)
                 df = pd.read_excel(filePath)
-                html_content = df.to_html(index=False, border=0)
+                html_table = df.to_html(index=False, border=0)
+                html_content = f"""
+                    <style>
+                    table {{
+                        border-collapse: collapse;
+                        width: 100%;
+                        font-family: Arial, sans-serif;
+                    }}
+                    th, td {{
+                        border: 1px solid #ddd;
+                        padding: 8px 12px;
+                        text-align: left;
+                        white-space: nowrap;
+                    }}
+                    tr:nth-child(even) {{ background-color: #f9f9f9; }}
+                    tr:hover {{ background-color: #f1f1f1; }}
+                    </style>
+                    <div style="overflow-x:auto;">
+                    {html_table}
+                    </div>
+                    """
                 return Response({
                     "type": "html",
                     "html": html_content
@@ -589,38 +615,7 @@ class FilePreviewAPIView(APIView):
         except FileNotFoundError:
             raise Http404("File missing from server")
 
-        #         mime_type, _ = mimetypes.guess_type(filePath)
-        #         return FileResponse(open(filePath, 'rb'), content_type=mime_type or 'application/octet-stream')
-
-        #     if objFile.classification_id == 6 and objFile.uploaded_by_id != request.user.id:
-        #         # objFile.division_id in user_division_ids and not has_access
-
-       
-
-        #         print('is_Approved',is_approved)
-
-        
-
-        
-
-        #                 
-       
-
-                    
-
-        #     record_file_access(request.user, objFile)
-
-        #     if not os.path.exists(filePath):
-        #         raise FileNotFoundError("File not found on disk")
-
-        #     mime_type, _ = mimetypes.guess_type(filePath)
-        #     return FileResponse(open(filePath, 'rb'), content_type=mime_type or 'application/octet-stream')
-
-        # except FileDetails.DoesNotExist:
-        #     raise Http404("No file with given hash")
-
-        # except FileNotFoundError:
-        #     raise Http404("File path invalid or missing")
+      
   
 class FileAccessRequestListAPIView(APIView):
     # queryset = FileAccessRequest.objects.all().order_by('-created_at')
