@@ -563,14 +563,22 @@ class FilePreviewAPIView(APIView):
                 response['Content-Disposition'] = 'inline; filename="{}"'.format(os.path.basename(filePath))
                 return response
             
+            # elif file_ext == '.docx':
+            #     print(filePath)
+            #     pdf_path = convert_docx_to_pdf(filePath)
+
+            #     if not os.path.exists(pdf_path):
+            #         raise FileNotFoundError("PDF conversion failed or file not found.")
+
+            #     return FileResponse(open(pdf_path, 'rb'), content_type='application/pdf')
             elif file_ext == '.docx':
-                print(filePath)
-                pdf_path = convert_docx_to_pdf(filePath)
-
-                if not os.path.exists(pdf_path):
-                    raise FileNotFoundError("PDF conversion failed or file not found.")
-
-                return FileResponse(open(pdf_path, 'rb'), content_type='application/pdf')
+                with open(filePath, "rb") as docx_file:
+                    result = mammoth.convert_to_html(docx_file)
+                    html_content = result.value
+                    return Response({
+                        "type": "html",
+                        "html": html_content
+                    }, status=200)
 
             elif file_ext == '.xlsx':
                 print(filePath)
