@@ -28,19 +28,27 @@ class UserSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         designations = validated_data.pop('designation', [])
         # divisions_roles_data = validated_data.pop('userdivisionrole_set', [])
-        user = User(
-            email=validated_data['email'],
-            first_name=validated_data['first_name'],
-            last_name=validated_data['last_name'],
-            mobileno=validated_data.get('mobileno'),
-            kgid=validated_data['kgid'],
-            password=validated_data['password'],
-            role=validated_data['role'],
+        email=validated_data['email'],
+        first_name=validated_data['first_name'],
+        last_name=validated_data['last_name'],
+        mobileno=validated_data.get('mobileno'),
+        kgid=validated_data['kgid'],
+        password=validated_data['password'],
+        role=validated_data['role'],
             # set_password=validated_data['set_password'],
-        )
 
-        user.set_password(validated_data['password'])  # password is saved as hash
-        user.save()
+        # user.set_password(validated_data['password'])  # password is saved as hash
+        user = User.objects.create_user(
+            kgid=kgid,
+            email=email,
+            password=password,
+            role=role,
+            designation=None,  # Designation is set after creation
+            first_name=first_name,
+            last_name=last_name,
+            mobileno=mobileno
+        )
+        # user.save()
 
         if designations:
             user.designation.set(designations)

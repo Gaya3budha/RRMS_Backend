@@ -1,3 +1,4 @@
+from django.forms import ValidationError
 from django.shortcuts import render
 from rest_framework import status
 from rest_framework.views import APIView
@@ -47,8 +48,12 @@ class CreateUserView(APIView):
         serializer = UserSerializer(data=request.data)
 
         if serializer.is_valid():
-            user = serializer.save()
-            return Response(serializer.data,status = status.HTTP_201_CREATED)
+            try:
+                user = serializer.save()
+                return Response(serializer.data,status = status.HTTP_201_CREATED)
+            except ValidationError as e:
+                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -59,8 +64,10 @@ class UpdateUserView(APIView):
             # getting the user based on kgid
             user = User.objects.get(kgid = kgid_user)
             data = request.data
-            # blank dictinary object
-            updated_data = {}
+
+            original_role = user.role
+            original_active = user.is_active
+           
 
             # updated_data['password']=request.data['password']
             # updated_data['set_password']=request.data['set_password']
@@ -89,6 +96,16 @@ class UpdateUserView(APIView):
             if 'isActive' in data:
                 user.is_active = data['isActive']
             
+            new_role_name = getattr(user.role, 'name', None)
+            will_be_admin = (new_role_name == 'Admin')
+            becoming_active = user.is_active and not original_active
+            becoming_admin = will_be_admin and original_role != user.role
+            
+            if (becoming_active or becoming_admin or (will_be_admin and user.is_active)) and not (original_role and original_role.name == "Admin" and original_active):
+                active_admin_count = User.objects.filter(is_superuser=True, is_active=True).exclude(pk=user.pk).count()
+                if active_admin_count >= 5:
+                    return Response({"error": "Cannot have more than 5 active Admin users."}, status=status.HTTP_400_BAD_REQUEST)
+                
             excluded = ['id', 'password', 'role', 'designation', 'roleId', 'designationIds', 'is_active']
             updatable_fields = [field.name for field in User._meta.fields if field.name not in excluded]
 
@@ -96,6 +113,9 @@ class UpdateUserView(APIView):
             for key, value in data.items():
                 if key in updatable_fields:
                     setattr(user, key, value)
+
+            user.is_staff = (new_role_name == 'Admin')
+            user.is_superuser = (new_role_name == 'Admin')
 
             user.save()
 
