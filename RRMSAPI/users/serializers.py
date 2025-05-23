@@ -4,6 +4,8 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from mdm.models import Role, Designation, DesignationHierarchy
 from mdm.serializers import DivisionSerializer,DesignationSerializer,RoleSerializer
 from .models import User
+from django.core.exceptions import ValidationError as DjangoValidationError
+
 
 # Set up the logger
 logger = logging.getLogger(__name__)
@@ -27,29 +29,20 @@ class UserSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         designations = validated_data.pop('designation', [])
-        # divisions_roles_data = validated_data.pop('userdivisionrole_set', [])
-        email=validated_data['email'],
-        first_name=validated_data['first_name'],
-        last_name=validated_data['last_name'],
-        mobileno=validated_data.get('mobileno'),
-        kgid=validated_data['kgid'],
-        password=validated_data['password'],
-        role=validated_data['role'],
-            # set_password=validated_data['set_password'],
-
-        # user.set_password(validated_data['password'])  # password is saved as hash
-        user = User.objects.create_user(
-            kgid=kgid,
-            email=email,
-            password=password,
-            role=role,
-            designation=None,  # Designation is set after creation
-            first_name=first_name,
-            last_name=last_name,
-            mobileno=mobileno
-        )
-        # user.save()
-
+        try:
+            user = User.objects.create_user(
+                kgid=validated_data['kgid'],
+                email=validated_data['email'],
+                password=validated_data['password'],
+                role=validated_data['role'],
+                designation=None,
+                first_name=validated_data['first_name'],
+                last_name=validated_data['last_name'],
+                mobileno=validated_data.get('mobileno')
+            )
+        except DjangoValidationError as e:
+            raise serializers.ValidationError({'detail': str(e)})
+        
         if designations:
             user.designation.set(designations)
       

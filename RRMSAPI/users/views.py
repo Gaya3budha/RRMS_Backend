@@ -65,8 +65,35 @@ class UpdateUserView(APIView):
             user = User.objects.get(kgid = kgid_user)
             data = request.data
 
-            original_role = user.role
+            original_role_id = user.role.roleId if user.role else None
             original_active = user.is_active
+
+            new_role_id = data.get('roleId', original_role_id)
+            new_is_active = data.get('isActive', original_active)
+
+            print("new_role_id",new_role_id)
+            print("new_is_active",new_is_active)
+
+            ADMIN_ROLE_ID = 1
+
+            becoming_active_admin = (
+                new_role_id == ADMIN_ROLE_ID and new_is_active and
+                (original_role_id != ADMIN_ROLE_ID or not original_active)
+            )
+
+            print("becoming_active_admin",becoming_active_admin)
+
+            if becoming_active_admin:
+                active_admin_count = User.objects.filter(
+                    role__roleId=ADMIN_ROLE_ID,
+                    is_active=True
+                ).exclude(pk=user.pk).count()
+
+                if active_admin_count >= 5:
+                    return Response(
+                        {"error": "Cannot have more than 5 active Admin users."},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
            
 
             # updated_data['password']=request.data['password']
@@ -96,16 +123,7 @@ class UpdateUserView(APIView):
             if 'isActive' in data:
                 user.is_active = data['isActive']
             
-            new_role_name = getattr(user.role, 'name', None)
-            will_be_admin = (new_role_name == 'Admin')
-            becoming_active = user.is_active and not original_active
-            becoming_admin = will_be_admin and original_role != user.role
-            
-            if (becoming_active or becoming_admin or (will_be_admin and user.is_active)) and not (original_role and original_role.name == "Admin" and original_active):
-                active_admin_count = User.objects.filter(is_superuser=True, is_active=True).exclude(pk=user.pk).count()
-                if active_admin_count >= 5:
-                    return Response({"error": "Cannot have more than 5 active Admin users."}, status=status.HTTP_400_BAD_REQUEST)
-                
+           
             excluded = ['id', 'password', 'role', 'designation', 'roleId', 'designationIds', 'is_active']
             updatable_fields = [field.name for field in User._meta.fields if field.name not in excluded]
 
@@ -114,8 +132,6 @@ class UpdateUserView(APIView):
                 if key in updatable_fields:
                     setattr(user, key, value)
 
-            user.is_staff = (new_role_name == 'Admin')
-            user.is_superuser = (new_role_name == 'Admin')
 
             user.save()
 

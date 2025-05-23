@@ -10,11 +10,12 @@ class CustomUserManager(BaseUserManager):
     def create_user(self,kgid,email,password=None,role=None,designation=None, **extra_fields):
         if not kgid:
             raise ValueError('KGID is mandatory')
-        email = self.normalize_email(email)
-        user = self.model(email=email, kgid = kgid, role=role, designation=designation, **extra_fields)
+        # email = self.normalize_email(email)
+        user = self.model(email=email, kgid = kgid, role=role, **extra_fields)
 
-        if role and getattr(role, "name", None) == "Admin":
+        if role and role.roleId == 1:
             admin_count = User.objects.filter(is_superuser=True,is_active=True).count()
+            print("admin_count:",admin_count)
             if admin_count >= 5:
                 raise ValidationError("Cannot create more than 5 admin users.")
 
@@ -78,21 +79,27 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def save(self,*args,**kwargs):
         if self.is_active:
-            if self.role and getattr(self.role, "name", None) == "Admin":
+            if self.role and self.role.roleId == 1:
                 if self.pk:
+                    active_admin_count = None
+
                     existing = User.objects.filter(pk=self.pk).first()
-                    if existing and not existing.is_active:
-                        active_admin_count = User.objects.filter(
-                            is_superuser=True, is_active=True
-                        ).exclude(pk=self.pk).count()
-                        if active_admin_count >= 5:
-                            raise ValidationError("Cannot activate more than 5 admin users.")
-                else:
+                    if existing:
+                        becoming_active_admin = (
+                            (not existing.is_active and self.is_active) or
+                            (getattr(existing.role, 'roleId', None) != 1 and getattr(self.role, 'roleId', None) == 1)
+                        )
+                        if becoming_active_admin:
+                            active_admin_count = User.objects.filter(
+                                is_superuser=True, is_active=True
+                            ).exclude(pk=self.pk).count() or 0
+                            if active_admin_count >= 5:
+                                raise ValidationError("Cannot activate more than 5 admin users.")
+                    else:
                     # New admin creation path
-                    active_admin_count = User.objects.filter(is_superuser=True, is_active=True).count()
-                    if active_admin_count >= 5:
-                        raise ValidationError("Cannot create more than 5 active admin users.")
-        
+                        active_admin_count = User.objects.filter(is_superuser=True, is_active=True).count() or 0
+                        if active_admin_count >= 5:
+                            raise ValidationError("Cannot create more than 5 active admin users.")
         super().save(*args, **kwargs)
 
     def __str__(self):
