@@ -68,7 +68,7 @@ class UpdateUserView(APIView):
             original_role_id = user.role.roleId if user.role else None
             original_active = user.is_active
 
-            new_role_id = data.get('roleId', original_role_id)
+            new_role_id = int(data.get('roleId', original_role_id)) if data.get('roleId') else original_role_id
             new_is_active = data.get('isActive', original_active)
 
             print("new_role_id",new_role_id)
