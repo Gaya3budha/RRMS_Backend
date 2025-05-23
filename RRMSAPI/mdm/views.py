@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .permissions import HasRequiredPermission, IsSuperAdminOrReadOnly
 from rest_framework import viewsets
-from .serializers import DesignationHierarchySerializer,SMTPSerializer,CorrFilesSerializer,CaseFilesSerializer,FileTypeSerializer,FileClassificationSerializer,CaseStatusSerializer,DepartmentSeriallizer,LookupCustomSerializer, DivisionSerializer, DesignationSerializer
+from .serializers import DesignationHierarchySerializer,DesignationViewSerializer,SMTPSerializer,CorrFilesSerializer,CaseFilesSerializer,FileTypeSerializer,FileClassificationSerializer,CaseStatusSerializer,DepartmentSeriallizer,LookupCustomSerializer, DivisionSerializer, DesignationSerializer
 from rest_framework.permissions import IsAdminUser
 from .utils import CATEGORY_LABELS
 from rest_framework.generics import ListAPIView
@@ -80,7 +80,7 @@ class DivisionViewSet(viewsets.ModelViewSet):
 class DesignationViewSet(viewsets.ModelViewSet):
     permission_classes = [IsSuperAdminOrReadOnly]
     queryset = Designation.objects.all()
-    serializer_class = DesignationSerializer
+    serializer_class = DesignationViewSerializer
 
     def get_queryset(self):
         queryset = Designation.objects.filter(active='Y')

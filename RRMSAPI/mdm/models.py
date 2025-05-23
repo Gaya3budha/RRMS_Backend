@@ -76,11 +76,11 @@ class DistrictMaster(models.Model):
     
 class Designation(models.Model):
     designationId = models.AutoField(primary_key = True)
-    designationName = models.CharField( max_length = 100)
+    designationName = models.CharField( max_length = 100,unique=True)
     active = models.CharField(default = 'Y')
     lastModifiedDate = models.DateTimeField(auto_now = True)
-    division = models.ManyToManyField(Division)
-    department = models.ManyToManyField(Department)
+    division = models.ManyToManyField(Division,null=True,blank=True)
+    department = models.ManyToManyField(Department, null= True, blank= True)
 
     def __str__(self):
         return self.designationName

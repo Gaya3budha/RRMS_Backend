@@ -31,6 +31,17 @@ class DivisionSerializer(serializers.ModelSerializer):
         model = Division
         fields = ['divisionId', 'divisionName', 'departmentId', 'department']
 
+class DesignationViewSerializer(serializers.ModelSerializer):
+    division = DivisionSerializer(many=True,read_only=True)
+    department = DepartmentSeriallizer(many=True,read_only=True)
+
+    divisionIds = serializers.PrimaryKeyRelatedField(source='division',queryset=Division.objects.all(), many=True,required=False )
+    departmentIds = serializers.PrimaryKeyRelatedField(source='department',queryset=Department.objects.all(), many=True,required=False )
+
+    class Meta:
+        model = Designation
+        fields = ['designationId','designationName','division','department','divisionIds','departmentIds']
+
 class DesignationSerializer(serializers.ModelSerializer):
     division = DivisionSerializer(many=True,read_only=True)
     # department = DepartmentSeriallizer(many=True,read_only=True)
