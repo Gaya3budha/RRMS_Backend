@@ -236,57 +236,57 @@ class FileDetailsView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class SubmitDraftAPIView(APIView):
-    def post(self, request, pk):
+    def post(self, request):
         try:
-
-            caseData = get_object_or_404(CaseInfoDetails, pk=pk)
-
-            if not caseData.is_draft:
-                return Response({"detail": "Already submitted"}, status=status.HTTP_400_BAD_REQUEST)
-            
-            if caseData.lastmodified_by != request.user:
-                return Response({"detail": "You are not authorized to submit this draft."},
-                                status=status.HTTP_403_FORBIDDEN)
             
             case_info_json = request.data.get("caseDetails")
             file_details = request.data.get("fileDetails")
+            division_id = request.data.get("division_id")
+            uploaded_files = request.FILES.getlist("Files")
 
             if not case_info_json:
                 return Response({"error": "No case details provided"}, status=status.HTTP_400_BAD_REQUEST)
 
             case_data = json.loads(case_info_json) if isinstance(case_info_json, str) else case_info_json
-            file_details_data = json.loads(file_details) if isinstance(file_details, str) else file_details
-            
-            division_id = request.data.get("division_id")
+            file_details_data = json.loads(file_details) if file_details else []
+            case_details_id = case_data.get("CaseInfoDetailsId")
+            print("case_details_id",case_details_id)
             if not division_id:
                 return Response({"error": "Division ID is required."}, status=status.HTTP_400_BAD_REQUEST)
-            
-            case_changes = {}
-            for field, new_val in case_data.items():
-                old_val = getattr(caseData, field, None)
-                if str(old_val) != str(new_val):
-                    case_changes[field] = {
-                        "old": old_val,
-                        "new": new_val
-                    }
-                    setattr(caseData, field, new_val)
-            
-            caseData.is_draft = False
-            caseData.lastmodified_by = request.user
-            caseData.lastmodified_Date = timezone.now()
-            caseData.save()
 
-            uploaded_files = request.FILES.getlist("Files")
-            division_name = Division.objects.get(divisionId=division_id).divisionName
-
-                # Get existing files
-            existing_files = FileDetails.objects.filter(caseDetails=caseData)
-            existing_hashes = {f.fileHash: f for f in existing_files}
-
-            incoming_hashes = set()
             file_changes = []
-            
-            for i in range(len(uploaded_files)):
+            case_changes = {}
+
+            # Update if case details id  exists
+            if case_details_id:
+                print("hey i'm in if block")
+                try:
+                    case_instance = CaseInfoDetails.objects.get(pk=case_details_id)
+                    print("case_instance",case_instance)
+                except CaseInfoDetails.DoesNotExist:
+                    return Response({"error": "case Draft not found"}, status=status.HTTP_404_NOT_FOUND)
+                
+                for field, new_val in case_data.items():
+                        if hasattr(case_instance, field):
+                            old_val = getattr(case_instance, field)
+                            if str(old_val) != str(new_val):
+                                case_changes[field] = {"old": old_val, "new": new_val}
+                                setattr(case_instance, field, new_val)
+                
+                case_instance.is_draft = False
+                case_instance.submitted_at = timezone.now()
+                case_instance.lastmodified_by = request.user
+                case_instance.lastmodified_Date = timezone.now()
+                case_instance.save()
+
+                # Handle file updates
+                division_name = Division.objects.get(divisionId=division_id).divisionName
+                existing_files = FileDetails.objects.filter(caseDetails=case_instance)
+                existing_hashes = {f.fileHash: f for f in existing_files}
+                incoming_hashes = set()
+
+                # Process uploaded files: add new ones or skip duplicates
+                for i in range(len(uploaded_files)):
                     file_content = uploaded_files[i].read()
                     file_hash = hashlib.sha256(file_content).hexdigest()
                     incoming_hashes.add(file_hash)
@@ -294,8 +294,8 @@ class SubmitDraftAPIView(APIView):
                     if file_hash not in existing_hashes:
                         file_name = uploaded_files[i].name
                         file_path = os.path.join(
-                            UPLOAD_DIR, str(caseData.year), str(division_name),
-                            str(caseData.caseType), str(caseData.caseNo),
+                            UPLOAD_DIR, str(case_instance.year), division_name,
+                            str(case_instance.caseType), case_instance.caseNo,
                             str(file_details_data[i]['fileType']),
                             str(file_details_data[i]['documentType']),
                             file_name
@@ -305,7 +305,7 @@ class SubmitDraftAPIView(APIView):
                             f.write(file_content)
 
                         file_obj = FileDetails.objects.create(
-                            caseDetails=caseData,
+                            caseDetails=case_instance,
                             fileName=file_name,
                             filePath=file_path,
                             fileHash=file_hash,
@@ -313,27 +313,79 @@ class SubmitDraftAPIView(APIView):
                             fileType=GeneralLookUp.objects.get(lookupId=file_details_data[i]['fileType']),
                             classification=GeneralLookUp.objects.get(lookupId=file_details_data[i]['classification']),
                             uploaded_by=request.user,
-                            division=Division.objects.get(divisionId=division_id)
+                            division=Division.objects.get(divisionId=division_id),
+                            documentType=GeneralLookUp.objects.get(lookupId=file_details_data[i]['documentType'])
                         )
                         record_file_access(request.user, file_obj)
                         file_changes.append({"file": file_name, "action": "added"})
                     else:
                         uploaded_files[i].seek(0)
-            
-            # Delete files not in incoming list
-            for hash_val, file_obj in existing_hashes.items():
-                if hash_val not in incoming_hashes:
-                    if os.path.exists(file_obj.filePath):
-                        os.remove(file_obj.filePath)
-                    file_changes.append({"file": file_obj.fileName, "action": "deleted"})
-                    file_obj.delete()
 
-            return Response({
-                    "message": "Draft submitted successfully",
-                    "studentChanges": case_changes,
-                    "fileChanges": file_changes,
-                    "caseDetails": CaseInfoDetailsSerializer(caseData).data
-                }, status=status.HTTP_200_OK)
+                # Delete removed files
+                for hash_val, file_obj in existing_hashes.items():
+                    if hash_val not in incoming_hashes:
+                        if os.path.exists(file_obj.filePath):
+                            os.remove(file_obj.filePath)
+                        file_changes.append({"file": file_obj.fileName, "action": "deleted"})
+                        file_obj.delete()
+            else:
+                print("hey request is in else block :)")
+                # Create new case
+                serializer = CaseInfoDetailsSerializer(data=case_data)
+
+                if not serializer.is_valid():
+                    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                case_instance = serializer.save(
+                    lastmodified_by=request.user,
+                    is_draft=False,
+                    submitted_at=timezone.now()
+                )
+
+                if not uploaded_files:
+                    return Response({"error": "No files uploaded"}, status=status.HTTP_400_BAD_REQUEST)
+
+                division_name = Division.objects.get(divisionId=division_id).divisionName
+
+                for i in range(len(uploaded_files)):
+                    file_content = uploaded_files[i].read()
+                    file_hash = hashlib.sha256(file_content).hexdigest()
+
+                    file_name = uploaded_files[i].name
+                    file_path = os.path.join(
+                        UPLOAD_DIR, str(case_instance.year), division_name,
+                        str(case_instance.caseType), case_instance.caseNo,
+                        str(file_details_data[i]['fileType']),
+                        str(file_details_data[i]['documentType']),
+                        file_name
+                    )
+                    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                    with open(file_path, "wb") as f:
+                        f.write(file_content)
+
+                    file_obj = FileDetails.objects.create(
+                        caseDetails=case_instance,
+                        fileName=file_name,
+                        filePath=file_path,
+                        fileHash=file_hash,
+                        subject=file_details_data[i]['subject'],
+                        fileType=GeneralLookUp.objects.get(lookupId=file_details_data[i]['fileType']),
+                        classification=GeneralLookUp.objects.get(lookupId=file_details_data[i]['classification']),
+                        uploaded_by=request.user,
+                        division=Division.objects.get(divisionId=division_id),
+                        documentType=GeneralLookUp.objects.get(lookupId=file_details_data[i]['documentType'])
+                    )
+                    record_file_access(request.user, file_obj)
+
+            response_data = {
+                "message": "Submitted successfully",
+                "caseChanges": case_changes,
+                "caseDetails": CaseInfoDetailsSerializer(case_instance).data
+            }
+            # Add fileChanges only for draft submissions
+            if case_details_id:
+                response_data["fileChanges"] = file_changes
+
+            return Response(response_data, status=status.HTTP_200_OK)
 
         except Exception as e:
             return Response({
@@ -343,14 +395,14 @@ class SubmitDraftAPIView(APIView):
         
 class CaseInfoDraftDetailsView(APIView):
     def get(self, request):
-        draft_param = request.query_params.get('draft')
+        # draft_param = request.query_params.get('draft')
 
-        if draft_param == 'true':
-            caseDetails = CaseInfoDetails.objects.filter(is_draft=True)
-        elif draft_param == 'false':
-            caseDetails = CaseInfoDetails.objects.filter(is_draft=False)
-        else:
-            caseDetails = CaseInfoDetails.objects.all()
+        # if draft_param == 'true':
+        #     caseDetails = CaseInfoDetails.objects.filter(is_draft=True)
+        # elif draft_param == 'false':
+        #     caseDetails = CaseInfoDetails.objects.filter(is_draft=False)
+        # else:
+        caseDetails = CaseInfoDetails.objects.filter(is_draft=True)
 
         serializer = CaseInfoDetailsSerializer(caseDetails, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
