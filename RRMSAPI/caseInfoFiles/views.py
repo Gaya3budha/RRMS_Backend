@@ -235,91 +235,244 @@ class FileDetailsView(APIView):
             return Response({"message": "File details updated successfully", "data": serializer.data}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class CaseInfoDetailsView(APIView):
-    permission_classes = [IsAuthenticated, HasRequiredPermission]
-    parser_classes = [MultiPartParser, FormParser]
-    def post(self, request):
+class SubmitDraftAPIView(APIView):
+    def post(self, request, pk):
         try:
+
+            caseData = get_object_or_404(CaseInfoDetails, pk=pk)
+
+            if not caseData.is_draft:
+                return Response({"detail": "Already submitted"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            if caseData.lastmodified_by != request.user:
+                return Response({"detail": "You are not authorized to submit this draft."},
+                                status=status.HTTP_403_FORBIDDEN)
             
             case_info_json = request.data.get("caseDetails")
             file_details = request.data.get("fileDetails")
 
-
             if not case_info_json:
-                return Response({"responseData":{"error":"No Case Details","status":status.HTTP_400_BAD_REQUEST}})
+                return Response({"error": "No case details provided"}, status=status.HTTP_400_BAD_REQUEST)
 
+            case_data = json.loads(case_info_json) if isinstance(case_info_json, str) else case_info_json
+            file_details_data = json.loads(file_details) if isinstance(file_details, str) else file_details
             
+            division_id = request.data.get("division_id")
+            if not division_id:
+                return Response({"error": "Division ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+            
+            case_changes = {}
+            for field, new_val in case_data.items():
+                old_val = getattr(caseData, field, None)
+                if str(old_val) != str(new_val):
+                    case_changes[field] = {
+                        "old": old_val,
+                        "new": new_val
+                    }
+                    setattr(caseData, field, new_val)
+            
+            caseData.is_draft = False
+            caseData.lastmodified_by = request.user
+            caseData.lastmodified_Date = timezone.now()
+            caseData.save()
 
+            uploaded_files = request.FILES.getlist("Files")
+            division_name = Division.objects.get(divisionId=division_id).divisionName
+
+                # Get existing files
+            existing_files = FileDetails.objects.filter(caseDetails=caseData)
+            existing_hashes = {f.fileHash: f for f in existing_files}
+
+            incoming_hashes = set()
+            file_changes = []
+            
+            for i in range(len(uploaded_files)):
+                    file_content = uploaded_files[i].read()
+                    file_hash = hashlib.sha256(file_content).hexdigest()
+                    incoming_hashes.add(file_hash)
+
+                    if file_hash not in existing_hashes:
+                        file_name = uploaded_files[i].name
+                        file_path = os.path.join(
+                            UPLOAD_DIR, str(caseData.year), str(division_name),
+                            str(caseData.caseType), str(caseData.caseNo),
+                            str(file_details_data[i]['fileType']),
+                            str(file_details_data[i]['documentType']),
+                            file_name
+                        )
+                        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                        with open(file_path, "wb") as f:
+                            f.write(file_content)
+
+                        file_obj = FileDetails.objects.create(
+                            caseDetails=caseData,
+                            fileName=file_name,
+                            filePath=file_path,
+                            fileHash=file_hash,
+                            subject=file_details_data[i]['subject'],
+                            fileType=GeneralLookUp.objects.get(lookupId=file_details_data[i]['fileType']),
+                            classification=GeneralLookUp.objects.get(lookupId=file_details_data[i]['classification']),
+                            uploaded_by=request.user,
+                            division=Division.objects.get(divisionId=division_id)
+                        )
+                        record_file_access(request.user, file_obj)
+                        file_changes.append({"file": file_name, "action": "added"})
+                    else:
+                        uploaded_files[i].seek(0)
+            
+            # Delete files not in incoming list
+            for hash_val, file_obj in existing_hashes.items():
+                if hash_val not in incoming_hashes:
+                    if os.path.exists(file_obj.filePath):
+                        os.remove(file_obj.filePath)
+                    file_changes.append({"file": file_obj.fileName, "action": "deleted"})
+                    file_obj.delete()
+
+            return Response({
+                    "message": "Draft submitted successfully",
+                    "studentChanges": case_changes,
+                    "fileChanges": file_changes,
+                    "caseDetails": CaseInfoDetailsSerializer(caseData).data
+                }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({
+                "error": str(e),
+                "traceback": traceback.format_exc()
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class CaseInfoDraftDetailsView(APIView):
+    def get(self, request):
+        draft_param = request.query_params.get('draft')
+
+        if draft_param == 'true':
+            caseDetails = CaseInfoDetails.objects.filter(is_draft=True)
+        elif draft_param == 'false':
+            caseDetails = CaseInfoDetails.objects.filter(is_draft=False)
+        else:
+            caseDetails = CaseInfoDetails.objects.all()
+
+        serializer = CaseInfoDetailsSerializer(caseDetails, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class CaseInfoDetailsView(APIView):
+    
+    permission_classes = [IsAuthenticated, HasRequiredPermission]
+    parser_classes = [MultiPartParser, FormParser]
+    
+    def post(self, request):
+        try:
+            case_info_json = request.data.get("caseDetails")
+            file_details = request.data.get("fileDetails")
+            is_draft = request.data.get("is_draft", True)
+
+        
+            if not case_info_json:
+                return Response({
+                    "responseData":{
+                        "error":"No Case Details",
+                        "status":status.HTTP_400_BAD_REQUEST
+                        }
+                    })
+            
             if isinstance(case_info_json, str):
-                case_data= json.loads(case_info_json)
+                case_data = json.loads(case_info_json)
+            else:
+                case_data = case_info_json
+
 
             if isinstance(file_details, str):
                 file_details_data = json.loads(file_details)
+            else:
+                file_details_data = file_details
+
+            # if isinstance(case_info_json, str):
+            #     case_data= json.loads(case_info_json)
+
+            # if isinstance(file_details, str):
+            #     file_details_data = json.loads(file_details)
 
             division_id = request.data.get("division_id")
             if not division_id:
                 return Response({"error": "Division ID is required."}, status=status.HTTP_400_BAD_REQUEST)
         
             case_data['division'] = division_id 
-            case_serailizer = CaseInfoDetailsSerializer(data = case_data)
+            case_data['is_draft'] = is_draft 
 
+            if not is_draft:
+                case_data['submitted_at'] = timezone.now()
+
+            case_serailizer = CaseInfoDetailsSerializer(data = case_data)
             if not case_serailizer.is_valid():
                 return Response(case_serailizer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            caseInfo = case_serailizer.save(lastmodified_by= request.user)
+            case_info = case_serailizer.save(lastmodified_by= request.user)
 
-            div_name=Division.objects.get(divisionId=division_id)
+            # if is_draft:
+            #     return Response({
+            #         "studentDetails": CaseInfoDetailsSerializer(case_info).data,
+            #         "message": "Saved as draft."
+            #     }, status=status.HTTP_201_CREATED)
 
             uploaded_files = request.FILES.getlist("Files")
 
-            if not uploaded_files:
+            if not is_draft and not uploaded_files:
                 return Response({"error": "No files Uploaded"}, status=status.HTTP_400_BAD_REQUEST)
 
             file_details_list = [] 
            
+            if uploaded_files:
+                div_name=Division.objects.get(divisionId=division_id)
 
-            for i in range(len(uploaded_files)):
-                file_content = uploaded_files[i].read()
+                for i in range(len(uploaded_files)):
+                    file_content = uploaded_files[i].read()
 
-                # Compute file hash (SHA-256)
-                file_hash = hashlib.sha256(file_content).hexdigest()
-                
-                # Define file path and save file
-                file_name = uploaded_files[i].name
-                file_path = os.path.join(UPLOAD_DIR, str(caseInfo.year),str(div_name.divisionName),str(caseInfo.caseType), str(caseInfo.caseNo),str(file_details_data[i]['fileType']),str(file_details_data[i]['documentType']),file_name)
+                    # Compute file hash (SHA-256)
+                    file_hash = hashlib.sha256(file_content).hexdigest()
+                    
+                    # Define file path and save file
+                    file_name = uploaded_files[i].name
+                    file_path = os.path.join(
+                        UPLOAD_DIR,
+                        str(case_info.year),
+                        str(div_name.divisionName),
+                        str(case_info.caseType),
+                        str(case_info.caseNo),
+                        str(file_details_data[i]['fileType']),
+                        str(file_details_data[i]['documentType']),
+                        file_name
+                    )
 
-                os.makedirs(os.path.dirname(file_path), exist_ok=True)
-                # Write file to disk
-                with open(file_path, "wb") as f:
-                    f.write(file_content)
+                    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                    # Write file to disk
+                    with open(file_path, "wb") as f:
+                        f.write(file_content)
 
-                # Save file details in the database with casedetailsid
-                file_detail = FileDetails.objects.create(
-                    caseDetails=caseInfo,
-                    fileName=file_name,
-                    filePath=file_path,
-                    fileHash=file_hash,
-                    hashTag = file_details_data[i]['hashTag'],
-                    subject = file_details_data[i]['subject'],
-                    fileType = GeneralLookUp.objects.get(lookupId=file_details_data[i]['fileType']),
-                    classification = GeneralLookUp.objects.get(lookupId=file_details_data[i]['classification']),
-                    uploaded_by = request.user,
-                    division = Division.objects.get(divisionId=request.data.get('division_id')),
-                    documentType =GeneralLookUp.objects.get(lookupId=file_details_data[i]['documentType'])
-                )
+                    # Save file details in the database with casedetailsid
+                    file_detail = FileDetails.objects.create(
+                        caseDetails=case_info,
+                        fileName=file_name,
+                        filePath=file_path,
+                        fileHash=file_hash,
+                        hashTag = file_details_data[i]['hashTag'],
+                        subject = file_details_data[i]['subject'],
+                        fileType = GeneralLookUp.objects.get(lookupId=file_details_data[i]['fileType']),
+                        classification = GeneralLookUp.objects.get(lookupId=file_details_data[i]['classification']),
+                        uploaded_by = request.user,
+                        division = Division.objects.get(divisionId=request.data.get('division_id')),
+                        documentType =GeneralLookUp.objects.get(lookupId=file_details_data[i]['documentType'])
+                    )
 
-                record_file_access(request.user, file_detail)
+                    record_file_access(request.user, file_detail)
 
-                file_details_list.append({
-                    "file":FileDetailsSerializer(file_detail).data
-                })
-            return Response(
-                {
-                    "caseDetails": CaseInfoDetailsSerializer(caseInfo).data,
-                    "file": file_details_list ,
-                },
-                status=status.HTTP_201_CREATED,
-            )
+                    file_details_list.append({
+                        "file":FileDetailsSerializer(file_detail).data
+                    })
+            
+            return Response({
+                    "caseDetails": CaseInfoDetailsSerializer(case_info).data,
+                    "file": file_details_list,
+                },status=status.HTTP_201_CREATED)
 
         except Exception as e:
             tb = traceback.format_exc()

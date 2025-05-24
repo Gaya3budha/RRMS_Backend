@@ -26,6 +26,9 @@ class CaseInfoDetails(models.Model):
     lastmodified_Date = models.DateTimeField(auto_now_add=True, null = True,blank = True)
     division  = models.ForeignKey(Division,blank= True, null=True,on_delete=models.CASCADE) 
 
+    is_draft = models.BooleanField(default=True)
+    submitted_at = models.DateTimeField(null=True, blank=True)
+    
     class Meta:
         permissions = [
             ("view_searchcaseFiles","can search the case and file details"),

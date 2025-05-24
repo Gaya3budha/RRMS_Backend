@@ -14,6 +14,7 @@ class CaseInfoDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = CaseInfoDetails
         fields = "__all__"
+        read_only_fields = ['submitted_at', 'lastmodified_Date']
     
     def validate_caseNo(self,value):
         if CaseInfoDetails.objects.filter(caseNo=value).exists():

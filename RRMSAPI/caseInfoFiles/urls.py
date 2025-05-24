@@ -1,13 +1,15 @@
 from django.urls import path
 from django.contrib import admin
-from .views import CaseInfoDetailsView,SearchCaseFilesView,CaseFileUploadView,FileDetailsView,UploadApprovalDetailView,WithdrawAccessApprovalView,SendAccessApprovalReminder,SendUploadApprovalReminder,WithdrawUploadApprovalView,MarkNotificationAsReadAPIView,UploadApprovalListView,RevokeFileAccessRequestAPIView, FileApprovalDetailsViewSet,FilePreviewAPIView,FileAccessRequestListAPIView,ApproveorDenyConfidentialAPIView,NotificationListView, FavouriteFilesView,FavouriteFilesView,LatestUserFilesView
+from .views import CaseInfoDetailsView,SearchCaseFilesView,CaseInfoDraftDetailsView,CaseFileUploadView,SubmitDraftAPIView,FileDetailsView,UploadApprovalDetailView,WithdrawAccessApprovalView,SendAccessApprovalReminder,SendUploadApprovalReminder,WithdrawUploadApprovalView,MarkNotificationAsReadAPIView,UploadApprovalListView,RevokeFileAccessRequestAPIView, FileApprovalDetailsViewSet,FilePreviewAPIView,FileAccessRequestListAPIView,ApproveorDenyConfidentialAPIView,NotificationListView, FavouriteFilesView,FavouriteFilesView,LatestUserFilesView
 
 admin.site.site_header = "RRMS Super Admin Portal"
 admin.site.site_title = "RRMS"
 admin.site.index_title = "Master Data Dashboard"
 
 urlpatterns = [
-    path('save', CaseInfoDetailsView.as_view(), name='case-data'),
+    path('saveDraft', CaseInfoDetailsView.as_view(), name='case-data-draft'),
+    path('drafts',CaseInfoDraftDetailsView.as_view(),name='case-drafts'),
+    path('submit/<int:pk>', SubmitDraftAPIView.as_view(), name='submit-case-draft'),
     path('<int:casedetailsId>/upload',CaseFileUploadView.as_view(),name='file-upload'),
     path('update/<int:pk>', CaseInfoDetailsView.as_view(), name='update-case-data'),
     path('search', SearchCaseFilesView.as_view(), name='search-case'),
