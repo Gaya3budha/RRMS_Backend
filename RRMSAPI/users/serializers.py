@@ -2,9 +2,11 @@ import logging
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from mdm.models import Role, Designation, DesignationHierarchy
-from mdm.serializers import DivisionSerializer,DesignationSerializer,RoleSerializer
+from mdm.serializers import DesignationSerializer
+from users.utils import send_password_setup_email
 from .models import User
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.utils.crypto import get_random_string
 
 
 # Set up the logger
@@ -24,16 +26,17 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id','email', 'first_name', 'last_name', 'roleId','mobileno', 'kgid', 'password','designation','designation_detail']
         extra_kwargs = {
-            'password': {'write_only': True},
+            'password': {'write_only': True,'required': False},
         }
 
     def create(self, validated_data):
         designations = validated_data.pop('designation', [])
+        random_password = get_random_string(length=10)
         try:
             user = User.objects.create_user(
                 kgid=validated_data['kgid'],
                 email=validated_data['email'],
-                password=validated_data['password'],
+                password=random_password,
                 role=validated_data['role'],
                 designation=None,
                 first_name=validated_data['first_name'],
@@ -45,6 +48,9 @@ class UserSerializer(serializers.ModelSerializer):
         
         if designations:
             user.designation.set(designations)
+
+        # Send password setup email
+        send_password_setup_email(user)
       
         return user
 

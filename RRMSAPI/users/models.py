@@ -117,19 +117,6 @@ class ActiveUser(models.Model):
     def __str__(self):
         return self.user.kgid
 
-# class UserDivisionRole(models.Model):
-#     user = models.ForeignKey(User, on_delete=models.CASCADE)
-#     division = models.ForeignKey(DivisionMaster, on_delete=models.CASCADE)
-#     role = models.ForeignKey(Role, on_delete=models.CASCADE)
-#     designation = models.ForeignKey(DesignationMaster, on_delete=models.CASCADE)
-
-#     class Meta:
-#         unique_together = ('user', 'division')  # optional
-
-#     def __str__(self):
-#         return f"{self.user.first_name}{self.user.last_name} - {self.division.divisionName} - {self.role.roleName} - {self.designation.designationName}"
-
-
 
 
 
