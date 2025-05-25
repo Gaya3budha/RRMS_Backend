@@ -1,0 +1,16 @@
+from django.contrib.auth.tokens import default_token_generator
+from django.urls import reverse
+from django.core.mail import send_mail
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+
+def send_password_setup_email(user):
+    token = default_token_generator.make_token(user)
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    
+    frontend_link = f"https://rrms-frontend.vercel.app/set-password?uid={uid}&token={token}"
+
+    subject = "[RRMS] Confirm your Password"
+    message = f"Hello {user.first_name},\n\nClick the link below to set your password:\n{frontend_link}\n\nThis link is valid for one-time use only."
+
+    send_mail(subject, message, 'no-reply@example.com', [user.email])
