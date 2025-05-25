@@ -92,14 +92,6 @@ WSGI_APPLICATION = 'RRMSAPI.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    # 'default': {
-    #    'ENGINE': 'django.db.backends.postgresql',
-    #     'NAME': 'RRMS',
-    #     'USER': 'postgres',
-    #     'PASSWORD': '1234',
-    #     'HOST': 'localhost',
-    #     'PORT': '5432'
-    # }
     'default': {
        'ENGINE': 'django.db.backends.postgresql',
         'NAME': config('DB_NAME'),
@@ -193,3 +185,11 @@ SIMPLE_JWT = {
 
 USE_TZ = True
 TIME_ZONE = 'UTC'
+
+EMAIL_BACKEND = config('EMAIL_BACKEND')
+EMAIL_HOST = config('EMAIL_HOST')
+EMAIL_PORT = config('EMAIL_PORT')
+EMAIL_USE_TLS = config('EMAIL_USE_TLS')
+EMAIL_HOST_USER = config('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD =  config('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
