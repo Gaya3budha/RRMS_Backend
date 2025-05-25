@@ -4,9 +4,11 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
+
+from users.utils import generate_otp, send_otp_email
 from .serializers import UserSerializer, CustomTokenObtainPairSerializer, UserSearchSerializer
 from rest_framework.exceptions import AuthenticationFailed
-from .models import User, ActiveUser, Designation
+from .models import PasswordResetOTP, User, ActiveUser, Designation
 from mdm.models import Role
 from mdm.permissions import IsSuperAdminOrReadOnly
 from datetime import date
@@ -63,8 +65,61 @@ class SetPasswordView(APIView):
             return Response({"success": "Password has been set for the user."})
         else:
             return Response({"error": "Invalid or expired token."}, status=status.HTTP_400_BAD_REQUEST)
-  
-  
+
+class RequestPasswordResetOTP(APIView):
+    def post(self, request, *args, **kwargs):
+        try:
+            pk = kwargs.get('pk')
+            user = User.objects.get(kgid=pk)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found.'}, status=404)
+
+        otp = generate_otp()
+        PasswordResetOTP.objects.create(user=user, otp=otp)
+        print('email', user.email)
+        send_otp_email(user.email, otp)
+        # send_otp_sms(user.mobileno, otp)
+
+        return Response({'message': 'OTP sent to registered email.'})
+
+class VerifyPasswordResetOTP(APIView):
+    def post(self, request):
+        user_id = request.data.get('kgid')
+        otp = request.data.get('otp')
+
+        try:
+            user = User.objects.get(kgid=user_id)
+        except User.DoesNotExist:
+            return Response({'error': 'Invalid user ID'}, status=404)
+
+        try:
+            otp_entry = PasswordResetOTP.objects.filter(user=user, otp=otp, is_used=False).latest('created_at')
+        except PasswordResetOTP.DoesNotExist:
+            return Response({'error': 'Invalid or used OTP'}, status=400)
+
+        if otp_entry.is_expired():
+            return Response({'error': 'OTP has expired'}, status=400)
+
+        otp_entry.is_used = True
+        otp_entry.save()
+
+        return Response({'message': 'OTP validated. You can now reset the password.'})
+
+class ResetPassword(APIView):
+    def post(self, request):
+        user_id = request.data.get('kgid')
+        new_password = request.data.get('password')
+
+        try:
+            user = User.objects.get(kgid=user_id)
+        except User.DoesNotExist:
+            return Response({'error': 'Invalid user ID'}, status=404)
+
+        user.set_password(new_password)
+        user.is_passwordset = True
+        user.save()
+
+        return Response({'message': 'Password reset successful.'})
 class UpdateUserView(APIView):
     def patch(self,request,kgid_user,*args,**kwargs):
         try:

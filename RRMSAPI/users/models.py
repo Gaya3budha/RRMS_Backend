@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 from mdm.models import Role,Designation
@@ -117,6 +118,14 @@ class ActiveUser(models.Model):
     def __str__(self):
         return self.user.kgid
 
+class PasswordResetOTP(models.Model):
+    user = models.ForeignKey('User', on_delete=models.CASCADE)
+    otp = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_used = models.BooleanField(default=False)
+
+    def is_expired(self):
+        return timezone.now() > self.created_at + timezone.timedelta(minutes=10)
 
 
 

@@ -1,3 +1,4 @@
+import random
 from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
 from django.urls import reverse
@@ -16,3 +17,17 @@ def send_password_setup_email(user):
     from_email = settings.DEFAULT_FROM_EMAIL
     
     send_mail(subject, message, from_email, [user.email], fail_silently=False)
+
+def generate_otp():
+    return str(random.randint(100000, 999999))
+
+def send_otp_email(user_email, otp):
+    from_email = settings.DEFAULT_FROM_EMAIL
+
+    send_mail(
+        'Your OTP for Password Reset',
+        f'Your OTP is {otp}. It is valid for 10 minutes.',
+        from_email,
+        [user_email],
+        fail_silently=False,
+    )
