@@ -147,13 +147,17 @@ class SearchCaseFilesView(APIView):
             query &= Q(year__lte= searchParams['toYear'])
             filters_applied = True
 
-
+        print('query: ',query)
+        print('filters_applied: ',filters_applied)
         if filters_applied:
             case_details_qs = CaseInfoDetails.objects.filter(query).distinct()
         else:
             case_details_qs = CaseInfoDetails.objects.all()
 
         user = request.user
+
+        print("case_details_qs: ",case_details_qs.count())
+        print("logged in user",user)
 
         request_raised_subquery = FileAccessRequest.objects.filter(
                     file=OuterRef('pk'),
@@ -166,31 +170,33 @@ class SearchCaseFilesView(APIView):
                     )
         favourite_subquery = FavouriteFiles.objects.filter(user=request.user,file=OuterRef('pk'))
         
-        if user.is_staff or user.role.roleId in [1,3]:
-            file_filter = Q()  # Admin sees all
+        print('user.role.roleId',user.role.roleId)
+        if user.is_staff or user.role.roleId in [3]:
+            file_filter = Q()  # content manager sees all
         else:
            
             file_filter = Q(is_approved=True) | Q(uploaded_by=user) | Exists(access_request_subquery)
 
-        print("access- ",file_filter)
+        file_extra_filter = Q()
+
         if 'hashtag' in searchParams and searchParams["hashtag"] not in [None, ""]:
-            query &= Q(files__hashTag__icontains=searchParams['hashtag'])
+            file_extra_filter &= Q(files__hashTag__icontains=searchParams['hashtag'])
             filters_applied = True
 
         if 'subject' in searchParams and searchParams["subject"] not in [None, ""]:
-            query &= Q(files__subject__icontains= searchParams['subject'])
+            file_extra_filter &= Q(files__subject__icontains= searchParams['subject'])
             filters_applied = True
 
         if 'classification' in searchParams and searchParams["classification"] not in [None, ""]:
-            query &= Q(files__classification__lookupId__icontains= searchParams['classification'])
+            file_extra_filter &= Q(files__classification__lookupId__icontains= searchParams['classification'])
             filters_applied = True
 
         if 'fileType' in searchParams and searchParams["fileType"] not in [None, ""]:
-            query &= Q(files__fileType__lookupId__icontains= searchParams['fileType'])
+            file_extra_filter &= Q(files__fileType__lookupId__icontains= searchParams['fileType'])
             filters_applied = True
 
         if 'docType' in searchParams and searchParams["docType"] not in [None, ""]:
-            query &= Q(files__documentType__lookupId__icontains= searchParams['docType'])
+            file_extra_filter &= Q(files__documentType__lookupId__icontains= searchParams['docType'])
             filters_applied = True
 
         if 'fileExt' in searchParams and searchParams["fileExt"]:
@@ -210,13 +216,16 @@ class SearchCaseFilesView(APIView):
                 ext_query = Q()
                 for ext in extensions:
                     ext_query |= Q(fileName__iendswith=ext)
-                file_filter &= ext_query
+                file_extra_filter &= ext_query
 
-        file_queryset = FileDetails.objects.select_related('classification').filter(file_filter).annotate(
+
+        file_queryset = FileDetails.objects.select_related('classification').filter(file_filter & file_extra_filter).annotate(
             is_favourited=Exists(favourite_subquery),
             is_request_raised = Exists(request_raised_subquery),
             is_access_request_approved=Exists(access_request_subquery)
             )
+
+        print('file_extra_filter:',file_queryset.count())
 
         caseDetails = case_details_qs.prefetch_related(
             Prefetch('files', queryset=file_queryset)
@@ -330,6 +339,7 @@ class SubmitDraftAPIView(APIView):
                         file_obj.delete()
             else:
                 print("hey request is in else block :)")
+                case_data['division'] = division_id
                 # Create new case
                 serializer = CaseInfoDetailsSerializer(data=case_data)
 
