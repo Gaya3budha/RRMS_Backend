@@ -283,6 +283,7 @@ class SubmitDraftAPIView(APIView):
                                 setattr(case_instance, field, new_val)
                 
                 case_instance.is_draft = False
+                case_instance.division = division_id
                 case_instance.submitted_at = timezone.now()
                 case_instance.lastmodified_by = request.user
                 case_instance.lastmodified_Date = timezone.now()
