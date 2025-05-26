@@ -8,7 +8,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from users.utils import generate_otp, send_otp_email
 from .serializers import PasswordResetRequestSerializer, UserSerializer, CustomTokenObtainPairSerializer, UserSearchSerializer
 from rest_framework.exceptions import AuthenticationFailed
-from .models import PasswordResetOTP, User, ActiveUser, Designation
+from .models import PasswordResetOTP, PasswordResetRequest, User, ActiveUser, Designation
 from mdm.models import Role
 from mdm.permissions import IsSuperAdminOrReadOnly
 from datetime import date
@@ -296,8 +296,24 @@ class RequestPasswordResetView(APIView):
         serializer = PasswordResetRequestSerializer(data=request.data)
 
         if serializer.is_valid():
-            reset_request = serializer.save(requested_by=request.user)
+            validated_data = serializer.validated_data
 
-            return Response({'message': 'Request Received by Admin. You shall be notified shortly'}, status=status.HTTP_201_CREATED)
+            kgid = validated_data.get('kgid')
+            try:
+                user = User.objects.get(kgid=kgid)
+            except User.DoesNotExist:
+                return Response({'error': 'User with this student ID does not exist.'}, status=status.HTTP_404_NOT_FOUND)
+
+            # Create the password reset request
+            reset_request = PasswordResetRequest.objects.create(
+                kgid=kgid,
+                first_name=validated_data.get('first_name'),
+                last_name=validated_data.get('last_name'),
+                email=validated_data.get('email'),
+                mobileno=validated_data.get('mobileno'),
+                requested_by=user
+            )
+
+            return Response({'message': 'Request received by admin. You shall be notified shortly.'}, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
