@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from users.utils import generate_otp, send_otp_email
-from .serializers import UserSerializer, CustomTokenObtainPairSerializer, UserSearchSerializer
+from .serializers import PasswordResetRequestSerializer, UserSerializer, CustomTokenObtainPairSerializer, UserSearchSerializer
 from rest_framework.exceptions import AuthenticationFailed
 from .models import PasswordResetOTP, User, ActiveUser, Designation
 from mdm.models import Role
@@ -290,3 +290,14 @@ class SearchUsersAPIView(APIView):
 
         serializer = UserSearchSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class RequestPasswordResetView(APIView):
+    def post(self, request):
+        serializer = PasswordResetRequestSerializer(data=request.data)
+
+        if serializer.is_valid():
+            reset_request = serializer.save(requested_by=request.user)
+
+            return Response({'message': 'Request Received by Admin. You shall be notified shortly'}, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

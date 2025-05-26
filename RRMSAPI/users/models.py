@@ -126,6 +126,19 @@ class PasswordResetOTP(models.Model):
 
     def is_expired(self):
         return timezone.now() > self.created_at + timezone.timedelta(minutes=10)
+    
+class PasswordResetRequest(models.Model):
+    passwordResetRequestId = models.AutoField(primary_key=True)
+    kgid = models.CharField()
+    first_name=models.CharField(max_length=100)
+    last_name=models.CharField(max_length=100)
+    email = models.EmailField()
+    mobileno=models.CharField(max_length=10)
+    requested_at = models.DateTimeField(auto_now_add=True)
+    requested_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
+
+    def __str__(self):
+        return f"{self.kgid} - {self.email}-{self.mobileno}"
 
 
 

@@ -4,7 +4,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from mdm.models import Role, Designation, DesignationHierarchy
 from mdm.serializers import DesignationSerializer
 from users.utils import send_password_setup_email
-from .models import User
+from .models import PasswordResetRequest, User
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils.crypto import get_random_string
 
@@ -134,3 +134,11 @@ class UserSearchSerializer(serializers.ModelSerializer):
         fields = ['kgid','email','first_name','last_name','mobileno','role','roleName','designation','designation_detail','is_active']
     
 
+class PasswordResetRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PasswordResetRequest
+        fields = '__all__'
+
+        def create(self, validated_data):
+            requested_by = self.context.get('requested_by')
+            return PasswordResetRequest.objects.create(**validated_data, requested_by=requested_by)
