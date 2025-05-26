@@ -140,5 +140,10 @@ class PasswordResetRequestSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
         def create(self, validated_data):
-            requested_by = self.context.get('requested_by')
-            return PasswordResetRequest.objects.create(**validated_data, requested_by=requested_by)
+            # Try to look up the user (optional)
+            user = User.objects.filter(id=validated_data.get('kgid')).first()
+
+            return PasswordResetRequest.objects.create(
+                **validated_data,
+                requested_by=user  # can be None if not found
+            )
