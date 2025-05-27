@@ -148,6 +148,7 @@ class SearchCaseFilesView(APIView):
             filters_applied = True
 
         query &= Q(is_draft__icontains = False)
+        
         if filters_applied:
             case_details_qs = CaseInfoDetails.objects.filter(query).distinct()
         else:
@@ -244,7 +245,6 @@ class FileDetailsView(APIView):
 class SubmitDraftAPIView(APIView):
     def post(self, request):
         try:
-            
             case_info_json = request.data.get("caseDetails")
             file_details = request.data.get("fileDetails")
             division_id = request.data.get("division_id")
@@ -375,6 +375,7 @@ class SubmitDraftAPIView(APIView):
                         fileName=file_name,
                         filePath=file_path,
                         fileHash=file_hash,
+                        hashTag = file_details_data[i]['hashTag'],
                         subject=file_details_data[i]['subject'],
                         fileType=GeneralLookUp.objects.get(lookupId=file_details_data[i]['fileType']),
                         classification=GeneralLookUp.objects.get(lookupId=file_details_data[i]['classification']),
