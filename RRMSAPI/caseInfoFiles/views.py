@@ -147,8 +147,7 @@ class SearchCaseFilesView(APIView):
             query &= Q(year__lte= searchParams['toYear'])
             filters_applied = True
 
-        print('query: ',query)
-        print('filters_applied: ',filters_applied)
+        query &= Q(is_draft__icontains = False)
         if filters_applied:
             case_details_qs = CaseInfoDetails.objects.filter(query).distinct()
         else:
@@ -156,8 +155,6 @@ class SearchCaseFilesView(APIView):
 
         user = request.user
 
-        print("case_details_qs: ",case_details_qs.count())
-        print("logged in user",user)
 
         request_raised_subquery = FileAccessRequest.objects.filter(
                     file=OuterRef('pk'),
