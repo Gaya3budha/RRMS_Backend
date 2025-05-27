@@ -10,17 +10,23 @@ from cryptography.fernet import Fernet
 
 
 class CaseInfoDetailsSerializer(serializers.ModelSerializer):
-
+    file_details = serializers.SerializerMethodField()
     class Meta:
         model = CaseInfoDetails
         fields = "__all__"
         read_only_fields = ['submitted_at', 'lastmodified_Date']
     
+    def get_file_details(self, obj):
+        files = FileDetails.objects.filter(caseDetails=obj)
+        if files.exists():
+            return FileDetailsSerializer(files, many=True).data
+        return []
+    
     def validate_caseNo(self,value):
         if CaseInfoDetails.objects.filter(caseNo=value).exists():
-            raise serializers.ValidationError("(CCMS)Case No/ Enquiry No already exists")
-        
+            raise serializers.ValidationError("(CMS)Case No/ Enquiry No already exists")
         return value
+    
 
 class FileDetailsSearchSerializer(serializers.ModelSerializer):
     CaseInfoDetailsId = serializers.IntegerField(source='CaseInfoDetails.CaseInfoDetailsId',read_only = True)

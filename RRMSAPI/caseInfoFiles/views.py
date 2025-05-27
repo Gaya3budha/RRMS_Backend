@@ -406,15 +406,7 @@ class SubmitDraftAPIView(APIView):
         
 class CaseInfoDraftDetailsView(APIView):
     def get(self, request):
-        # draft_param = request.query_params.get('draft')
-
-        # if draft_param == 'true':
-        #     caseDetails = CaseInfoDetails.objects.filter(is_draft=True)
-        # elif draft_param == 'false':
-        #     caseDetails = CaseInfoDetails.objects.filter(is_draft=False)
-        # else:
         caseDetails = CaseInfoDetails.objects.filter(is_draft=True)
-
         serializer = CaseInfoDetailsSerializer(caseDetails, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
@@ -449,12 +441,6 @@ class CaseInfoDetailsView(APIView):
             else:
                 file_details_data = file_details
 
-            # if isinstance(case_info_json, str):
-            #     case_data= json.loads(case_info_json)
-
-            # if isinstance(file_details, str):
-            #     file_details_data = json.loads(file_details)
-
             division_id = request.data.get("division_id")
             if not division_id:
                 return Response({"error": "Division ID is required."}, status=status.HTTP_400_BAD_REQUEST)
@@ -471,11 +457,6 @@ class CaseInfoDetailsView(APIView):
 
             case_info = case_serailizer.save(lastmodified_by= request.user)
 
-            # if is_draft:
-            #     return Response({
-            #         "studentDetails": CaseInfoDetailsSerializer(case_info).data,
-            #         "message": "Saved as draft."
-            #     }, status=status.HTTP_201_CREATED)
 
             uploaded_files = request.FILES.getlist("Files")
 
@@ -533,8 +514,7 @@ class CaseInfoDetailsView(APIView):
                     })
             
             return Response({
-                    "caseDetails": CaseInfoDetailsSerializer(case_info).data,
-                    "file": file_details_list,
+                    "caseDetails": CaseInfoDetailsSerializer(case_info).data
                 },status=status.HTTP_201_CREATED)
 
         except Exception as e:
