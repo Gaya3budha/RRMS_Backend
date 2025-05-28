@@ -11,6 +11,13 @@ from cryptography.fernet import Fernet
 
 class CaseInfoDetailsSerializer(serializers.ModelSerializer):
     file_details = serializers.SerializerMethodField()
+    stateName = serializers.SerializerMethodField()
+    districtName = serializers.SerializerMethodField()
+    unitName = serializers.SerializerMethodField()
+    caseTypeName = serializers.SerializerMethodField()
+    caseDate = serializers.DateTimeField(format="%d-%m-%Y")
+    caseStatusName = serializers.SerializerMethodField()
+
     class Meta:
         model = CaseInfoDetails
         fields = "__all__"
@@ -27,6 +34,40 @@ class CaseInfoDetailsSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("(CMS)Case No/ Enquiry No already exists")
         return value
     
+    def get_caseStatusName(self, obj):
+        try:
+            state = GeneralLookUp.objects.get(lookupId = obj.caseType)
+            return state.lookupName
+        except GeneralLookUp.DoesNotExist:
+            return None
+        
+    def get_stateName(self, obj):
+        try:
+            state = StateMaster.objects.get(stateId = obj.stateId)
+            return state.stateName
+        except StateMaster.DoesNotExist:
+            return None
+
+    def get_districtName(self, obj):
+        try:
+            dist = DistrictMaster.objects.get(districtId = obj.districtId)
+            return dist.districtName
+        except DistrictMaster.DoesNotExist:
+            return None
+
+    def get_unitName(self, obj):
+        try:
+            unit = UnitMaster.objects.get(unitId = obj.unitId)
+            return unit.unitName
+        except UnitMaster.DoesNotExist:
+            return None
+        
+    def get_caseTypeName(self, obj):
+        try:
+            caseType = GeneralLookUp.objects.get(lookupId = obj.caseType)
+            return caseType.lookupName
+        except GeneralLookUp.DoesNotExist:
+            return None
 
 class FileDetailsSearchSerializer(serializers.ModelSerializer):
     CaseInfoDetailsId = serializers.IntegerField(source='CaseInfoDetails.CaseInfoDetailsId',read_only = True)
