@@ -224,7 +224,7 @@ class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
         fields = "__all__"
-        extra_fields = ['redirect_url', 'status']
+        extra_fields = ['redirect_url', 'status','reference_object_data']
 
     def get_status(self, obj):
         if obj.reference_object and hasattr(obj.reference_object, 'status'):
@@ -255,7 +255,7 @@ class FileAccessRequestSerializer(serializers.ModelSerializer):
     approved_by_last_name = serializers.CharField(source='approved_by.last_name', read_only=True)
     file_name = serializers.CharField(source='file.fileName', read_only=True)
     case_no = serializers.CharField(source='case_details_id.caseNo', read_only=True)
-    
+    file = FileDetailsSerializer()
     class Meta:
         model = FileAccessRequest
         fields = [

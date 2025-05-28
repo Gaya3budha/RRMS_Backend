@@ -841,10 +841,7 @@ class FileAccessRequestListAPIView(APIView):
         approvals = FileAccessRequest.objects.all()
 
         print("division_id",division_id)
-        if user.role.roleId == 1:  # Admin role
-            # Admin can see all approvals where they are assigned for review
-            approvals = approvals.filter(reviewed_by=user)
-        elif user.role.roleId == 3:  # Content manager role
+        if user.role.roleId == 3:  # Content manager role
             # Viewer can also see the approvals where they are assigned for review
             approvals = approvals.filter(reviewed_by=user)
         else:  # Regular User
@@ -1216,31 +1213,18 @@ class NotificationListView(APIView):
         if not division_id and not user.is_staff:
             return Response({"detail": "Division ID is required."}, status=400)
         
-    
-        # notifications = Notification.objects.filter(
-        #         recipient=user,
-        #         division__divisionId=division_id,
-        #         type__in=allowed_types
-        #     ).order_by('-created_at')
-        
         if user.is_staff:
             notifications = Notification.objects.filter(
                 recipient=user,
                 type__in=allowed_types
             ).order_by('-created_at').distinct()
-        # elif user.role.roleId==1:
-        #     notifications = Notification.objects.filter(
-        #         division__divisionId=division_id,
-        #         type__in=allowed_types
-        #     ).order_by('-created_at')
         else:
             notifications = Notification.objects.filter(
                 recipient=user,
                 division__divisionId=division_id,
                 type__in=allowed_types
             ).order_by('-created_at')
-        # else:
-        #     return Response({"detail": "Not authorized."}, status=403)
+       
 
         serializer = NotificationSerializer(notifications, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
