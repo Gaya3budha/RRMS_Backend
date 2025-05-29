@@ -404,7 +404,7 @@ class SubmitDraftAPIView(APIView):
         
 class CaseInfoDraftDetailsView(APIView):
     def get(self, request):
-        caseDetails = CaseInfoDetails.objects.filter(is_draft=True)
+        caseDetails = CaseInfoDetails.objects.filter(is_draft=True,lastmodified_by=request.user)
         serializer = CaseInfoDetailsSerializer(caseDetails, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
