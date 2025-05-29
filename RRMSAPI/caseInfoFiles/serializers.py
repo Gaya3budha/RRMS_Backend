@@ -15,7 +15,7 @@ class CaseInfoDetailsSerializer(serializers.ModelSerializer):
     districtName = serializers.SerializerMethodField()
     unitName = serializers.SerializerMethodField()
     caseTypeName = serializers.SerializerMethodField()
-    caseDate = serializers.DateTimeField(format="%d-%m-%Y")
+    caseDate = serializers.DateTimeField(format="%d-%m-%Y",required=False,allow_null=True)
     caseStatusName = serializers.SerializerMethodField()
 
     class Meta:
