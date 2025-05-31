@@ -403,8 +403,8 @@ class SubmitDraftAPIView(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 class CaseInfoDraftDetailsView(APIView):
-    def get(self, request):
-        caseDetails = CaseInfoDetails.objects.filter(is_draft=True,lastmodified_by=request.user)
+    def get(self, request,divisionId):
+        caseDetails = CaseInfoDetails.objects.filter(is_draft=True,lastmodified_by=request.user,division=divisionId)
         serializer = CaseInfoDetailsSerializer(caseDetails, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     

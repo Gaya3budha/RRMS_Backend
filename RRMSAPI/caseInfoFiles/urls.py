@@ -8,7 +8,7 @@ admin.site.index_title = "Master Data Dashboard"
 
 urlpatterns = [
     path('saveDraft', CaseInfoDetailsView.as_view(), name='case-data-draft'),
-    path('drafts',CaseInfoDraftDetailsView.as_view(),name='case-drafts'),
+    path('drafts/<int:divisionId>',CaseInfoDraftDetailsView.as_view(),name='case-drafts'),
     path('submit', SubmitDraftAPIView.as_view(), name='submit-case-draft'),
     path('<int:casedetailsId>/upload',CaseFileUploadView.as_view(),name='file-upload'),
     path('update/<int:pk>', CaseInfoDetailsView.as_view(), name='update-case-data'),
