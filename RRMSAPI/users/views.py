@@ -302,7 +302,7 @@ class RequestPasswordResetView(APIView):
             try:
                 user = User.objects.get(kgid=kgid)
             except User.DoesNotExist:
-                return Response({'error': 'User with this student ID does not exist.'}, status=status.HTTP_404_NOT_FOUND)
+                return Response({'error': 'User with this KGID does not exist.'}, status=status.HTTP_404_NOT_FOUND)
 
             # Create the password reset request
             reset_request = PasswordResetRequest.objects.create(
