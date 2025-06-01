@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'mdm',
     'users',
     'caseInfoFiles.apps.CaseinfofilesConfig',
+    'ManageContent.apps.ManagecontentConfig'
 ]
 
 MIDDLEWARE = [

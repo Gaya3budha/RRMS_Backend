@@ -12,7 +12,7 @@ from django.db.models import Q
 from django.http import FileResponse, Http404
 from rest_framework.permissions import IsAuthenticated
 from mdm.permissions import HasRequiredPermission
-from mdm.models import FileClassification, GeneralLookUp, Division, Designation
+from mdm.models import Department, FileClassification, FileType, GeneralLookUp, Division, Designation
 # from users.models import UserDivisionRole
 from rest_framework.parsers import MultiPartParser, FormParser
 from .permissions import HasCustomPermission,FileDetailsPermission
@@ -248,6 +248,7 @@ class SubmitDraftAPIView(APIView):
             case_info_json = request.data.get("caseDetails")
             file_details = request.data.get("fileDetails")
             division_id = request.data.get("division_id")
+            department_id = request.data.get("dept_id")
             uploaded_files = request.FILES.getlist("Files")
             print("division_id ",division_id)
             if not case_info_json:
@@ -292,6 +293,8 @@ class SubmitDraftAPIView(APIView):
                 existing_hashes = {f.fileHash: f for f in existing_files}
                 incoming_hashes = set()
 
+                division_name = Division.objects.get(divisionId=division_id).divisionName
+                dept_name = Department.objects.get(departmentId=department_id).departmentName
                 # Process uploaded files: add new ones or skip duplicates
                 for i in range(len(uploaded_files)):
                     file_content = uploaded_files[i].read()
@@ -301,11 +304,15 @@ class SubmitDraftAPIView(APIView):
                     if file_hash not in existing_hashes:
                         file_name = uploaded_files[i].name
                         file_path = os.path.join(
-                            UPLOAD_DIR, str(case_instance.year), division_name,
-                            str(case_instance.caseType), case_instance.caseNo,
-                            str(file_details_data[i]['fileType']),
-                            str(file_details_data[i]['documentType']),
-                            file_name
+                           UPLOAD_DIR,
+                        str(dept_name),
+                        str(division_name),
+                        str(case_instance.year),
+                        str(case_instance.caseNo),
+                        str(GeneralLookUp.objects.get(lookupid=case_instance.caseType).lookupName),
+                        str(GeneralLookUp.objects.get(lookupId= file_details_data[i]['fileType']).lookupName),
+                        str(GeneralLookUp.objects.get(lookupid=file_details_data[i]['documentType']).lookupName),
+                        file_name
                         )
                         os.makedirs(os.path.dirname(file_path), exist_ok=True)
                         with open(file_path, "wb") as f:
@@ -360,10 +367,14 @@ class SubmitDraftAPIView(APIView):
 
                     file_name = uploaded_files[i].name
                     file_path = os.path.join(
-                        UPLOAD_DIR, str(case_instance.year), division_name,
-                        str(case_instance.caseType), case_instance.caseNo,
-                        str(file_details_data[i]['fileType']),
-                        str(file_details_data[i]['documentType']),
+                         UPLOAD_DIR,
+                        str(dept_name),
+                        str(division_name),
+                        str(case_instance.year),
+                        str(case_instance.caseNo),
+                        str(GeneralLookUp.objects.get(lookupid=case_instance.caseType).lookupName),
+                        str(GeneralLookUp.objects.get(lookupId= file_details_data[i]['fileType']).lookupName),
+                        str(GeneralLookUp.objects.get(lookupid=file_details_data[i]['documentType']).lookupName),
                         file_name
                     )
                     os.makedirs(os.path.dirname(file_path), exist_ok=True)
@@ -418,7 +429,7 @@ class CaseInfoDetailsView(APIView):
             case_info_json = request.data.get("caseDetails")
             file_details = request.data.get("fileDetails")
             is_draft = request.data.get("is_draft", True)
-
+            
         
             if not case_info_json:
                 return Response({
@@ -440,8 +451,13 @@ class CaseInfoDetailsView(APIView):
                 file_details_data = file_details
 
             division_id = request.data.get("division_id")
+            department_id= request.data.get("dept_id")
+
             if not division_id:
                 return Response({"error": "Division ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+            
+            if not department_id:
+                return Response({"error": "Department ID is required."}, status=status.HTTP_400_BAD_REQUEST)
         
             case_data['division'] = division_id 
             case_data['is_draft'] = is_draft 
@@ -465,23 +481,25 @@ class CaseInfoDetailsView(APIView):
            
             if uploaded_files:
                 div_name=Division.objects.get(divisionId=division_id)
+                dept_name = Department.objects.get(departmentId = department_id)
 
                 for i in range(len(uploaded_files)):
                     file_content = uploaded_files[i].read()
 
                     # Compute file hash (SHA-256)
                     file_hash = hashlib.sha256(file_content).hexdigest()
-                    
+                    print("file_details_data[i]['fileType']",file_details_data[i]['fileType'])
                     # Define file path and save file
                     file_name = uploaded_files[i].name
                     file_path = os.path.join(
                         UPLOAD_DIR,
-                        str(case_info.year),
+                        str(dept_name.departmentName),
                         str(div_name.divisionName),
-                        str(case_info.caseType),
+                        str(case_info.year),
                         str(case_info.caseNo),
-                        str(file_details_data[i]['fileType']),
-                        str(file_details_data[i]['documentType']),
+                        str(GeneralLookUp.objects.get(lookupId=case_info.caseType).lookupName),
+                        str(GeneralLookUp.objects.get(lookupId= file_details_data[i]['fileType']).lookupName),
+                        str(GeneralLookUp.objects.get(lookupId=file_details_data[i]['documentType']).lookupName),
                         file_name
                     )
 
@@ -937,7 +955,7 @@ class ApproveorDenyConfidentialAPIView(APIView):
             requestedBy=request.user,
             division=access_request.division,
             message=f"Your file has been {'approved' if is_approved else 'denied'} with comments: {comment}",
-            type="GENERIC",
+            type="ACCESS_REQUEST",
             content_type=ContentType.objects.get_for_model(FileUploadApproval),
             object_id=access_request.id
         )
