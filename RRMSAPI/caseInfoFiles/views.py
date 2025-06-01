@@ -264,6 +264,9 @@ class SubmitDraftAPIView(APIView):
             file_changes = []
             case_changes = {}
 
+            division_name = Division.objects.get(divisionId=division_id).divisionName
+            dept_name = Department.objects.get(departmentId=department_id).departmentName
+
             # Update if case details id  exists
             if case_details_id:
                 print("hey i'm in if block")
@@ -293,8 +296,7 @@ class SubmitDraftAPIView(APIView):
                 existing_hashes = {f.fileHash: f for f in existing_files}
                 incoming_hashes = set()
 
-                division_name = Division.objects.get(divisionId=division_id).divisionName
-                dept_name = Department.objects.get(departmentId=department_id).departmentName
+                
                 # Process uploaded files: add new ones or skip duplicates
                 for i in range(len(uploaded_files)):
                     file_content = uploaded_files[i].read()
@@ -359,7 +361,7 @@ class SubmitDraftAPIView(APIView):
                 if not uploaded_files:
                     return Response({"error": "No files uploaded"}, status=status.HTTP_400_BAD_REQUEST)
 
-                division_name = Division.objects.get(divisionId=division_id).divisionName
+                # division_name = Division.objects.get(divisionId=division_id).divisionName
 
                 for i in range(len(uploaded_files)):
                     file_content = uploaded_files[i].read()
