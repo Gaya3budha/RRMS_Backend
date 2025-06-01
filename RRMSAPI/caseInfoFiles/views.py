@@ -309,9 +309,9 @@ class SubmitDraftAPIView(APIView):
                         str(division_name),
                         str(case_instance.year),
                         str(case_instance.caseNo),
-                        str(GeneralLookUp.objects.get(lookupid=case_instance.caseType).lookupName),
+                        str(GeneralLookUp.objects.get(lookupId=case_instance.caseType).lookupName),
                         str(GeneralLookUp.objects.get(lookupId= file_details_data[i]['fileType']).lookupName),
-                        str(GeneralLookUp.objects.get(lookupid=file_details_data[i]['documentType']).lookupName),
+                        str(GeneralLookUp.objects.get(lookupId=file_details_data[i]['documentType']).lookupName),
                         file_name
                         )
                         os.makedirs(os.path.dirname(file_path), exist_ok=True)
@@ -372,9 +372,9 @@ class SubmitDraftAPIView(APIView):
                         str(division_name),
                         str(case_instance.year),
                         str(case_instance.caseNo),
-                        str(GeneralLookUp.objects.get(lookupid=case_instance.caseType).lookupName),
+                        str(GeneralLookUp.objects.get(lookupId=case_instance.caseType).lookupName),
                         str(GeneralLookUp.objects.get(lookupId= file_details_data[i]['fileType']).lookupName),
-                        str(GeneralLookUp.objects.get(lookupid=file_details_data[i]['documentType']).lookupName),
+                        str(GeneralLookUp.objects.get(lookupId=file_details_data[i]['documentType']).lookupName),
                         file_name
                     )
                     os.makedirs(os.path.dirname(file_path), exist_ok=True)
