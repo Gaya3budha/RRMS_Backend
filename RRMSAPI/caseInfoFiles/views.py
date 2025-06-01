@@ -1155,15 +1155,18 @@ class FileApprovalDetailsViewSet(APIView):
         is_approved= request.data.get("is_approved")
         comments = request.data.get("comments")
 
+        print("comments ",comments)
+
         upload_approval = get_object_or_404(FileUploadApproval, id=upload_approval_id)
         file = upload_approval.file
 
         file.is_approved = is_approved
         file.comments = comments
-        file.save(update_fields=["is_approved", "comments"])
+        file.save()
 
         upload_approval.status = "APPROVED" if is_approved else "DENIED"
         upload_approval.is_approved = is_approved
+        upload_approval.comments=comments
         upload_approval.reviewed_by = request.user
         upload_approval.reviewed_at = timezone.now()
         upload_approval.approved_by=request.user
@@ -1181,7 +1184,7 @@ class FileApprovalDetailsViewSet(APIView):
         ).exclude(id=upload_approval.id)
 
         other_pending_approvals.update(status = "APPROVED" if is_approved else "DENIED",reviewed_at = timezone.now(),is_approved = is_approved,
-                                       approved_by=request.user)
+                                       approved_by=request.user,comments=comments)
 
         for other_approval in other_pending_approvals:
             Notification.objects.filter(
@@ -1195,7 +1198,7 @@ class FileApprovalDetailsViewSet(APIView):
             requestedBy=request.user,
             division=file.division,
             message=f"Your file has been {'approved' if is_approved else 'denied'} with comments: {comments}",
-            type="GENERIC",
+            type="UPLOAD_APPROVAL",
             content_type=ContentType.objects.get_for_model(FileUploadApproval),
             object_id=upload_approval.id
         )
