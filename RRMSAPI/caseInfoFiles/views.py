@@ -249,7 +249,7 @@ class SubmitDraftAPIView(APIView):
             file_details = request.data.get("fileDetails")
             division_id = request.data.get("division_id")
             uploaded_files = request.FILES.getlist("Files")
-
+            print("division_id ",division_id)
             if not case_info_json:
                 return Response({"error": "No case details provided"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -280,7 +280,7 @@ class SubmitDraftAPIView(APIView):
                                 setattr(case_instance, field, new_val)
                 
                 case_instance.is_draft = False
-                case_instance.division = division_id
+                case_instance.division =  Division.objects.get(divisionId=division_id)
                 case_instance.submitted_at = timezone.now()
                 case_instance.lastmodified_by = request.user
                 case_instance.lastmodified_Date = timezone.now()
