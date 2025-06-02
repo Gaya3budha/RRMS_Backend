@@ -12,7 +12,7 @@ from users.models import User
 class FolderTreeAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
+    def post(self, request):
         division_id = request.data.get("division_id")
         year=request.data.get("year")
         caseNo=request.data.get("caseNo")
