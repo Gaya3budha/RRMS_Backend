@@ -73,7 +73,7 @@ class FolderTreeAPIView(APIView):
             ])
         elif division_id and not year:
             yearData=files.values_list("caseDetails__year",flat=True).distinct()
-            division_files = files.filter(studentDetails__year__isnull=True)
+            division_files = files.filter(caseDetails__year__isnull=True)
             return Response({
                 "folders":[
                 {"name": y, "type": "folder", "level": "year"}
@@ -93,7 +93,7 @@ class FolderTreeAPIView(APIView):
         elif division_id and year and not caseNo:
             # Return caseno as folders
             caseData = files.values_list("caseDetails__caseNo", flat=True).distinct()
-            caseDataFiles=files.filter(caseData__caseNo_isnull=True)
+            caseDataFiles=files.filter(caseDetails__caseNo__isnull=True)
             return Response({
                 "folders":[
                 {"name": s, "type": "folder", "level": "caseNo"}
