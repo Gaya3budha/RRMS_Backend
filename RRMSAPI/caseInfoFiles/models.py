@@ -38,11 +38,6 @@ class CaseInfoDetails(models.Model):
         return self.caseNo
 
 class FileDetails(models.Model):
-    FILE_STAGE_CHOICES = [
-        ('Enquiry', 'enquiry'),
-        ('I/O', 'i/o'),
-        ('Crime', 'crime')
-    ]
     fileId = models.AutoField(primary_key = True)
     caseDetails = models.ForeignKey('CaseInfoDetails',on_delete=models.CASCADE, related_name = 'files')
     fileName = models.CharField(max_length=255)
@@ -58,6 +53,7 @@ class FileDetails(models.Model):
     division= models.ForeignKey(Division, null= True, blank=True,on_delete=models.CASCADE)
     documentType = models.ForeignKey(GeneralLookUp,on_delete=models.CASCADE,null= True, blank= True,related_name="document_type")
     comments = models.CharField(max_length=100,null=True,blank=True)
+    isArchieved=models.BooleanField(default=False)
     def __str__(self):
         return self.fileName
 

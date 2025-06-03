@@ -279,3 +279,40 @@ class MoveFilesAPIView(APIView):
 
         except Exception as e:
             return Response({"detail": str(e)}, status=500)
+
+class ArchiveFileAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        file_id = request.data.get("file_id")
+
+        if not file_id:
+            return Response({"detail": "file_id is required."}, status=400)
+
+        try:
+            file = FileDetails.objects.get(fileId=file_id)
+            old_path = file.filePath.path  # absolute path
+
+            # Build new archive path: archive/<existing-relative-path>
+            archive_relative_path = os.path.join("archive", file.filePath.name)
+            new_path = os.path.join(settings.MEDIA_ROOT,"uploads","CID", archive_relative_path)
+
+            # Ensure archive folder exists
+            os.makedirs(os.path.dirname(new_path), exist_ok=True)
+
+            if not os.path.exists(old_path):
+                return Response({"detail": "Original file not found."}, status=404)
+
+            os.rename(old_path, new_path)
+
+            # Update filePath and mark as archived
+            file.filePath.name = archive_relative_path
+            file.is_archived = True
+            file.save()
+
+            return Response({"detail": "File archived successfully."}, status=200)
+
+        except FileDetails.DoesNotExist:
+            return Response({"detail": "File not found."}, status=404)
+        except Exception as e:
+            return Response({"detail": str(e)}, status=500)
