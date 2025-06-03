@@ -1,10 +1,12 @@
+import os
+from django.conf import settings
 from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
 
-from caseInfoFiles.models import FileDetails
+from caseInfoFiles.models import CaseInfoDetails, FileDetails
 from mdm.models import Department, Division, GeneralLookUp
 from users.models import User
 
@@ -193,3 +195,87 @@ class FolderTreeAPIView(APIView):
                 }
                 for f in files
             ])
+        
+class MoveFilesAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        deptId = request.data.get("deptId")
+        divsionId=request.data.get("divisionId")
+        file_id = request.data.get("file_id")  # list of IDs
+        target_year = request.data.get("year")  # optional
+        target_caseNo= request.data.get("caseNo")  # optional
+        target_caseType= request.data.get("caseType")  # optional
+        target_filetype_id = request.data.get("file_type_id")  # optional
+        target_documenttype_id = request.data.get("document_type_id")
+
+        if not file_id:
+            return Response({"detail": "file_id is required."}, status=400)
+
+
+        if target_caseType and (not target_filetype_id or not target_documenttype_id):
+            return Response({
+                "detail": "Case Type is given, both file type and document type are required."
+            }, status=400)
+        
+        try:
+            file = FileDetails.objects.select_related("caseDetails").get(fileId=file_id)
+            fileType = GeneralLookUp.objects.get(pk=target_filetype_id)
+            documentType = GeneralLookUp.objects.get(pk=target_documenttype_id)
+            caseDetail = CaseInfoDetails.objects.get(caseNo=target_caseNo)
+
+            if target_year != caseDetail.year:
+                    file.caseDetails.year = target_year
+                    file.caseDetails.save()
+            if target_caseNo != caseDetail.caseNo:
+                    file.caseDetails_caseNo = target_caseNo
+                    file.caseDetails__CaseInfoDetailsId = caseDetail.CaseInfoDetailsId
+                    file.caseDetails__stateId=caseDetail.stateId
+                    file.caseDetails__districtId=caseDetail.districtId
+                    file.caseDetails__unitId=caseDetail.unitId
+                    file.caseDetails__Office = caseDetail.Office
+                    file.caseDetails__letterNo = caseDetail.letterNo
+                    file.caseDetails__caseDate=caseDetail.caseDate
+                    file.caseDetails__caseType=caseDetail.caseType
+                    file.caseDetails__firNo=caseDetail.firNo
+                    file.caseDetails__author=caseDetail.author
+                    file.caseDetails__toAddr=caseDetail.toAddr
+                    file.caseDetails__caseStatus=caseDetail.caseStatus
+                    file.caseDetails.save()
+            if target_caseType != caseDetail.caseType:
+                    file.caseDetails__caseType = target_caseType
+                    file.caseDetails.save()
+
+                    file.fileType=fileType
+                    file.documentType=documentType
+
+            if fileType != file.fileType:
+                    file.fileType = fileType
+
+            if documentType != file.documentType:
+                    file.documentType = documentType
+
+            # Build new file path
+            dept = Department.objects.get(departmentId=deptId).departmentName
+            division_id =Division.objects.get(divisionId= file.division_id).divisionName
+            year = caseDetail.year
+            caseNo = caseDetail.caseNo
+            caseType = GeneralLookUp.objects.get(lookupId= caseDetail.caseType).lookupName if caseDetail.caseType else "NA"
+            fileType = file.fileType.lookupName if file.fileType else "NA"
+            documentType = file.documentType.lookupName if file.documentType else "NA"
+            filename = os.path.basename(file.filePath)
+
+            new_relative_path = os.path.join(str(dept),str(division_id), str(year), str(caseNo), caseType, fileType, documentType, filename)
+            old_path = file.filePath
+            new_full_path = os.path.join(settings.MEDIA_ROOT, "uploads","CID", new_relative_path)
+
+            os.makedirs(os.path.dirname(new_full_path), exist_ok=True)
+            os.rename(old_path, new_full_path)
+
+            file.filePath.name = new_relative_path
+            file.save()
+
+            return Response({"detail": "File moved successfully."}, status=200)
+
+        except Exception as e:
+            return Response({"detail": str(e)}, status=500)

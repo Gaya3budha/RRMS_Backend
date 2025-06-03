@@ -314,7 +314,7 @@ class SubmitDraftAPIView(APIView):
                         str(GeneralLookUp.objects.get(lookupId=case_instance.caseType).lookupName),
                         str(GeneralLookUp.objects.get(lookupId= file_details_data[i]['fileType']).lookupName),
                         str(GeneralLookUp.objects.get(lookupId=file_details_data[i]['documentType']).lookupName),
-                        file_name
+                        file_hash
                         )
                         os.makedirs(os.path.dirname(file_path), exist_ok=True)
                         with open(file_path, "wb") as f:
@@ -377,7 +377,7 @@ class SubmitDraftAPIView(APIView):
                         str(GeneralLookUp.objects.get(lookupId=case_instance.caseType).lookupName),
                         str(GeneralLookUp.objects.get(lookupId= file_details_data[i]['fileType']).lookupName),
                         str(GeneralLookUp.objects.get(lookupId=file_details_data[i]['documentType']).lookupName),
-                        file_name
+                        file_hash
                     )
                     os.makedirs(os.path.dirname(file_path), exist_ok=True)
                     with open(file_path, "wb") as f:
@@ -502,7 +502,7 @@ class CaseInfoDetailsView(APIView):
                         str(GeneralLookUp.objects.get(lookupId=case_info.caseType).lookupName),
                         str(GeneralLookUp.objects.get(lookupId= file_details_data[i]['fileType']).lookupName),
                         str(GeneralLookUp.objects.get(lookupId=file_details_data[i]['documentType']).lookupName),
-                        file_name
+                        file_hash
                     )
 
                     os.makedirs(os.path.dirname(file_path), exist_ok=True)
@@ -541,6 +541,7 @@ class CaseInfoDetailsView(APIView):
 
     def put(self,request,pk):
         try:
+            departmentID=request.data.get("ddeptId")
             case_details = get_object_or_404(CaseInfoDetails, pk=pk)
             case_info_json = request.data.get("caseDetails")
             file_details = request.data.get("fileDetails")
@@ -595,11 +596,23 @@ class CaseInfoDetailsView(APIView):
                     if new_file_index >= len(uploaded_files):
                         return Response({"error": "fileDetails and uploaded Files doesn't match"}, status=status.HTTP_400_BAD_REQUEST)
 
+                    div_name = Division.objects.get(divisionId = file_detail.divisionId)
+                    dept_name = Department.objects.get(departmentId = departmentID)
+
                     uploaded_file = uploaded_files[new_file_index]
                     file_content = uploaded_file.read()
                     file_hash = hashlib.sha256(file_content).hexdigest()
                     file_name = uploaded_file.name
-                    file_path = os.path.join(UPLOAD_DIR, file_name)
+                    file_path = os.path.join(UPLOAD_DIR,
+                        str(dept_name.departmentName),
+                        str(div_name.divisionName),
+                        str(caseInfo.year),
+                        str(caseInfo.caseNo),
+                        str(GeneralLookUp.objects.get(lookupId=caseInfo.caseType).lookupName),
+                        str(GeneralLookUp.objects.get(lookupId= file_details_data[i]['fileType']).lookupName),
+                        str(GeneralLookUp.objects.get(lookupId=file_details_data[i]['documentType']).lookupName),
+                        file_hash
+                    )
 
                     # Save file to disk
                     with open(file_path, "wb") as f:
