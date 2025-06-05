@@ -212,22 +212,28 @@ class MoveFilesAPIView(APIView):
         if not file_id:
             return Response({"detail": "file_id is required."}, status=400)
 
-
-        if target_caseType and (not target_filetype_id or not target_documenttype_id):
-            return Response({
-                "detail": "Case Type is given, both file type and document type are required."
-            }, status=400)
-        
         try:
             file = FileDetails.objects.select_related("caseDetails").get(fileId=file_id)
-            fileType = GeneralLookUp.objects.get(pk=target_filetype_id)
-            documentType = GeneralLookUp.objects.get(pk=target_documenttype_id)
             caseDetail = CaseInfoDetails.objects.get(caseNo=target_caseNo)
 
-            if target_year != caseDetail.year:
+            if target_year:
                     file.caseDetails.year = target_year
                     file.caseDetails.save()
-            if target_caseNo != caseDetail.caseNo:
+
+            if target_caseType:
+                    file.caseDetails__caseType = target_caseType
+                    file.caseDetails.save()
+
+                    file.fileType=None
+                    file.documentType=None
+
+            if target_filetype_id:
+                    file.fileType = GeneralLookUp.objects.get(lookupId=target_filetype_id)
+                    
+            if target_documenttype_id:
+                    file.documentType = GeneralLookUp.objects.get(lookupId=target_documenttype_id)
+            
+            if target_caseNo:
                     file.caseDetails_caseNo = target_caseNo
                     file.caseDetails__CaseInfoDetailsId = caseDetail.CaseInfoDetailsId
                     file.caseDetails__stateId=caseDetail.stateId
@@ -242,37 +248,53 @@ class MoveFilesAPIView(APIView):
                     file.caseDetails__toAddr=caseDetail.toAddr
                     file.caseDetails__caseStatus=caseDetail.caseStatus
                     file.caseDetails.save()
-            if target_caseType != caseDetail.caseType:
-                    file.caseDetails__caseType = target_caseType
-                    file.caseDetails.save()
 
-                    file.fileType=fileType
-                    file.documentType=documentType
-
-            if fileType != file.fileType:
-                    file.fileType = fileType
-
-            if documentType != file.documentType:
-                    file.documentType = documentType
+                    file.fileType=None
+                    file.documentType=None
 
             # Build new file path
-            dept = Department.objects.get(departmentId=deptId).departmentName
-            division_id =Division.objects.get(divisionId= file.division_id).divisionName
-            year = caseDetail.year
-            caseNo = caseDetail.caseNo
-            caseType = GeneralLookUp.objects.get(lookupId= caseDetail.caseType).lookupName if caseDetail.caseType else "NA"
-            fileType = file.fileType.lookupName if file.fileType else "NA"
-            documentType = file.documentType.lookupName if file.documentType else "NA"
+            relative_parts = []
+            if request.data.get("deptId"):
+                dept_name = Department.objects.get(departmentId=deptId).departmentName
+                relative_parts.append(str(dept_name))
+
+            if file.division_id:
+                division_name = Division.objects.get(divisionId=file.division_id).divisionName
+                relative_parts.append(str(division_name))
+            
+            if request.data.get("year"):
+                relative_parts.append(str(caseDetail.year))
+
+            if request.data.get("caseNo"):
+                relative_parts.append(str(caseDetail.caseNo))
+
+            if request.data.get("caseType"):
+                print('case Type')
+                case_type = GeneralLookUp.objects.get(lookupId=caseDetail.caseType).lookupName
+                relative_parts.append(str(case_type))
+
+            if request.data.get("file_type_id"):
+                print('im here')
+                fileType= GeneralLookUp.objects.get(lookupId= target_filetype_id).lookupName
+                relative_parts.append(str(fileType))
+            
+            if request.data.get("document_type_id"):
+                print('checking doc type')
+                documentType = GeneralLookUp.objects.get(lookupId=file.documentType).lookupName
+                relative_parts.append(str(documentType))
+
             filename = os.path.basename(file.filePath)
 
-            new_relative_path = os.path.join(str(dept),str(division_id), str(year), str(caseNo), caseType, fileType, documentType, filename)
-            old_path = file.filePath
-            new_full_path = os.path.join(settings.MEDIA_ROOT, "uploads","CID", new_relative_path)
+            relative_parts.append(filename)
+
+            new_relative_path = os.path.join("uploads","CID",*relative_parts)
+            old_path = os.path.join(settings.MEDIA_ROOT,file.filePath)
+            new_full_path = os.path.join(settings.MEDIA_ROOT, new_relative_path)
 
             os.makedirs(os.path.dirname(new_full_path), exist_ok=True)
             os.rename(old_path, new_full_path)
 
-            file.filePath.name = new_relative_path
+            file.filePath = new_relative_path
             file.save()
 
             return Response({"detail": "File moved successfully."}, status=200)

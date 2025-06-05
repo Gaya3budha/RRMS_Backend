@@ -314,7 +314,7 @@ class SubmitDraftAPIView(APIView):
                         str(GeneralLookUp.objects.get(lookupId=case_instance.caseType).lookupName),
                         str(GeneralLookUp.objects.get(lookupId= file_details_data[i]['fileType']).lookupName),
                         str(GeneralLookUp.objects.get(lookupId=file_details_data[i]['documentType']).lookupName),
-                        file_hash
+                        file_name
                         )
                         os.makedirs(os.path.dirname(file_path), exist_ok=True)
                         with open(file_path, "wb") as f:
@@ -377,7 +377,7 @@ class SubmitDraftAPIView(APIView):
                         str(GeneralLookUp.objects.get(lookupId=case_instance.caseType).lookupName),
                         str(GeneralLookUp.objects.get(lookupId= file_details_data[i]['fileType']).lookupName),
                         str(GeneralLookUp.objects.get(lookupId=file_details_data[i]['documentType']).lookupName),
-                        file_hash
+                        file_name
                     )
                     os.makedirs(os.path.dirname(file_path), exist_ok=True)
                     with open(file_path, "wb") as f:
