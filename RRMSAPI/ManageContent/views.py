@@ -229,7 +229,7 @@ class MoveFilesAPIView(APIView):
 
             if target_filetype_id:
                     file.fileType = GeneralLookUp.objects.get(lookupId=target_filetype_id)
-                    
+
             if target_documenttype_id:
                     file.documentType = GeneralLookUp.objects.get(lookupId=target_documenttype_id)
             
@@ -313,10 +313,10 @@ class ArchiveFileAPIView(APIView):
 
         try:
             file = FileDetails.objects.get(fileId=file_id)
-            old_path = file.filePath.path  # absolute path
+            old_path = file.filePath  # absolute path
 
             # Build new archive path: archive/<existing-relative-path>
-            archive_relative_path = os.path.join("archive", file.filePath.name)
+            archive_relative_path = os.path.join("archive", file.filePath)
             new_path = os.path.join(settings.MEDIA_ROOT,"uploads","CID", archive_relative_path)
 
             # Ensure archive folder exists
