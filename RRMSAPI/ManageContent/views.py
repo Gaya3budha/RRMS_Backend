@@ -328,7 +328,7 @@ class ArchiveFileAPIView(APIView):
             os.rename(old_path, new_path)
 
             # Update filePath and mark as archived
-            file.filePath.name = archive_relative_path
+            file.filePath = archive_relative_path
             file.is_archived = True
             file.save()
 
