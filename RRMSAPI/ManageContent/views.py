@@ -317,7 +317,7 @@ class ArchiveFileAPIView(APIView):
 
             # Build new archive path: archive/<existing-relative-path>
             archive_relative_path = os.path.join("archive", file.filePath)
-            new_path = os.path.join(settings.MEDIA_ROOT,"uploads","CID", archive_relative_path)
+            new_path = os.path.join(settings.MEDIA_ROOT, archive_relative_path)
 
             # Ensure archive folder exists
             os.makedirs(os.path.dirname(new_path), exist_ok=True)
