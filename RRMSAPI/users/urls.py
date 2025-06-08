@@ -15,5 +15,5 @@ urlpatterns = [
     path('reset-password', ResetPassword.as_view(),name='reset-pwd'),
     path('reset-pwd-request', RequestPasswordResetView.as_view(),name='reset-pwd-request'),
     path('get-user-data/<int:pk>', ViewDatafromNotificationPasswordRequest.as_view(),name='reset-pwd-request'),
-    path('send-pwd-reset/<int:pk',SendPasswordResetLink.as_view(),name='send-pwd-reset')
+    path('send-pwd-reset/<int:pk>',SendPasswordResetLink.as_view(),name='send-pwd-reset')
 ]
