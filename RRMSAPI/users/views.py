@@ -327,19 +327,13 @@ class ViewDatafromNotificationPasswordRequest(APIView):
             print(pwdRequestData)
             user= pwdRequestData.requested_by
 
-            user.is_passwordset=False
-            user.save(update_fields=['is_passwordset'])
-
-            given_user=pwdRequestData.requested_by
-            given_user.email=pwdRequestData.email
-            given_user.mobileno=pwdRequestData.mobileno
-
-            send_password_setup_email(given_user)
+           
             return Response({
                 'email': user.email,
                 'mobileNo':user.mobileno,
                 'userName': user.first_name+' '+user.last_name,
                 'pwdRequestEmail':pwdRequestData.email,
+                'pwdResetRequestId':pwdRequestData.passwordResetRequestId,
                 'pwdRequestMobileNo':pwdRequestData.mobileno,
                 'kgid':user.kgid
             }, status=200)
@@ -348,4 +342,21 @@ class ViewDatafromNotificationPasswordRequest(APIView):
         except User.DoesNotExist:
             return Response({'message':f'user with kgid doesnt exists'},status=404)
 
+
+class SendPasswordResetLink(APIView):
+    def Post(self,request,pk,*args,**kwargs):
+        pwdRequestData=PasswordResetRequest.objects.get(passwordResetRequestId=pk)
+
+        given_user=pwdRequestData.requested_by
+
+        given_user.is_passwordset=False
+        given_user.save(update_fields=['is_passwordset'])
+
+        given_user.email=pwdRequestData.email
+        given_user.mobileno=pwdRequestData.mobileno
+
+        send_password_setup_email(given_user)
+
+        return Response({'message':'Password Reset Link Sent Successfully'},status=200)
+    
     
