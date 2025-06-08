@@ -80,7 +80,7 @@ class FileDetailsSearchSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = FileDetails
-        fields = ['fileId','CaseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','filetypeName','classification','classificationName','uploaded_by','is_approved','is_favourited','is_access_request_approved','is_request_raised','documentType','documentTypeName','comments']
+        fields = ['fileId','CaseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','filetypeName','classification','classificationName','uploaded_by','is_approved','is_favourited','is_access_request_approved','is_request_raised','documentType','documentTypeName','comments','isArchieved']
     
     def get_classificationName(self, obj):
         return getattr(obj.classification, 'lookupName', None)

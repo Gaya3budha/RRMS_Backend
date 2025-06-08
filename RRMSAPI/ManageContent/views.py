@@ -43,9 +43,11 @@ class FolderTreeAPIView(APIView):
         files = FileDetails.objects.select_related("division","caseDetails","fileType","documentType","division__departmentId"
                                                    ).filter(
                                 Q(division_id=division_id),
-                                Q(division_id__in=user_division_ids) | Q(division__departmentId__in=user_department_ids)
+                                Q(division_id__in=user_division_ids) | Q(division__departmentId__in=user_department_ids),
+                                isArchieved=False
                             )
 
+        print(files)
         if division_id:
             files = files.filter(division_id=division_id)
         if year:
@@ -59,11 +61,9 @@ class FolderTreeAPIView(APIView):
         if docTypeId:
             files = files.filter(documentType_id=docTypeId)
 
-        print("files",files)
         if not division_id:
             # First level: show divisions user has access to
             divisions = files.values("division_id", "division__divisionName").distinct()
-            print("divisions",divisions)
             return Response([
                 {
                     "id": d["division_id"],
@@ -227,7 +227,7 @@ class MoveFilesAPIView(APIView):
 
             # Update caseType
             if target_caseType:
-                current_case.studentType = target_caseType
+                current_case.caseType = target_caseType
                 file.fileType = None
                 file.documentType = None
 
@@ -249,10 +249,10 @@ class MoveFilesAPIView(APIView):
             if target_year or current_case.year:
                 relative_parts.append(str(target_year or current_case.year))
 
-            if target_caseNo or current_case.studentNo:
+            if target_caseNo or current_case.caseNo:
                 relative_parts.append(str(target_caseNo or current_case.caseNo))
 
-            if target_caseType or current_case.studentType:
+            if target_caseType or current_case.caseType:
                 case_type = GeneralLookUp.objects.get(lookupId=target_caseType).lookupName
                 relative_parts.append(str(case_type))
 
@@ -320,7 +320,7 @@ class ArchiveFileAPIView(APIView):
 
             # Update filePath and mark as archived
             file.filePath = archive_relative_path
-            file.is_archived = True
+            file.isArchieved = True
             file.save()
 
             return Response({"detail": "File archived successfully."}, status=200)
