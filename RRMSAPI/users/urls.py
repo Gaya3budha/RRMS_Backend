@@ -1,6 +1,5 @@
 from django.urls import path
-from .views import CreateUserView,UserListView,SetPasswordView,RequestPasswordResetOTP,RequestPasswordResetView,ResetPassword,VerifyPasswordResetOTP,UpdateUserView,CustomTokenObtainPairView,SearchUsersAPIView,GetDivisionrAdminsView, GetLoggedInUsersView
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from .views import CreateUserView,UserListView,SetPasswordView,RequestPasswordResetOTP,ViewDatafromNotificationPasswordRequest,RequestPasswordResetView,ResetPassword,VerifyPasswordResetOTP,UpdateUserView,CustomTokenObtainPairView,SearchUsersAPIView,GetDivisionrAdminsView, GetLoggedInUsersView
 
 urlpatterns = [
     path('',UserListView.as_view(),name='user-list'), #path for fetching all the users
@@ -14,6 +13,7 @@ urlpatterns = [
     path('request-otp/<str:pk>', RequestPasswordResetOTP.as_view(),name='request-otp'),
     path('verify-otp', VerifyPasswordResetOTP.as_view(),name='verify-otp'),
     path('reset-password', ResetPassword.as_view(),name='reset-pwd'),
-    path('reset-pwd-request', RequestPasswordResetView.as_view(),name='reset-pwd-request')
+    path('reset-pwd-request', RequestPasswordResetView.as_view(),name='reset-pwd-request'),
+    path('get-user-data/<int:pk>', ViewDatafromNotificationPasswordRequest.as_view(),name='reset-pwd-request')
 
 ]

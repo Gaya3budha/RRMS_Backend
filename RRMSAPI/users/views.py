@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from users.utils import generate_otp, send_otp_email
+from users.utils import generate_otp, send_otp_email, send_password_setup_email
 from .serializers import PasswordResetRequestSerializer, UserSerializer, CustomTokenObtainPairSerializer, UserSearchSerializer
 from rest_framework.exceptions import AuthenticationFailed
 from .models import PasswordResetOTP, PasswordResetRequest, User, ActiveUser, Designation
@@ -172,10 +172,12 @@ class UpdateUserView(APIView):
 
                 if isinstance(designation_ids, list):
                     designations = Designation.objects.filter(designationId__in=designation_ids)
+                    if designations.count() != len(designation_ids):
+                        return Response({"error": "One or more designation IDs are invalid"}, status=status.HTTP_400_BAD_REQUEST)
                     user.designation.set(designations)
                 else:
                     return Response({"error": "designationIds must be a list"}, status=status.HTTP_400_BAD_REQUEST)
-
+                
             if 'password' in data:
                 user.set_password(data['password'])
             
@@ -317,3 +319,33 @@ class RequestPasswordResetView(APIView):
             return Response({'message': 'Request received by admin. You shall be notified shortly.'}, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class ViewDatafromNotificationPasswordRequest(APIView):
+    def get(self, request, pk, *args, **kwargs):
+        try:
+            pwdRequestData=PasswordResetRequest.objects.get(passwordResetRequestId=pk)
+            print(pwdRequestData)
+            user= pwdRequestData.requested_by
+
+            user.is_passwordset=False
+            user.save(update_fields=['is_passwordset'])
+
+            given_user=pwdRequestData.requested_by
+            given_user.email=pwdRequestData.email
+            given_user.mobileno=pwdRequestData.mobileno
+
+            send_password_setup_email(given_user)
+            return Response({
+                'email': user.email,
+                'mobileNo':user.mobileno,
+                'userName': user.first_name+' '+user.last_name,
+                'pwdRequestEmail':pwdRequestData.email,
+                'pwdRequestMobileNo':pwdRequestData.mobileno,
+                'kgid':user.kgid
+            }, status=200)
+        except PasswordResetRequest.DoesNotExist:
+            return Response({'message':'Password Request doesnt exists'},status=404)
+        except User.DoesNotExist:
+            return Response({'message':f'user with kgid doesnt exists'},status=404)
+
+    

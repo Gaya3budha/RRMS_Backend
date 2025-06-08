@@ -25,7 +25,7 @@ def send_otp_email(user_email, otp):
     from_email = settings.DEFAULT_FROM_EMAIL
 
     send_mail(
-        'Your OTP for Password Reset',
+        '[RRMS] Your OTP for Password Reset',
         f'Your OTP is {otp}. It is valid for 10 minutes.',
         from_email,
         [user_email],
