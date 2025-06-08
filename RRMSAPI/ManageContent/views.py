@@ -214,47 +214,31 @@ class MoveFilesAPIView(APIView):
 
         try:
             file = FileDetails.objects.select_related("caseDetails").get(fileId=file_id)
-            caseDetail = CaseInfoDetails.objects.get(caseNo=target_caseNo)
+            current_case = file.caseDetails
 
             if target_year:
-                    file.caseDetails.year = target_year
-                    file.caseDetails.save()
+                    current_case.year= target_year
 
+            # Update caseDetails if caseNo changes
+            if target_caseNo and target_caseNo != current_case.caseNo:
+                new_case = CaseInfoDetails.objects.get(caseNo=target_caseNo)
+                file.caseDetails = new_case
+                current_case = new_case  # for further path building
+
+            # Update caseType
             if target_caseType:
-                    file.caseDetails__caseType = target_caseType
-                    file.caseDetails.save()
+                current_case.studentType = target_caseType
+                file.fileType = None
+                file.documentType = None
 
-                    file.fileType=None
-                    file.documentType=None
-
-            if target_filetype_id:
-                    file.fileType = GeneralLookUp.objects.get(lookupId=target_filetype_id)
-
-            if target_documenttype_id:
-                    file.documentType = GeneralLookUp.objects.get(lookupId=target_documenttype_id)
+            file.fileType = GeneralLookUp.objects.get(lookupId=target_filetype_id) if target_filetype_id else None
+            file.documentType = GeneralLookUp.objects.get(lookupId=target_documenttype_id) if target_documenttype_id else None
             
-            if target_caseNo:
-                    file.caseDetails_caseNo = target_caseNo
-                    file.caseDetails__CaseInfoDetailsId = caseDetail.CaseInfoDetailsId
-                    file.caseDetails__stateId=caseDetail.stateId
-                    file.caseDetails__districtId=caseDetail.districtId
-                    file.caseDetails__unitId=caseDetail.unitId
-                    file.caseDetails__Office = caseDetail.Office
-                    file.caseDetails__letterNo = caseDetail.letterNo
-                    file.caseDetails__caseDate=caseDetail.caseDate
-                    file.caseDetails__caseType=caseDetail.caseType
-                    file.caseDetails__firNo=caseDetail.firNo
-                    file.caseDetails__author=caseDetail.author
-                    file.caseDetails__toAddr=caseDetail.toAddr
-                    file.caseDetails__caseStatus=caseDetail.caseStatus
-                    file.caseDetails.save()
-
-                    file.fileType=None
-                    file.documentType=None
+            current_case.save()
 
             # Build new file path
             relative_parts = []
-            if request.data.get("deptId"):
+            if deptId:
                 dept_name = Department.objects.get(departmentId=deptId).departmentName
                 relative_parts.append(str(dept_name))
 
@@ -262,25 +246,22 @@ class MoveFilesAPIView(APIView):
                 division_name = Division.objects.get(divisionId=file.division_id).divisionName
                 relative_parts.append(str(division_name))
             
-            if request.data.get("year"):
-                relative_parts.append(str(caseDetail.year))
+            if target_year or current_case.year:
+                relative_parts.append(str(target_year or current_case.year))
 
-            if request.data.get("caseNo"):
-                relative_parts.append(str(caseDetail.caseNo))
+            if target_caseNo or current_case.studentNo:
+                relative_parts.append(str(target_caseNo or current_case.caseNo))
 
-            if request.data.get("caseType"):
-                print('case Type')
-                case_type = GeneralLookUp.objects.get(lookupId=caseDetail.caseType).lookupName
+            if target_caseType or current_case.studentType:
+                case_type = GeneralLookUp.objects.get(lookupId=target_caseType).lookupName
                 relative_parts.append(str(case_type))
 
-            if request.data.get("file_type_id"):
-                print('im here')
+            if target_filetype_id:
                 fileType= GeneralLookUp.objects.get(lookupId= target_filetype_id).lookupName
                 relative_parts.append(str(fileType))
             
-            if request.data.get("document_type_id"):
-                print('checking doc type')
-                documentType = GeneralLookUp.objects.get(lookupId=file.documentType).lookupName
+            if target_documenttype_id:
+                documentType = GeneralLookUp.objects.get(lookupId=target_documenttype_id).lookupName
                 relative_parts.append(str(documentType))
 
             filename = os.path.basename(file.filePath)
@@ -299,6 +280,16 @@ class MoveFilesAPIView(APIView):
 
             return Response({"detail": "File moved successfully."}, status=200)
 
+        except FileDetails.DoesNotExist:
+            return Response({"detail": "File not found."}, status=404)
+        except CaseInfoDetails.DoesNotExist:
+            return Response({"detail": "Target Case not found."}, status=404)
+        except GeneralLookUp.DoesNotExist as e:
+            return Response({"detail": f"Invalid lookup reference: {str(e)}"}, status=400)
+        except Department.DoesNotExist:
+            return Response({"detail": "Invalid department."}, status=400)
+        except Division.DoesNotExist:
+            return Response({"detail": "Invalid division."}, status=400)
         except Exception as e:
             return Response({"detail": str(e)}, status=500)
 
