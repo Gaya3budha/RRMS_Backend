@@ -231,8 +231,13 @@ class MoveFilesAPIView(APIView):
                 file.fileType = None
                 file.documentType = None
 
-            file.fileType = GeneralLookUp.objects.get(lookupId=target_filetype_id) if target_filetype_id else None
-            file.documentType = GeneralLookUp.objects.get(lookupId=target_documenttype_id) if target_documenttype_id else None
+            if target_filetype_id:
+                print('in target file type')
+                file.fileType = GeneralLookUp.objects.get(lookupId=target_filetype_id)
+                file.documentType=None
+            
+            if target_documenttype_id:
+                file.documentType = GeneralLookUp.objects.get(lookupId=target_documenttype_id)
             
             current_case.save()
 
@@ -252,7 +257,7 @@ class MoveFilesAPIView(APIView):
             if target_caseNo or current_case.caseNo:
                 relative_parts.append(str(target_caseNo or current_case.caseNo))
 
-            if target_caseType or current_case.caseType:
+            if target_caseType:
                 case_type = GeneralLookUp.objects.get(lookupId=target_caseType).lookupName
                 relative_parts.append(str(case_type))
 
