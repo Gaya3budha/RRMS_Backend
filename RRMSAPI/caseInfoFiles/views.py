@@ -267,6 +267,8 @@ class SubmitDraftAPIView(APIView):
             division_name = Division.objects.get(divisionId=division_id).divisionName
             dept_name = Department.objects.get(departmentId=department_id).departmentName
 
+            isApproved = request.user.role and request.user.role.roleId == 3
+
             # Update if case details id  exists
             if case_details_id:
                 print("hey i'm in if block")
@@ -320,6 +322,7 @@ class SubmitDraftAPIView(APIView):
                         with open(file_path, "wb") as f:
                             f.write(file_content)
 
+                        
                         file_obj = FileDetails.objects.create(
                             caseDetails=case_instance,
                             fileName=file_name,
@@ -330,7 +333,8 @@ class SubmitDraftAPIView(APIView):
                             classification=GeneralLookUp.objects.get(lookupId=file_details_data[i]['classification']),
                             uploaded_by=request.user,
                             division=Division.objects.get(divisionId=division_id),
-                            documentType=GeneralLookUp.objects.get(lookupId=file_details_data[i]['documentType'])
+                            documentType=GeneralLookUp.objects.get(lookupId=file_details_data[i]['documentType']),
+                            is_approved=isApproved
                         )
                         record_file_access(request.user, file_obj)
                         file_changes.append({"file": file_name, "action": "added"})
@@ -394,7 +398,9 @@ class SubmitDraftAPIView(APIView):
                         classification=GeneralLookUp.objects.get(lookupId=file_details_data[i]['classification']),
                         uploaded_by=request.user,
                         division=Division.objects.get(divisionId=division_id),
-                        documentType=GeneralLookUp.objects.get(lookupId=file_details_data[i]['documentType'])
+                        documentType=GeneralLookUp.objects.get(lookupId=file_details_data[i]['documentType']),
+                        is_approved=isApproved
+
                     )
                     record_file_access(request.user, file_obj)
 

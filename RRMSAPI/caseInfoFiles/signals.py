@@ -30,6 +30,9 @@ def notify_admin_on_upload(sender, instance, created, **kwargs):
     if  created and not instance.is_approved:
         uploader = instance.uploaded_by
 
+        if uploader.role and uploader.role.roleId == 3:
+            return
+        
         if instance.caseDetails.is_draft:
             return
     
