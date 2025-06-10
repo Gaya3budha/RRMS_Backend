@@ -344,7 +344,7 @@ class ViewDatafromNotificationPasswordRequest(APIView):
 
 
 class SendPasswordResetLink(APIView):
-    def Post(self,request,pk,*args,**kwargs):
+    def post(self,request,pk,*args,**kwargs):
         pwdRequestData=PasswordResetRequest.objects.get(passwordResetRequestId=pk)
 
         given_user=pwdRequestData.requested_by
