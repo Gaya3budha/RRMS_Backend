@@ -326,8 +326,8 @@ class ViewDatafromNotificationPasswordRequest(APIView):
         try:
             notifyData=Notification.objects.get(object_id=pk)
             notifyData.is_read=True
-            notifyData.save()
-            
+            notifyData.save(update_fields=['is_read'])
+
             pwdRequestData=PasswordResetRequest.objects.get(passwordResetRequestId=pk)
             print(pwdRequestData)
             user= pwdRequestData.requested_by
