@@ -324,9 +324,7 @@ class RequestPasswordResetView(APIView):
 class ViewDatafromNotificationPasswordRequest(APIView):
     def get(self, request, pk, *args, **kwargs):
         try:
-            notifyData=Notification.objects.get(object_id=pk)
-            notifyData.is_read=True
-            notifyData.save(update_fields=['is_read'])
+            Notification.objects.filter(object_id=pk).update(is_read=True)
 
             pwdRequestData=PasswordResetRequest.objects.get(passwordResetRequestId=pk)
             print(pwdRequestData)
