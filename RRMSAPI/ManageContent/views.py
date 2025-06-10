@@ -85,7 +85,7 @@ class FolderTreeAPIView(APIView):
                 {
                     "file_id": f.fileId,
                     "name": f.fileName,
-                    "path": f.filePath,
+                    "path":  request.build_absolute_uri(f.filePath) if f.filePath else None,
                     "created_at": f.created_at,
                     "uploaded_by": f.uploaded_by.first_name + ' ' + f.uploaded_by.last_name if f.uploaded_by else None
                 }
@@ -105,7 +105,7 @@ class FolderTreeAPIView(APIView):
                 {
                     "file_id": f.fileId,
                     "name": f.fileName,
-                    "path": f.filePath,
+                    "path":  request.build_absolute_uri(f.filePath) if f.filePath else None,
                     "created_at": f.created_at,
                     "uploaded_by": f.uploaded_by.first_name + ' ' + f.uploaded_by.last_name if f.uploaded_by else None
                 }
@@ -127,7 +127,7 @@ class FolderTreeAPIView(APIView):
                 {
                     "file_id": f.fileId,
                     "name": f.fileName,
-                    "path": f.filePath,
+                    "path":  request.build_absolute_uri(f.filePath) if f.filePath else None,
                     "created_at": f.created_at,
                     "uploaded_by": f.uploaded_by.first_name + ' ' + f.uploaded_by.last_name if f.uploaded_by else None
                 }
@@ -152,7 +152,7 @@ class FolderTreeAPIView(APIView):
                 {
                     "file_id": f.fileId,
                     "name": f.fileName,
-                    "path": f.filePath,
+                    "path":  request.build_absolute_uri(f.filePath) if f.filePath else None,
                     "created_at": f.created_at,
                     "uploaded_by": f.uploaded_by.first_name + ' ' + f.uploaded_by.last_name if f.uploaded_by else None
                 }
@@ -177,7 +177,7 @@ class FolderTreeAPIView(APIView):
                 {
                     "file_id": f.fileId,
                     "name": f.fileName,
-                    "path": f.filePath,
+                    "path":  request.build_absolute_uri(f.filePath) if f.filePath else None,
                     "created_at": f.created_at,
                     "uploaded_by": f.uploaded_by.first_name + ' ' + f.uploaded_by.last_name if f.uploaded_by else None
                 }
