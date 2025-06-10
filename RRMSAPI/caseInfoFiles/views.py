@@ -468,12 +468,22 @@ class CaseInfoDetailsView(APIView):
                 return Response({"error": "Department ID is required."}, status=status.HTTP_400_BAD_REQUEST)
         
             case_data['division'] = division_id 
-            case_data['is_draft'] = is_draft 
+            case_data['is_draft'] = is_draft
 
             if not is_draft:
                 case_data['submitted_at'] = timezone.now()
+            
+            existing_draft = CaseInfoDetails.objects.filter(
+                    caseNo=case_data.get("caseNo"),
+                    CaseInfoDetailsId=case_data.get("CaseInfoDetailsId"),
+                    division=division_id,
+                    is_draft=True
+                ).first()
+            if existing_draft:
+                case_serailizer=CaseInfoDetailsSerializer(existing_draft,data=case_data,partial=True)
+            else:
+                case_serailizer = CaseInfoDetailsSerializer(data = case_data)
 
-            case_serailizer = CaseInfoDetailsSerializer(data = case_data)
             if not case_serailizer.is_valid():
                 return Response(case_serailizer.errors, status=status.HTTP_400_BAD_REQUEST)
 

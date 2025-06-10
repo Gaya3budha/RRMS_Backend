@@ -30,8 +30,18 @@ class CaseInfoDetailsSerializer(serializers.ModelSerializer):
         return []
     
     def validate_caseNo(self,value):
-        if CaseInfoDetails.objects.filter(caseNo=value).exists():
+        instance = self.instance
+        print("instance",instance)
+        if instance and str(instance.caseNo) == str(value):
+            return value
+        
+        qs = CaseInfoDetails.objects.filter(caseNo=value)
+
+        if instance:
+            qs = qs.exclude(pk=instance.pk)
+        if qs.exists():
             raise serializers.ValidationError("(CMS)Case No/ Enquiry No already exists")
+
         return value
     
     def get_caseStatusName(self, obj):
