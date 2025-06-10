@@ -224,6 +224,9 @@ class MoveFilesAPIView(APIView):
                 new_case = CaseInfoDetails.objects.get(caseNo=target_caseNo)
                 file.caseDetails = new_case
                 current_case = new_case  # for further path building
+                current_case.caseType=None
+                file.fileHash=None
+                file.documentType=None
 
             # Update caseType
             if target_caseType:
