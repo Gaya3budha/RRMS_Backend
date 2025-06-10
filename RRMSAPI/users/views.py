@@ -5,6 +5,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+from caseInfoFiles.models import Notification
 from users.utils import generate_otp, send_otp_email, send_password_setup_email
 from .serializers import PasswordResetRequestSerializer, UserSerializer, CustomTokenObtainPairSerializer, UserSearchSerializer
 from rest_framework.exceptions import AuthenticationFailed
@@ -323,6 +324,10 @@ class RequestPasswordResetView(APIView):
 class ViewDatafromNotificationPasswordRequest(APIView):
     def get(self, request, pk, *args, **kwargs):
         try:
+            notifyData=Notification.objects.get(object_id=pk)
+            notifyData.is_read=True
+            notifyData.save()
+            
             pwdRequestData=PasswordResetRequest.objects.get(passwordResetRequestId=pk)
             print(pwdRequestData)
             user= pwdRequestData.requested_by
