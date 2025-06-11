@@ -117,7 +117,7 @@ class FolderTreeAPIView(APIView):
             print("files",files)
             case_type_ids = [int(i) for i in raw_ids if i and str(i).isdigit()]
             case_types = GeneralLookUp.objects.filter(lookupId__in=case_type_ids).values("lookupId", "lookupName")
-            caseTypeFiles=files.filter(caseDetails__caseType__isnull=True)
+            caseTypeFiles=files.filter(caseType__isnull=True)
             return Response({
                 "folders":[
                 {"id": s["lookupId"],"name": s["lookupName"],"type": "folder","level": "caseType"}
@@ -230,7 +230,7 @@ class MoveFilesAPIView(APIView):
 
             # Update caseType
             if target_caseType:
-                current_case.caseType = target_caseType
+                file.caseType = target_caseType
                 file.fileType = None
                 file.documentType = None
 
