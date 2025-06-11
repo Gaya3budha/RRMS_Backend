@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from caseInfoFiles.models import Notification
-from users.utils import generate_otp, send_otp_email, send_password_setup_email
+from users.utils import generate_otp, send_otp_email, send_password_reset_email, send_password_setup_email
 from .serializers import PasswordResetRequestSerializer, UserSerializer, CustomTokenObtainPairSerializer, UserSearchSerializer
 from rest_framework.exceptions import AuthenticationFailed
 from .models import PasswordResetOTP, PasswordResetRequest, User, ActiveUser, Designation
@@ -358,7 +358,7 @@ class SendPasswordResetLink(APIView):
         given_user.email=pwdRequestData.email
         given_user.mobileno=pwdRequestData.mobileno
 
-        send_password_setup_email(given_user)
+        send_password_reset_email(given_user)
 
         return Response({'message':'Password Reset Link Sent Successfully'},status=200)
     

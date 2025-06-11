@@ -18,6 +18,18 @@ def send_password_setup_email(user):
     
     send_mail(subject, message, from_email, [user.email], fail_silently=False)
 
+def send_password_reset_email(user):
+    token = default_token_generator.make_token(user)
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    
+    frontend_link = f"https://rrms-frontend.vercel.app/restset-password?uid={uid}&token={token}"
+
+    subject = "[RRMS] Confirm your Password"
+    message = f"Hello {user.first_name},\n\nClick the link below to set your password:\n{frontend_link}\n\nThis link is valid for one-time use only."
+    from_email = settings.DEFAULT_FROM_EMAIL
+    
+    send_mail(subject, message, from_email, [user.email], fail_silently=False)
+
 def generate_otp():
     return str(random.randint(100000, 999999))
 

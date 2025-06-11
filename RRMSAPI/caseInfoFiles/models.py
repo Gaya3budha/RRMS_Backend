@@ -15,7 +15,7 @@ class CaseInfoDetails(models.Model):
     Office = models.TextField(max_length=255)
     letterNo = models.CharField(max_length=100)
     caseDate = models.DateTimeField(null=True,blank=True)
-    caseType = models.CharField(max_length = 100)
+    caseType = models.CharField(max_length = 100,null=True,default=True)
     caseNo = models.CharField(max_length=17, unique=True)
     firNo = models.CharField(max_length=255)
     author = models.TextField(max_length = 200)
@@ -39,7 +39,7 @@ class CaseInfoDetails(models.Model):
 
 class FileDetails(models.Model):
     fileId = models.AutoField(primary_key = True)
-    caseDetails = models.ForeignKey('CaseInfoDetails',on_delete=models.CASCADE, related_name = 'files')
+    caseDetails = models.ForeignKey('CaseInfoDetails',on_delete=models.CASCADE, related_name = 'files',default=0)
     fileName = models.CharField(max_length=255)
     filePath = models.TextField()
     fileHash = models.CharField(max_length=64)
@@ -64,9 +64,9 @@ class FileUploadApproval(models.Model):
         ('revoked', 'Revoked'),
         ('denied', 'Denied'),
     ]
-    file = models.ForeignKey(FileDetails, on_delete=models.CASCADE)
+    file = models.ForeignKey(FileDetails, on_delete=models.CASCADE,default=0)
     case_details_id= models.ForeignKey(CaseInfoDetails,on_delete=models.CASCADE,null=True,blank=True)
-    requested_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    requested_by = models.ForeignKey(User, on_delete=models.CASCADE,default=0)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
     reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='upload_approver')
     reviewed_at = models.DateTimeField(null=True, blank=True)
@@ -87,9 +87,9 @@ class FileAccessRequest(models.Model):
         ('revoked', 'Revoked'),
         ('denied', 'Denied'),
     ]
-    file = models.ForeignKey(FileDetails, on_delete=models.CASCADE)
+    file = models.ForeignKey(FileDetails, on_delete=models.CASCADE,default=0)
     case_details_id= models.ForeignKey(CaseInfoDetails,on_delete=models.CASCADE,null=True,blank=True)
-    requested_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="access_requests")
+    requested_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="access_requests",default=0)
     approved_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="approved_requests")
     requested_to = models.ForeignKey(User, on_delete=models.CASCADE, related_name="file_requests_received",null = True, blank = True)
     comments = models.TextField(null= True, blank = True)
@@ -109,8 +109,8 @@ class FileAccessRequest(models.Model):
         return reverse("access-request-action", kwargs={"pk": self.pk})
 
 class FavouriteFiles(models.Model):
-    user = models.ForeignKey(User,on_delete=models.CASCADE, related_name = 'favorited_by')
-    file = models.ForeignKey('FileDetails',on_delete=models.CASCADE, related_name = 'favourites')
+    user = models.ForeignKey(User,on_delete=models.CASCADE, related_name = 'favorited_by',default=0)
+    file = models.ForeignKey('FileDetails',on_delete=models.CASCADE, related_name = 'favourites',default=0)
     added_at = models.DateTimeField(auto_now_add=True)
     division = models.ForeignKey(Division,null=True,blank=True,on_delete=models.CASCADE)
 
@@ -119,8 +119,8 @@ class FavouriteFiles(models.Model):
 
 
 class FileUsage(models.Model):
-    user = models.ForeignKey(User,on_delete=models.CASCADE)
-    file = models.ForeignKey('FileDetails',on_delete=models.CASCADE)
+    user = models.ForeignKey(User,on_delete=models.CASCADE,default=0)
+    file = models.ForeignKey('FileDetails',on_delete=models.CASCADE,default=0)
     last_accessed = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -133,7 +133,7 @@ class Notification(models.Model):
         ("ACCESS_REQUEST", "Access Request"),
         ("GENERIC", "Generic"),
     ]
-    recipient = models.ForeignKey(User, on_delete=models.CASCADE)
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE,default=0)
     division = models.ForeignKey(Division,null = True, blank=True, on_delete=models.CASCADE)
     message = models.TextField()
     type = models.CharField(max_length=30, choices=NOTIFICATION_TYPES, default="GENERIC")
