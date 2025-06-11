@@ -54,6 +54,7 @@ class FileDetails(models.Model):
     documentType = models.ForeignKey(GeneralLookUp,on_delete=models.CASCADE,null= True, blank= True,related_name="document_type")
     comments = models.CharField(max_length=100,null=True,blank=True)
     isArchieved=models.BooleanField(default=False)
+    caseType = models.CharField(max_length = 100,null=True,default=True)
     def __str__(self):
         return self.fileName
 

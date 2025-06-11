@@ -47,7 +47,6 @@ class FolderTreeAPIView(APIView):
                                 isArchieved=False
                             )
 
-        print(files)
         if division_id:
             files = files.filter(division_id=division_id)
         if year:
@@ -55,7 +54,7 @@ class FolderTreeAPIView(APIView):
         if caseNo:
             files = files.filter(caseDetails__caseNo = str(caseNo))
         if caseType:
-            files = files.filter(caseDetails__caseType = caseType)
+            files = files.filter(caseType = caseType)
         if fileTypeId:
             files = files.filter(fileType_id = fileTypeId)
         if docTypeId:
@@ -114,7 +113,8 @@ class FolderTreeAPIView(APIView):
             })
         elif division_id and year and caseNo and not caseType:
             # Return caseno as folders
-            raw_ids = files.values_list("caseDetails__caseType", flat=True).distinct()
+            raw_ids = files.values_list("caseType", flat=True).distinct()
+            print("files",files)
             case_type_ids = [int(i) for i in raw_ids if i and str(i).isdigit()]
             case_types = GeneralLookUp.objects.filter(lookupId__in=case_type_ids).values("lookupId", "lookupName")
             caseTypeFiles=files.filter(caseDetails__caseType__isnull=True)
@@ -224,7 +224,7 @@ class MoveFilesAPIView(APIView):
                 new_case = CaseInfoDetails.objects.get(caseNo=target_caseNo)
                 file.caseDetails = new_case
                 current_case = new_case  # for further path building
-                current_case.caseType=None
+                file.caseType=None
                 file.fileType=None
                 file.documentType=None
 

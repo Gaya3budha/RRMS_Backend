@@ -334,7 +334,8 @@ class SubmitDraftAPIView(APIView):
                             uploaded_by=request.user,
                             division=Division.objects.get(divisionId=division_id),
                             documentType=GeneralLookUp.objects.get(lookupId=file_details_data[i]['documentType']),
-                            is_approved=isApproved
+                            is_approved=isApproved,
+                            caseType= case_instance.caseType
                         )
                         record_file_access(request.user, file_obj)
                         file_changes.append({"file": file_name, "action": "added"})
@@ -399,7 +400,8 @@ class SubmitDraftAPIView(APIView):
                         uploaded_by=request.user,
                         division=Division.objects.get(divisionId=division_id),
                         documentType=GeneralLookUp.objects.get(lookupId=file_details_data[i]['documentType']),
-                        is_approved=isApproved
+                        is_approved=isApproved,
+                        caseType= case_instance.caseType
 
                     )
                     record_file_access(request.user, file_obj)
@@ -538,7 +540,8 @@ class CaseInfoDetailsView(APIView):
                         classification = GeneralLookUp.objects.get(lookupId=file_details_data[i]['classification']),
                         uploaded_by = request.user,
                         division = Division.objects.get(divisionId=request.data.get('division_id')),
-                        documentType =GeneralLookUp.objects.get(lookupId=file_details_data[i]['documentType'])
+                        documentType =GeneralLookUp.objects.get(lookupId=file_details_data[i]['documentType']),
+                        caseType= case_info.caseType
                     )
 
                     record_file_access(request.user, file_detail)
