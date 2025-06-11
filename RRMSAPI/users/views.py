@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework.permissions import AllowAny
 
 from caseInfoFiles.models import Notification
 from users.utils import generate_otp, send_otp_email, send_password_reset_email, send_password_setup_email
@@ -45,6 +46,7 @@ class CreateUserView(APIView):
         return Response({'error':serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 class SetPasswordView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         uid = request.data.get("uid")
         token = request.data.get("token")
@@ -56,8 +58,12 @@ class SetPasswordView(APIView):
         try:
             uid = urlsafe_base64_decode(uid).decode()
             user = User.objects.get(pk=uid)
+            print('user',user.email)
         except (TypeError, ValueError, OverflowError, User.DoesNotExist):
             return Response({"error": "Invalid UID."}, status=status.HTTP_400_BAD_REQUEST)
+
+        print("Expected token:", default_token_generator.make_token(user))
+        print("Received token:", token)
 
         if default_token_generator.check_token(user, token):
             user.set_password(new_password)
@@ -355,10 +361,10 @@ class SendPasswordResetLink(APIView):
         given_user.is_passwordset=False
         given_user.save(update_fields=['is_passwordset'])
 
-        given_user.email=pwdRequestData.email
-        given_user.mobileno=pwdRequestData.mobileno
+        # given_user.email=pwdRequestData.email
+        # given_user.mobileno=pwdRequestData.mobileno
 
-        send_password_reset_email(given_user)
+        send_password_reset_email(user=given_user,to_email=pwdRequestData.email)
 
         return Response({'message':'Password Reset Link Sent Successfully'},status=200)
     
