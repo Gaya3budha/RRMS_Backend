@@ -225,7 +225,7 @@ class MoveFilesAPIView(APIView):
                 file.caseDetails = new_case
                 current_case = new_case  # for further path building
                 current_case.caseType=None
-                file.fileHash=None
+                file.fileType=None
                 file.documentType=None
 
             # Update caseType
