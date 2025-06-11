@@ -22,7 +22,7 @@ def send_password_reset_email(user):
     token = default_token_generator.make_token(user)
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     
-    frontend_link = f"https://rrms-frontend.vercel.app/reset-password?uid={uid}&token={token}"
+    frontend_link = f"https://rrms-frontend.vercel.app/set-password?uid={uid}&token={token}"
 
     subject = "[RRMS] Confirm your Password"
     message = f"Hello {user.first_name},\n\nClick the link below to set your password:\n{frontend_link}\n\nThis link is valid for one-time use only."
