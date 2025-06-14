@@ -351,6 +351,13 @@ class ViewDatafromNotificationPasswordRequest(APIView):
         except User.DoesNotExist:
             return Response({'message':f'user with kgid doesnt exists'},status=404)
 
+class SetDefaultPwd(APIView):
+    def post(self,request,pk,*args,**kwargs):
+        existingUser=User.objects.get(kgid=pk)
+        existingUser.password=request.data.get("defaultPwd")
+        existingUser.is_passwordset=False
+        existingUser.save(update_fields=['password','is_passwordset'])
+        return Response({'message':'Default Password set for the user successfully'},status=200)
 
 class SendPasswordResetLink(APIView):
     def post(self,request,pk,*args,**kwargs):
