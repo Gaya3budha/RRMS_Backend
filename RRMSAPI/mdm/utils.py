@@ -1,3 +1,6 @@
+from mdm.models import SMTPSettings
+
+
 CATEGORY_LABELS = {
     1: "CaseType",
     2: "FileType",
@@ -7,3 +10,7 @@ CATEGORY_LABELS = {
     6: "CaseStatus",
     7: "ClassificationType"
 }
+
+
+def get_active_smtp_settings():
+    return SMTPSettings.objects.filter(isActive=True).first()

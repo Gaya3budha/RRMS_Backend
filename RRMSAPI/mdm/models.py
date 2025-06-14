@@ -178,3 +178,10 @@ class SMTPSettings(models.Model):
 
     def __str__(self):
         return f"{self.smtpServerName} ({'Active' if self.isActive else 'Inactive'})"
+    
+class EmailDomain(models.Model):
+    domainId = models.AutoField(primary_key=True)
+    domainName=models.CharField(max_length=255)
+    created_at=models.DateTimeField(auto_now=True)
+    created_by = models.IntegerField()
+    isActive=models.BooleanField(default=True)

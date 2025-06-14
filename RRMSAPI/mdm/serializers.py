@@ -1,7 +1,7 @@
 import logging
 from rest_framework import serializers
 
-from .models import  Role,SMTPSettings,Department, DistrictMaster, Division, StateMaster, Designation,DesignationHierarchy, GeneralLookUp,UnitMaster, FileType, FileClassification, CaseStatus
+from .models import  EmailDomain, Role,SMTPSettings,Department, DistrictMaster, Division, StateMaster, Designation,DesignationHierarchy, GeneralLookUp,UnitMaster, FileType, FileClassification, CaseStatus
 
 class StateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -81,6 +81,24 @@ class SMTPSerializer(serializers.ModelSerializer):
     class Meta:
         model = SMTPSettings
         fields = '__all__'
+        read_only_fields = ('created_by', 'modified_by', 'modified_at')
+
+class EmailDomainSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EmailDomain
+        fields = '__all__'
+        read_only_fields = ('domainId','created_by')
+
+class DomainNameOnlySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EmailDomain
+        fields = ['domainName']
+
+def get_serializer_class(self):
+    if self.action == 'list':
+        return DomainNameOnlySerializer
+    return EmailDomainSerializer
+
 
 class CaseFilesSerializer(serializers.ModelSerializer):
     caseFileId = serializers.IntegerField(source='lookupId',read_only=True)

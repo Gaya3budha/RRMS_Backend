@@ -1,12 +1,12 @@
 from django.shortcuts import render
 from rest_framework import status
-from .models import Role,SMTPSettings,DesignationHierarchy, Department,Division,GeneralLookUp, DistrictMaster, StateMaster,UnitMaster, Designation, FileType, FileClassification, CaseStatus
+from .models import EmailDomain, Role,SMTPSettings,DesignationHierarchy, Department,Division,GeneralLookUp, DistrictMaster, StateMaster,UnitMaster, Designation, FileType, FileClassification, CaseStatus
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .permissions import HasRequiredPermission, IsSuperAdminOrReadOnly
 from rest_framework import viewsets
-from .serializers import DesignationHierarchySerializer,DesignationViewSerializer,SMTPSerializer,CorrFilesSerializer,CaseFilesSerializer,FileTypeSerializer,FileClassificationSerializer,CaseStatusSerializer,DepartmentSeriallizer,LookupCustomSerializer, DivisionSerializer, DesignationSerializer
+from .serializers import DesignationHierarchySerializer,DesignationViewSerializer, EmailDomainSerializer,SMTPSerializer,CorrFilesSerializer,CaseFilesSerializer,FileTypeSerializer,FileClassificationSerializer,CaseStatusSerializer,DepartmentSeriallizer,LookupCustomSerializer, DivisionSerializer, DesignationSerializer
 from rest_framework.permissions import IsAdminUser
 from .utils import CATEGORY_LABELS
 from rest_framework.generics import ListAPIView
@@ -114,7 +114,7 @@ class SMTPViewSet(viewsets.ModelViewSet):
         print("count",queryset.count())
         return queryset
     
-    def perform_create(self, serializer):
+    def perform_create(self,serializer):
         serializer.save(
             created_by=self.request.user.id,
             modified_by=self.request.user.id,  # Optional: Track on creation
@@ -134,7 +134,36 @@ class SMTPViewSet(viewsets.ModelViewSet):
         instance.modified_at = timezone.now()
         instance.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class EmailViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsSuperAdminOrReadOnly]
+    queryset = EmailDomain.objects.all()
+    serializer_class = EmailDomainSerializer
+
+    def get_queryset(self):
+        return EmailDomain.objects.all()
+
+    def list(self, request, *args, **kwargs):
+        domains = EmailDomain.objects.filter(isActive=True).values_list('domainName', flat=True)
+        return Response(domains)
     
+    def perform_create(self,serializer):
+        serializer.save(
+            created_by=self.request.user.id,
+        )
+    
+    def perform_update(self, serializer):
+        serializer.save(
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.isActive = False
+        instance.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+  
+
 class DesignationHierarchyViewSet(viewsets.ModelViewSet):
     permission_classes = [IsSuperAdminOrReadOnly]
     queryset = DesignationHierarchy.objects.all()
