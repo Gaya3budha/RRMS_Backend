@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
+from rest_framework import status
 
 from caseInfoFiles.models import CaseInfoDetails, FileDetails
 from mdm.models import Department, Division, GeneralLookUp
@@ -202,104 +203,113 @@ class MoveFilesAPIView(APIView):
     def post(self, request):
         deptId = request.data.get("deptId")
         divsionId=request.data.get("divisionId")
-        file_id = request.data.get("file_id")  # list of IDs
+        # file_id = request.data.get("file_id")
+        file_ids = request.data.get("file_ids")
         target_year = request.data.get("year")  # optional
         target_caseNo= request.data.get("caseNo")  # optional
         target_caseType= request.data.get("caseType")  # optional
         target_filetype_id = request.data.get("file_type_id")  # optional
         target_documenttype_id = request.data.get("document_type_id")
 
-        if not file_id:
-            return Response({"detail": "file_id is required."}, status=400)
+        # if not file_id:
+        #     return Response({"detail": "file_id is required."}, status=400)
 
-        try:
-            file = FileDetails.objects.select_related("caseDetails").get(fileId=file_id)
-            current_case = file.caseDetails
+        if isinstance(file_ids, (str, int)):
+            file_ids = [file_ids]
+        if not file_ids:
+            return Response({"detail": "file_ids is required and must be a list."},
+                            status=status.HTTP_400_BAD_REQUEST)
+        
+        results = {"moved": [], "errors": []}
+        for file_id in file_ids:
+            try:
+                file = FileDetails.objects.select_related("caseDetails").get(fileId=file_id)
+                current_case = file.caseDetails
 
-            if target_year:
+                if target_year:
                     current_case.year= target_year
 
-            # Update caseDetails if caseNo changes
-            if target_caseNo and target_caseNo != current_case.caseNo:
-                new_case = CaseInfoDetails.objects.get(caseNo=target_caseNo)
-                file.caseDetails = new_case
-                current_case = new_case  # for further path building
-                file.caseType=None
-                file.fileType=None
-                file.documentType=None
+                # Update caseDetails if caseNo changes
+                if target_caseNo and target_caseNo != current_case.caseNo:
+                    new_case = CaseInfoDetails.objects.get(caseNo=target_caseNo)
+                    file.caseDetails = new_case
+                    current_case = new_case  # for further path building
+                    file.caseType=None
+                    file.fileType=None
+                    file.documentType=None
 
-            # Update caseType
-            if target_caseType:
-                file.caseType = target_caseType
-                file.fileType = None
-                file.documentType = None
+                # Update caseType
+                if target_caseType:
+                    file.caseType = target_caseType
+                    file.fileType = None
+                    file.documentType = None
 
-            if target_filetype_id:
-                print('in target file type')
-                file.fileType = GeneralLookUp.objects.get(lookupId=target_filetype_id)
-                file.documentType=None
+                if target_filetype_id:
+                    file.fileType = GeneralLookUp.objects.get(lookupId=target_filetype_id)
+                    file.documentType=None
             
-            if target_documenttype_id:
-                file.documentType = GeneralLookUp.objects.get(lookupId=target_documenttype_id)
+                if target_documenttype_id:
+                    file.documentType = GeneralLookUp.objects.get(lookupId=target_documenttype_id)
             
-            current_case.save()
+                current_case.save()
 
-            # Build new file path
-            relative_parts = []
-            if deptId:
-                dept_name = Department.objects.get(departmentId=deptId).departmentName
-                relative_parts.append(str(dept_name))
+                # Build new file path
+                relative_parts = []
+                if deptId:
+                    dept_name = Department.objects.get(departmentId=deptId).departmentName
+                    relative_parts.append(str(dept_name))
 
-            if file.division_id:
-                division_name = Division.objects.get(divisionId=file.division_id).divisionName
-                relative_parts.append(str(division_name))
+                if file.division_id:
+                    division_name = Division.objects.get(divisionId=file.division_id).divisionName
+                    relative_parts.append(str(division_name))
             
-            if target_year or current_case.year:
-                relative_parts.append(str(target_year or current_case.year))
+                if target_year or current_case.year:
+                    relative_parts.append(str(target_year or current_case.year))
 
-            if target_caseNo or current_case.caseNo:
-                relative_parts.append(str(target_caseNo or current_case.caseNo))
+                if target_caseNo or current_case.caseNo:
+                    relative_parts.append(str(target_caseNo or current_case.caseNo))
 
-            if target_caseType:
-                case_type = GeneralLookUp.objects.get(lookupId=target_caseType).lookupName
-                relative_parts.append(str(case_type))
+                if target_caseType:
+                    case_type = GeneralLookUp.objects.get(lookupId=target_caseType).lookupName
+                    relative_parts.append(str(case_type))
 
-            if target_filetype_id:
-                fileType= GeneralLookUp.objects.get(lookupId= target_filetype_id).lookupName
-                relative_parts.append(str(fileType))
+                if target_filetype_id:
+                    fileType= GeneralLookUp.objects.get(lookupId= target_filetype_id).lookupName
+                    relative_parts.append(str(fileType))
             
-            if target_documenttype_id:
-                documentType = GeneralLookUp.objects.get(lookupId=target_documenttype_id).lookupName
-                relative_parts.append(str(documentType))
+                if target_documenttype_id:
+                    documentType = GeneralLookUp.objects.get(lookupId=target_documenttype_id).lookupName
+                    relative_parts.append(str(documentType))
 
-            filename = os.path.basename(file.filePath)
+                filename = os.path.basename(file.filePath)
 
-            relative_parts.append(filename)
+                relative_parts.append(filename)
 
-            new_relative_path = os.path.join("uploads","CID",*relative_parts)
-            old_path = os.path.join(settings.MEDIA_ROOT,file.filePath)
-            new_full_path = os.path.join(settings.MEDIA_ROOT, new_relative_path)
+                new_relative_path = os.path.join("uploads","CID",*relative_parts)
+                old_path = os.path.join(settings.MEDIA_ROOT,file.filePath)
+                new_full_path = os.path.join(settings.MEDIA_ROOT, new_relative_path)
 
-            os.makedirs(os.path.dirname(new_full_path), exist_ok=True)
-            os.rename(old_path, new_full_path)
+                os.makedirs(os.path.dirname(new_full_path), exist_ok=True)
+                os.rename(old_path, new_full_path)
 
-            file.filePath = new_relative_path
-            file.save()
+                file.filePath = new_relative_path
+                file.save()
 
-            return Response({"detail": "File moved successfully."}, status=200)
+                results["moved"].append(
+                        {"fileId": file_id, "new_path": file.filePath})
 
-        except FileDetails.DoesNotExist:
-            return Response({"detail": "File not found."}, status=404)
-        except CaseInfoDetails.DoesNotExist:
-            return Response({"detail": "Target Case not found."}, status=404)
-        except GeneralLookUp.DoesNotExist as e:
-            return Response({"detail": f"Invalid lookup reference: {str(e)}"}, status=400)
-        except Department.DoesNotExist:
-            return Response({"detail": "Invalid department."}, status=400)
-        except Division.DoesNotExist:
-            return Response({"detail": "Invalid division."}, status=400)
-        except Exception as e:
-            return Response({"detail": str(e)}, status=500)
+            except FileDetails.DoesNotExist:
+                results["errors"].append({"fileId": file_id, "reason": "File not found"})
+            except CaseInfoDetails.DoesNotExist:
+                results["errors"].append({"fileId": file_id, "reason": "Target Case not found"})
+            except GeneralLookUp.DoesNotExist as e:
+                results["errors"].append({"fileId":file_id,"detail": f"Invalid lookup reference: {str(e)}"})
+            except Department.DoesNotExist:
+                results["errors"].append({"fileId":file_id,"detail": "Invalid department."})
+            except Division.DoesNotExist:
+                results["errors"].append({"fileId":file_id,"detail": "Invalid division."})
+            except Exception as e:
+                results["errors"].append({"fileId":file_id, "reason": str(e)})
 
 class ArchiveFileAPIView(APIView):
     permission_classes = [IsAuthenticated]
