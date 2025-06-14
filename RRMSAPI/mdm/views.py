@@ -11,6 +11,7 @@ from rest_framework.permissions import IsAdminUser
 from .utils import CATEGORY_LABELS
 from rest_framework.generics import ListAPIView
 from django.utils import timezone
+from rest_framework.decorators import action
 
 # Create your views here.
 class StateMasterView(APIView):
@@ -145,8 +146,18 @@ class EmailViewSet(viewsets.ModelViewSet):
         return EmailDomain.objects.all()
 
     def list(self, request, *args, **kwargs):
-        domains = EmailDomain.objects.filter(isActive=True).values_list('domainName', flat=True)
-        return Response(domains)
+        active_qs = self.get_queryset().filter(isActive=True)
+        serializer = self.get_serializer(active_qs, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=["get"], url_path="names")
+    def names(self, request):
+        domains = (
+            EmailDomain.objects
+            .filter(isActive=True)
+            .values_list("domainName", flat=True)
+        )
+        return Response(list(domains))
     
     def perform_create(self,serializer):
         serializer.save(
