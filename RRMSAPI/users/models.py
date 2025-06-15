@@ -136,6 +136,7 @@ class PasswordResetRequest(models.Model):
     mobileno=models.CharField(max_length=10)
     requested_at = models.DateTimeField(auto_now_add=True)
     requested_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
+    status= models.CharField(null=True,blank=True,default='C')
 
     def __str__(self):
         return f"{self.kgid} - {self.email}-{self.mobileno}"

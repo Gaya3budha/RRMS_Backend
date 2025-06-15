@@ -369,6 +369,37 @@ class SetDefaultPwd(APIView):
         existingUser.is_passwordset=False
         existingUser.save(update_fields=['password','is_passwordset'])
         return Response({'message':'Default Password set for the user successfully'},status=200)
+    
+class PasswordResetRequestListAPIView(APIView):
+    def get(self, request, *args, **kwargs):
+        requests = PasswordResetRequest.objects.all().order_by('-requested_at') 
+        serializer = PasswordResetRequestSerializer(requests, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+        
+
+class SetStatusForUser(APIView):
+    def post(self,request,*args,**kwargs):
+        pwdRequestData=PasswordResetRequest.objects.get(passwordResetRequestId=request.data.get("pwdId"))
+        
+        status_value = request.data.get("status")
+
+        if status_value not in ["approved", "rejected"]:
+            return Response({"message": "Invalid status. Must be 'approved' or 'rejected'."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        # Update status
+        pwdRequestData.status = status_value
+        pwdRequestData.save(update_fields=['status'])
+
+        if status_value == "approved":
+            # You can also return the tokenized set password URL if needed
+            frontend_url = f"https://rrms-frontend.vercel.app/manage-user/reset-password"
+            return Response({
+                "message": "Request approved. Redirect to reset password screen.",
+                "redirect_url": frontend_url
+            }, status=status.HTTP_200_OK)
+
+        return Response({"message": "Request has been rejected."}, status=status.HTTP_200_OK)
 
 class SendPasswordResetLink(APIView):
     def post(self,request,pk,*args,**kwargs):
