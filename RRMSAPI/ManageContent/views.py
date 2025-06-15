@@ -6,6 +6,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
 from rest_framework import status
+from collections import defaultdict
 
 from caseInfoFiles.models import CaseInfoDetails, FileDetails
 from mdm.models import Department, Division, GeneralLookUp
@@ -347,3 +348,129 @@ class ArchiveFileAPIView(APIView):
             return Response({"detail": "File not found."}, status=404)
         except Exception as e:
             return Response({"detail": str(e)}, status=500)
+        
+
+class FolderTreeFullAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user          = request.user
+        division_id   = request.data.get("division_id")
+        year          = request.data.get("year")
+        case_no    = request.data.get("caseNo")
+        case_type  = request.data.get("caseType")
+        file_type_id  = request.data.get("fileTypeId")
+        doc_type_id   = request.data.get("documentTypeId")
+
+        user_designations = user.designation.all()
+
+        user_division_ids = Division.objects.filter(
+            designation__in=user_designations
+        ).values_list("divisionId", flat=True).distinct()
+
+        user_department_ids = Department.objects.filter(
+            designation__in=user_designations
+        ).values_list("departmentId", flat=True).distinct()
+
+        if division_id and int(division_id) not in user_division_ids:
+            return Response({"detail": "Unauthorized for this division"}, status=403)
+        
+        files = FileDetails.objects.select_related(
+            "division",
+            "caseDetails",
+            "fileType",
+            "documentType",
+            "division__departmentId",
+        ).filter(
+            Q(division_id__in=user_division_ids) | Q(division__departmentId__in=user_department_ids),
+            isArchieved=False,)
+        
+        if division_id:
+            files = files.filter(division_id=division_id)
+        if year:
+            files = files.filter(caseDetails__year=int(year))
+        if case_no:
+            files = files.filter(caseDetails__caseNo=str(case_no))
+        if case_type:
+            files = files.filter(caseType=case_type)
+        if file_type_id:
+            files = files.filter(fileType_id=file_type_id)
+        if doc_type_id:
+            files = files.filter(documentType_id=doc_type_id)
+
+        def nested_dict():
+            return defaultdict(nested_dict)
+        
+        tree = nested_dict()
+        for f in files:
+            div_id   = f.division.divisionId
+            div_name = f.division.divisionName
+
+            yr   = f.caseDetails.year or "UNASSIGNED"
+            sno  = f.caseDetails.caseNo or "UNASSIGNED"
+            stp  = (f.caseType and int(f.caseType)) or "UNASSIGNED"
+            ftp  = (f.fileType_id or "UNASSIGNED")
+            dtp  = (f.documentType_id or "UNASSIGNED")
+
+            leaf = tree[div_id]
+            leaf.setdefault("_meta", {"id": div_id, "name": div_name, "level": "division", "type": "folder"})
+
+            leaf = leaf[yr]
+            leaf.setdefault("_meta", {"name": yr, "level": "year", "type": "folder"})
+
+            leaf = leaf[sno]
+            leaf.setdefault("_meta", {"name": sno, "level": "caseNo", "type": "folder"})
+
+            leaf = leaf[stp]
+            if stp != "UNASSIGNED":
+                stp_name = GeneralLookUp.objects.filter(lookupId=stp).values_list("lookupName", flat=True).first()
+            else:
+                stp_name = "UNASSIGNED"
+            leaf.setdefault("_meta", {"id": stp, "name": stp_name, "level": "caseType", "type": "folder"})
+
+            leaf = leaf[ftp]
+            if ftp != "UNASSIGNED":
+                ftp_name = GeneralLookUp.objects.filter(lookupId=ftp).values_list("lookupName", flat=True).first()
+            else:
+                ftp_name = "UNASSIGNED"
+            leaf.setdefault("_meta", {"id": ftp, "name": ftp_name, "level": "filetype", "type": "folder"})
+
+            leaf = leaf[dtp]
+            if dtp != "UNASSIGNED":
+                dtp_name = GeneralLookUp.objects.filter(lookupId=dtp).values_list("lookupName", flat=True).first()
+            else:
+                dtp_name = "UNASSIGNED"
+            leaf.setdefault("_meta", {"id": dtp, "name": dtp_name, "level": "documenttype", "type": "folder"})
+
+            leaf.setdefault("files", []).append({
+                "file_id":   f.fileId,
+                "name":      f.fileName,
+                "path":      request.build_absolute_uri(f.filePath) if f.filePath else None,
+                "created_at": f.created_at,
+                "uploaded_by": f"{f.uploaded_by.first_name} {f.uploaded_by.last_name}" if f.uploaded_by else None,
+            })
+
+        # ───────────────────────────────────────────────────────────
+        # 3. Convert the defaultdict tree to plain lists / dicts
+        # ───────────────────────────────────────────────────────────
+        def dictify(node):
+            """Recursively convert `_meta` + children to frontend JSON."""
+            meta = node.pop("_meta")
+            children = []
+            for key, child in node.items():
+                if key == "files":
+                    # keep files list at this level
+                    meta["files"] = child
+                else:
+                    children.append(dictify(child))
+            if children:
+                # Sort children folders alphabetically / numerically
+                children.sort(key=lambda c: str(c["name"]))
+                meta["children"] = children
+            return meta
+
+        full_tree = [dictify(child) for child in tree.values()]
+        # Sort divisions alphabetically
+        full_tree.sort(key=lambda c: str(c["name"]))
+
+        return Response(full_tree, status=status.HTTP_200_OK)
