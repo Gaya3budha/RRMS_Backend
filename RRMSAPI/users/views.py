@@ -210,19 +210,30 @@ class UpdateUserView(APIView):
             return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
 class CustomTokenObtainPairView(TokenObtainPairView):
-    #  serializer_class = CustomTokenObtainPairSerializer
     def post(self,request):
         serializer_class = CustomTokenObtainPairSerializer(data = request.data)
 
         try:
-            if serializer_class.is_valid():
-                user = serializer_class.user
-                ActiveUser.objects.update_or_create(user=user)
-                return Response({"responseData": serializer_class.validated_data, "statusCode": 200}, status=status.HTTP_200_OK)
-            return Response({"responseData":serializer_class.errors, "statusCode": 400}, status=status.HTTP_400_BAD_REQUEST)
-
+            serializer_class.is_valid(raise_exception=True)
         except AuthenticationFailed as e:
-            return Response({"responseData":str(e), "statusCode": 401}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({
+                "responseData": str(e),
+                "statusCode": 401
+            }, status=status.HTTP_401_UNAUTHORIZED)
+        user = serializer_class.user
+        password_set = serializer_class.validated_data.pop("passwordSet", False)
+
+        if not password_set:
+            # Password is not set → skip token generation
+            return Response({
+                "passwordSet": False,
+                "responseData": {},
+                "statusCode": 200
+            }, status=status.HTTP_200_OK)
+        ActiveUser.objects.update_or_create(user=user)
+        return Response({"passwordSet": True,"responseData": serializer_class.validated_data, "statusCode": 200},
+                         status=status.HTTP_200_OK)
+
 
 
 class GetLoggedInUsersView(APIView):
@@ -354,7 +365,7 @@ class ViewDatafromNotificationPasswordRequest(APIView):
 class SetDefaultPwd(APIView):
     def post(self,request,pk,*args,**kwargs):
         existingUser=User.objects.get(kgid=pk)
-        existingUser.password=request.data.get("defaultPwd")
+        existingUser.set_password(request.data.get("defaultPwd"))
         existingUser.is_passwordset=False
         existingUser.save(update_fields=['password','is_passwordset'])
         return Response({'message':'Default Password set for the user successfully'},status=200)
@@ -375,4 +386,11 @@ class SendPasswordResetLink(APIView):
 
         return Response({'message':'Password Reset Link Sent Successfully'},status=200)
     
+class SetPwdAfterReset(APIView):
+    def post(self,request,pk,*args,**kwargs):
+        existingUser=User.objects.get(kgid=pk)
+        existingUser.set_password(request.data.get("password"))
+        existingUser.is_passwordset=False
+        existingUser.save(update_fields=['password','is_passwordset'])
+        return Response({'message':'Password set for the user successfully'},status=200)
     

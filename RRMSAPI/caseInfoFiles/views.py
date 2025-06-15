@@ -1272,13 +1272,13 @@ class NotificationListView(APIView):
             notifications = Notification.objects.filter(
                 recipient=user,
                 type__in=allowed_types
-            ).order_by('-created_at').distinct()
+            ).order_by('is_read','-created_at').distinct()
         else:
             notifications = Notification.objects.filter(
                 recipient=user,
                 division__divisionId=division_id,
                 type__in=allowed_types
-            ).order_by('-created_at')
+            ).order_by('is_read','-created_at')
        
 
         serializer = NotificationSerializer(notifications, many=True)

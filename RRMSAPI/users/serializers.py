@@ -60,10 +60,21 @@ class UserSerializer(serializers.ModelSerializer):
         return representation
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        data["passwordSet"] = self.user.is_passwordset
+
+        if not self.user.is_passwordset:
+            data.pop("access", None)
+            data.pop("refresh", None)
+
+        return data
+    
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
-        print(user)
+        
         token['email']=user.email
         token['full_name']=f"{user.first_name} {user.last_name}"
         token['is_superadmin']=user.is_superuser
