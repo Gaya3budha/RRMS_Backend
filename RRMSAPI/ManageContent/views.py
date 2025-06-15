@@ -1,4 +1,5 @@
 import os
+from uuid import uuid4
 from django.conf import settings
 from django.shortcuts import render
 from rest_framework.response import Response
@@ -7,7 +8,9 @@ from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
 from rest_framework import status
 from collections import defaultdict
+from django.core.files.storage import default_storage
 
+from ManageContent.utils import nested_dict, user_access_scope
 from caseInfoFiles.models import CaseInfoDetails, FileDetails
 from mdm.models import Department, Division, GeneralLookUp
 from users.models import User
@@ -348,8 +351,155 @@ class ArchiveFileAPIView(APIView):
             return Response({"detail": "File not found."}, status=404)
         except Exception as e:
             return Response({"detail": str(e)}, status=500)
-        
 
+class CopyFilesAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        file_ids         = request.data.get("file_ids", [])         # list of file IDs to copy
+        division_id      = request.data.get("divisionId")
+        year             = request.data.get("year")
+        case_no       = request.data.get("caseNo")
+        case_type     = request.data.get("caseType")
+        file_type_id     = request.data.get("fileTypeId")
+        document_type_id = request.data.get("documentTypeId")
+
+        if not (division_id and year and case_no):
+            return Response({"error": "divisionId, year, and caseNo are required."}, status=400)
+
+        copied_files = []
+
+        for fid in file_ids:
+            try:
+                original_file = FileDetails.objects.get(fileId=fid)
+
+                # Fetch or create the correct caseInfoDetails entry
+                case_obj, _ = CaseInfoDetails.objects.get_or_create(division_id=division_id,year=year,caseNo=case_no)
+
+                parts = [str(division_id), str(year), str(case_no)]
+                if case_type:
+                    parts.append(str(case_type))
+                if file_type_id:
+                    parts.append(str(file_type_id))
+                if document_type_id:
+                    parts.append(str(document_type_id))
+
+                original_filename = os.path.basename(original_file.filePath)
+                new_filename = f"{uuid4()}_{original_filename}"
+                new_path = "/".join(parts + [new_filename])
+                    
+                if original_file.filePath and default_storage.exists(original_file.filePath):
+                    with default_storage.open(original_file.filePath, 'rb') as src:
+                        saved_path = default_storage.save(new_path, src)
+                else:
+                    saved_path = None
+
+                # Create new FileDetails entry
+                new_file = FileDetails.objects.create(
+                    caseDetails=case_obj,
+                    division_id=division_id,
+                    caseType=case_type,
+                    fileType_id=file_type_id,
+                    documentType_id=document_type_id,
+                    fileName=original_file.fileName,
+                    filePath=saved_path,
+                    uploaded_by=request.user
+                )
+
+                copied_files.append({
+                    "original_file_id": fid,
+                    "new_file_id": new_file.fileId,
+                    "path": request.build_absolute_uri(new_file.filePath.url) if new_file.filePath else None
+                })
+
+            except FileDetails.DoesNotExist:
+                continue
+
+        return Response({"copied": copied_files}, status=201)       
+
+class ArchiveFullTreeAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        dept_ids, div_ids = user_access_scope(user)
+
+        files = FileDetails.objects.select_related(
+                "division",
+                "division__departmentId",
+                "caseDetails",
+                "fileType",
+                "documentType"
+            ).filter(
+                Q(division_id__in=div_ids) | Q(division__departmentId__in=dept_ids),
+                isArchieved=True
+            )
+
+        tree = nested_dict()
+
+        for f in files:
+            dept = f.division.departmentId
+            div = f.division
+            stud = f.caseDetails
+            stud_no = stud.caseNo
+            stud_type = f.caseType
+            file_type = f.fileType
+            doc_type = f.documentType
+
+            node = tree[dept.pk]
+            node["_meta"] = {"id": dept.pk, "name": dept.departmentName, "level": "department", "type": "folder"}
+
+            node = node[div.pk]
+            node["_meta"] = {"id": div.pk, "name": div.divisionName, "level": "division", "type": "folder"}
+
+            node = node[stud_no]
+            node["_meta"] = {"name": stud_no, "level": "caseNo", "type": "folder"}
+
+            node = node[stud_type.lookupId if stud_type else "unassigned"]
+            node["_meta"] = {
+                "id": stud_type.lookupId if stud_type else None,
+                "name": stud_type.lookupName if stud_type else "UNASSIGNED",
+                "level": "caseType",
+                "type": "folder"
+            }
+
+            node = node[file_type.lookupId if file_type else "unassigned"]
+            node["_meta"] = {
+                "id": file_type.lookupId if file_type else None,
+                "name": file_type.lookupName if file_type else "UNASSIGNED",
+                "level": "filetype",
+                "type": "folder"
+            }
+
+            node = node[doc_type.lookupId if doc_type else "unassigned"]
+            node["_meta"] = {
+                "id": doc_type.lookupId if doc_type else None,
+                "name": doc_type.lookupName if doc_type else "UNASSIGNED",
+                "level": "documenttype",
+                "type": "folder"
+            }
+
+            node.setdefault("files", []).append({
+                "file_id": f.fileId,
+                "name": f.fileName,
+                "path": request.build_absolute_uri(f.filePath.url) if f.filePath else None,
+                "created_at": f.created_at,
+                "uploaded_by": f.uploaded_by.get_full_name() if f.uploaded_by else None
+            })
+
+        # Convert nested dict to JSON serializable structure
+        def dictify(node_dict):
+            meta = node_dict.pop("_meta", {})
+            children = [dictify(child) for child in node_dict.values() if isinstance(child, dict)]
+            if children:
+                meta["children"] = sorted(children, key=lambda x: str(x.get("name")))
+            if "files" in node_dict:
+                meta["files"] = node_dict["files"]
+            return meta
+
+        response = [dictify(v) for v in tree.values()]
+        return Response(sorted(response, key=lambda x: x.get("name")), status=200)  
+    
 class FolderTreeFullAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
