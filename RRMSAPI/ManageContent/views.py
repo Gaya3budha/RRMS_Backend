@@ -207,7 +207,6 @@ class MoveFilesAPIView(APIView):
     def post(self, request):
         deptId = request.data.get("deptId")
         divsionId=request.data.get("divisionId")
-        # file_id = request.data.get("file_id")
         file_ids = request.data.get("file_ids")
         target_year = request.data.get("year")  # optional
         target_caseNo= request.data.get("caseNo")  # optional
@@ -301,7 +300,7 @@ class MoveFilesAPIView(APIView):
 
                 results["moved"].append(
                         {"fileId": file_id, "new_path": file.filePath})
-
+                
             except FileDetails.DoesNotExist:
                 results["errors"].append({"fileId": file_id, "reason": "File not found"})
             except CaseInfoDetails.DoesNotExist:
@@ -314,6 +313,13 @@ class MoveFilesAPIView(APIView):
                 results["errors"].append({"fileId":file_id,"detail": "Invalid division."})
             except Exception as e:
                 results["errors"].append({"fileId":file_id, "reason": str(e)})
+
+        if results["errors"]:
+                return Response(results,status=status.HTTP_207_MULTI_STATUS)
+                
+        return Response(results,status=status.HTTP_200_OK)
+            
+            
 
 class ArchiveFileAPIView(APIView):
     permission_classes = [IsAuthenticated]
