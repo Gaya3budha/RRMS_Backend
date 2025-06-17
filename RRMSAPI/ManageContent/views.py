@@ -415,7 +415,7 @@ class CopyFilesAPIView(APIView):
                 copied_files.append({
                     "original_file_id": fid,
                     "new_file_id": new_file.fileId,
-                    "path": request.build_absolute_uri(new_file.filePath.url) if new_file.filePath else None
+                    "path": request.build_absolute_uri(new_file.filePath) if new_file.filePath else None
                 })
 
             except FileDetails.DoesNotExist:
@@ -428,8 +428,29 @@ class ArchiveFullTreeAPIView(APIView):
 
     def get(self, request):
         user = request.user
+
+        division_id = request.query_params.get("division_id")
+        if not division_id:
+            return Response(
+                {"detail": "division_id query parameter is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        try:
+            division_id = int(division_id)
+        except ValueError:
+            return Response(
+                {"detail": "division_id must be an integer."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         dept_ids, div_ids = user_access_scope(user)
 
+        if division_id not in div_ids:
+            return Response(
+                {"detail": "You are not authorised for this division."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        
         files = FileDetails.objects.select_related(
                 "division",
                 "division__departmentId",
@@ -437,18 +458,18 @@ class ArchiveFullTreeAPIView(APIView):
                 "fileType",
                 "documentType"
             ).filter(
-                Q(division_id__in=div_ids) | Q(division__departmentId__in=dept_ids),
-                isArchieved=True
+                division_id=division_id,isArchieved=True
             )
-
+        if not files.exists():
+            return Response([], status=status.HTTP_200_OK)
         tree = nested_dict()
 
         for f in files:
             dept = f.division.departmentId
             div = f.division
-            stud = f.caseDetails
-            stud_no = stud.caseNo
-            stud_type = f.caseType
+            case = f.caseDetails
+            case_no = case.caseNo
+            case_type = f.caseType
             file_type = f.fileType
             doc_type = f.documentType
 
@@ -458,13 +479,13 @@ class ArchiveFullTreeAPIView(APIView):
             node = node[div.pk]
             node["_meta"] = {"id": div.pk, "name": div.divisionName, "level": "division", "type": "folder"}
 
-            node = node[stud_no]
-            node["_meta"] = {"name": stud_no, "level": "caseNo", "type": "folder"}
+            node = node[case_no]
+            node["_meta"] = {"name": case_no, "level": "caseNo", "type": "folder"}
 
-            node = node[stud_type.lookupId if stud_type else "unassigned"]
+            node = node[case_type.lookupId if case_type else "unassigned"]
             node["_meta"] = {
-                "id": stud_type.lookupId if stud_type else None,
-                "name": stud_type.lookupName if stud_type else "UNASSIGNED",
+                "id": case_type.lookupId if case_type else None,
+                "name": case_type.lookupName if case_type else "UNASSIGNED",
                 "level": "caseType",
                 "type": "folder"
             }
@@ -488,7 +509,7 @@ class ArchiveFullTreeAPIView(APIView):
             node.setdefault("files", []).append({
                 "file_id": f.fileId,
                 "name": f.fileName,
-                "path": request.build_absolute_uri(f.filePath.url) if f.filePath else None,
+                "path": request.build_absolute_uri(f.filePath) if f.filePath else None,
                 "created_at": f.created_at,
                 "uploaded_by": f.uploaded_by.get_full_name() if f.uploaded_by else None
             })
@@ -507,6 +528,7 @@ class ArchiveFullTreeAPIView(APIView):
         return Response(sorted(response, key=lambda x: x.get("name")), status=200)  
     
 class FolderTreeFullAPIView(APIView):
+
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -630,3 +652,6 @@ class FolderTreeFullAPIView(APIView):
         full_tree.sort(key=lambda c: str(c["name"]))
 
         return Response(full_tree, status=status.HTTP_200_OK)
+    
+
+    
