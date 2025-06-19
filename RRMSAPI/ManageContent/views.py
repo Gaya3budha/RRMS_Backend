@@ -14,6 +14,7 @@ from ManageContent.utils import nested_dict, user_access_scope
 from caseInfoFiles.models import CaseInfoDetails, FileDetails
 from mdm.models import Department, Division, GeneralLookUp
 from users.models import User
+import re
 
 # Create your views here.
 class FolderTreeAPIView(APIView):
@@ -547,6 +548,64 @@ class ArchiveFullTreeAPIView(APIView):
         response = [dictify(v) for v in tree.values()]
         return Response(sorted(response, key=lambda x: x.get("name")), status=200)  
     
+class UnArchiveFileAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        file_id = request.data.get("file_id")
+
+        if file_id is None:
+            return Response({"detail": "file_id  is required."}, status=400)
+        
+        if isinstance(file_id, int):
+            file_id = [file_id]
+
+        if not isinstance(file_id, (list, tuple)) or not file_id:
+            return Response({"detail": "Must be a non-empty list of integers."}, status=400)
+
+        try:
+            file_id = list({int(fid) for fid in file_id})
+        except (TypeError, ValueError):
+            return Response({"detail": "All IDs must be integers."}, status=400)
+
+        files_qs = FileDetails.objects.filter(fileId__in=file_id)
+        found = {f.fileId: f for f in files_qs}
+        results = {fid: "not_found" for fid in file_id}
+
+        for fid, file in found.items():
+            if not file.isArchieved:
+                results[fid] = "not_archived"
+                continue
+
+            archived_path = file.filePath  # e.g., "archive/..."
+            if not re.match(r"^archive[\\/]", archived_path):
+                results[fid] = "invalid_archive_path"
+                continue
+
+            archived_full_path = os.path.join(settings.MEDIA_ROOT, archived_path)
+
+            # Remove "archive/" prefix to get original relative path
+            original_relative_path = re.sub(r"^archive[\\/]", "", archived_path)
+            original_full_path = os.path.join(settings.MEDIA_ROOT, original_relative_path)
+
+            if not os.path.exists(archived_full_path):
+                results[fid] = "archived_file_missing"
+                continue
+
+            try:
+                os.makedirs(os.path.dirname(original_full_path), exist_ok=True)
+                os.rename(archived_full_path, original_full_path)
+
+                file.filePath = original_relative_path
+                file.isArchieved = False
+                file.save(update_fields=("filePath", "isArchieved"))
+
+                results[fid] = "unarchived"
+            except OSError as e:
+                results[fid] = f"error: {str(e)}"
+
+        return Response({"results": results}, status=200)
+
 class FolderTreeFullAPIView(APIView):
 
     permission_classes = [IsAuthenticated]
