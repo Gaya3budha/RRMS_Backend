@@ -610,6 +610,22 @@ class FolderTreeFullAPIView(APIView):
 
     permission_classes = [IsAuthenticated]
 
+    def _nested_dict(self):
+        return defaultdict(self._nested_dict)
+    
+    def _lookup_name(self, lookup_id, cache):
+        if not lookup_id:
+            return None
+        if lookup_id in cache:
+            return cache[lookup_id]
+        name = (
+            GeneralLookUp.objects.filter(lookupId=lookup_id)
+            .values_list("lookupName", flat=True)
+            .first()
+        )
+        cache[lookup_id] = name
+        return name
+
     def post(self, request):
         user          = request.user
         division_id   = request.data.get("division_id")
@@ -623,11 +639,11 @@ class FolderTreeFullAPIView(APIView):
 
         user_division_ids = Division.objects.filter(
             designation__in=user_designations
-        ).values_list("divisionId", flat=True).distinct()
+        ).values_list("divisionId", flat=True)
 
         user_department_ids = Department.objects.filter(
             designation__in=user_designations
-        ).values_list("departmentId", flat=True).distinct()
+        ).values_list("departmentId", flat=True)
 
         if division_id and int(division_id) not in user_division_ids:
             return Response({"detail": "Unauthorized for this division"}, status=403)
@@ -654,82 +670,87 @@ class FolderTreeFullAPIView(APIView):
             files = files.filter(fileType_id=file_type_id)
         if doc_type_id:
             files = files.filter(documentType_id=doc_type_id)
-
-        def nested_dict():
-            return defaultdict(nested_dict)
         
-        tree = nested_dict()
+        tree = self._nested_dict()
+        lookup_cache = {}
+
         for f in files:
+            division = f.division
+            case  = f.caseDetails
+
             div_id   = f.division.divisionId
             div_name = f.division.divisionName
 
-            yr   = f.caseDetails.year or ""
-            sno  = f.caseDetails.caseNo or " "
-            stp  = (f.caseType and int(f.caseType)) or " "
-            ftp  = (f.fileType_id or " ")
-            dtp  = (f.documentType_id or " ")
-
-            leaf = tree[div_id]
-            leaf.setdefault("_meta", {"id": div_id, "name": div_name, "level": "division", "type": "folder"})
-
-            leaf = leaf[yr]
-            leaf.setdefault("_meta", {"name": yr, "level": "year", "type": "folder"})
-
-            leaf = leaf[sno]
-            leaf.setdefault("_meta", {"name": sno, "level": "caseNo", "type": "folder"})
-
-            leaf = leaf[stp]
-            if stp != "UNASSIGNED":
-                stp_name = GeneralLookUp.objects.filter(lookupId=stp).values_list("lookupName", flat=True).first()
-            else:
-                stp_name = "UNASSIGNED"
-            leaf.setdefault("_meta", {"id": stp, "name": stp_name, "level": "caseType", "type": "folder"})
-
-            leaf = leaf[ftp]
-            if ftp != "UNASSIGNED":
-                ftp_name = GeneralLookUp.objects.filter(lookupId=ftp).values_list("lookupName", flat=True).first()
-            else:
-                ftp_name = "UNASSIGNED"
-            leaf.setdefault("_meta", {"id": ftp, "name": ftp_name, "level": "filetype", "type": "folder"})
-
-            leaf = leaf[dtp]
-            if dtp != "UNASSIGNED":
-                dtp_name = GeneralLookUp.objects.filter(lookupId=dtp).values_list("lookupName", flat=True).first()
-            else:
-                dtp_name = "UNASSIGNED"
-            leaf.setdefault("_meta", {"id": dtp, "name": dtp_name, "level": "documenttype", "type": "folder"})
-
-            leaf.setdefault("files", []).append({
-                "file_id":   f.fileId,
-                "name":      f.fileName,
-                "path":      request.build_absolute_uri(f.filePath) if f.filePath else None,
-                "created_at": f.created_at,
-                "uploaded_by": f"{f.uploaded_by.first_name} {f.uploaded_by.last_name}" if f.uploaded_by else None,
+            node = tree[div_id]
+            node.setdefault("_meta", {
+                "id": div_id,
+                "name": div_name,
+                "level": "division",
+                "type": "folder"
             })
 
-        # ───────────────────────────────────────────────────────────
-        # 3. Convert the defaultdict tree to plain lists / dicts
-        # ───────────────────────────────────────────────────────────
+            levels = []
+
+            if case.year:
+                levels.append(("year", case.year, str(case.year)))
+
+            if case.caseNo:
+                levels.append(("caseNo", case.caseNo, str(case.caseNo)))
+
+            if f.caseType:
+                name = self._lookup_name(f.caseType, lookup_cache)
+                if name:
+                    levels.append(("caseType", f.caseType, name))
+
+            if f.fileType_id:
+                name = self._lookup_name(f.fileType_id, lookup_cache)
+                if name:
+                    levels.append(("fileType", f.fileType_id, name))
+
+            if f.documentType_id:
+                name = self._lookup_name(f.documentType_id, lookup_cache)
+                if name:
+                    levels.append(("documentType", f.documentType_id, name))
+
+            # Traverse into nested tree
+            for level_key, level_id, level_name in levels:
+                node = node[level_id]
+                if "_meta" not in node:
+                    node["_meta"] = {
+                        "id": level_id,
+                        "name": level_name,
+                        "level": level_key,
+                        "type": "folder"
+                    }
+
+            node.setdefault("files", []).append({
+                "file_id": f.fileId,
+                "name": f.fileName,
+                "path": request.build_absolute_uri(f.filePath) if f.filePath else None,
+                "created_at": f.created_at,
+                "uploaded_by": f"{f.uploaded_by.first_name} {f.uploaded_by.last_name}" if f.uploaded_by else None
+            })
+
+        # ───── Convert tree ─────
         def dictify(node):
             meta = node.pop("_meta")
             children = []
+
             for key, child in node.items():
                 if key == "files":
-                    # keep files list at this level
                     meta["files"] = child
                 else:
                     children.append(dictify(child))
+
             if children:
-                # Sort children folders alphabetically / numerically
                 children.sort(key=lambda c: str(c["name"]))
                 meta["children"] = children
             return meta
 
-        full_tree = [dictify(child) for child in tree.values()]
-        # Sort divisions alphabetically
-        full_tree.sort(key=lambda c: str(c["name"]))
+        result = [dictify(child) for child in tree.values()]
+        result.sort(key=lambda c: str(c["name"]))
 
-        return Response(full_tree, status=status.HTTP_200_OK)
+        return Response(result, status=status.HTTP_200_OK)
     
 
     
