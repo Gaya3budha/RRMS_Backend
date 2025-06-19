@@ -327,12 +327,36 @@ class ArchiveFileAPIView(APIView):
     def post(self, request):
         file_id = request.data.get("file_id")
 
-        if not file_id:
-            return Response({"detail": "file_id is required."}, status=400)
+        if file_id is None:
+            return Response(
+                {"detail": "file_id is required and must be a list."},
+                status=400,
+            )
+        
+        if isinstance(file_id, int):
+            file_id = [file_id]
 
+        if not isinstance(file_id, (list, tuple)) or not file_id:
+            return Response(
+                {"detail": "file_id must be a non‑empty list of integers."}, status=400
+            )
         try:
-            file = FileDetails.objects.get(fileId=file_id)
+            file_id = list({int(fid) for fid in file_id})
+        except (TypeError, ValueError):
+            return Response({"detail": "require integers in array."}, status=400)
+        files = FileDetails.objects.filter(fileId__in=file_id)
+        found = {f.fileId: f for f in files}
+        results = {fid: "not_found" for fid in file_id}
+
+        for fid, file in found.items():
+            if file.isArchieved:
+                results[fid] = "already_archived"
+                continue    
             old_path = file.filePath  # absolute path
+
+            if not os.path.exists(old_path):
+                results[fid] = "original file is missing"
+                continue
 
             # Build new archive path: archive/<existing-relative-path>
             archive_relative_path = os.path.join("archive", file.filePath)
@@ -341,22 +365,18 @@ class ArchiveFileAPIView(APIView):
             # Ensure archive folder exists
             os.makedirs(os.path.dirname(new_path), exist_ok=True)
 
-            if not os.path.exists(old_path):
-                return Response({"detail": "Original file not found."}, status=404)
+            try:
+                os.rename(old_path, new_path)
+                file.filePath = archive_relative_path
+                file.isArchieved = True
+                file.save(update_fields=("filePath", "isArchieved"))
+                results[fid] = "archived"
+            except OSError as e:
+                results[fid] = f"error: {e!s}"
 
-            os.rename(old_path, new_path)
+        return Response({"results": results}, status=200)
 
-            # Update filePath and mark as archived
-            file.filePath = archive_relative_path
-            file.isArchieved = True
-            file.save()
-
-            return Response({"detail": "File archived successfully."}, status=200)
-
-        except FileDetails.DoesNotExist:
-            return Response({"detail": "File not found."}, status=404)
-        except Exception as e:
-            return Response({"detail": str(e)}, status=500)
+       
 
 class CopyFilesAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -469,7 +489,7 @@ class ArchiveFullTreeAPIView(APIView):
             div = f.division
             case = f.caseDetails
             case_no = case.caseNo
-            case_type = f.caseType
+            case_type = GeneralLookUp.objects.get(lookupId= f.caseType)
             file_type = f.fileType
             doc_type = f.documentType
 
@@ -511,7 +531,7 @@ class ArchiveFullTreeAPIView(APIView):
                 "name": f.fileName,
                 "path": request.build_absolute_uri(f.filePath) if f.filePath else None,
                 "created_at": f.created_at,
-                "uploaded_by": f.uploaded_by.get_full_name() if f.uploaded_by else None
+                "uploaded_by": f.uploaded_by.first_name if f.uploaded_by else None
             })
 
         # Convert nested dict to JSON serializable structure
@@ -584,11 +604,11 @@ class FolderTreeFullAPIView(APIView):
             div_id   = f.division.divisionId
             div_name = f.division.divisionName
 
-            yr   = f.caseDetails.year or "UNASSIGNED"
-            sno  = f.caseDetails.caseNo or "UNASSIGNED"
-            stp  = (f.caseType and int(f.caseType)) or "UNASSIGNED"
-            ftp  = (f.fileType_id or "UNASSIGNED")
-            dtp  = (f.documentType_id or "UNASSIGNED")
+            yr   = f.caseDetails.year or ""
+            sno  = f.caseDetails.caseNo or " "
+            stp  = (f.caseType and int(f.caseType)) or " "
+            ftp  = (f.fileType_id or " ")
+            dtp  = (f.documentType_id or " ")
 
             leaf = tree[div_id]
             leaf.setdefault("_meta", {"id": div_id, "name": div_name, "level": "division", "type": "folder"})
@@ -632,7 +652,6 @@ class FolderTreeFullAPIView(APIView):
         # 3. Convert the defaultdict tree to plain lists / dicts
         # ───────────────────────────────────────────────────────────
         def dictify(node):
-            """Recursively convert `_meta` + children to frontend JSON."""
             meta = node.pop("_meta")
             children = []
             for key, child in node.items():
