@@ -490,6 +490,7 @@ class ArchiveFullTreeAPIView(APIView):
             dept = f.division.departmentId
             div = f.division
             case = f.caseDetails
+            year    = case.year
             case_no = case.caseNo
             case_type = GeneralLookUp.objects.get(lookupId= f.caseType)
             file_type = f.fileType
@@ -500,6 +501,9 @@ class ArchiveFullTreeAPIView(APIView):
 
             node = node[div.pk]
             node["_meta"] = {"id": div.pk, "name": div.divisionName, "level": "division", "type": "folder"}
+
+            node = node[year]
+            node["_meta"] = {"name": str(year), "level": "year","type": "folder"}
 
             node = node[case_no]
             node["_meta"] = {"name": case_no, "level": "caseNo", "type": "folder"}
