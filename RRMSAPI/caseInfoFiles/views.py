@@ -12,7 +12,7 @@ from django.db.models import Q
 from django.http import FileResponse, Http404
 from rest_framework.permissions import IsAuthenticated
 from mdm.permissions import HasRequiredPermission
-from mdm.models import Department, FileClassification, FileType, GeneralLookUp, Division, Designation
+from mdm.models import Department, FileClassification, FileType, GeneralLookUp, Division, Designation, UnitMaster
 # from users.models import UserDivisionRole
 from rest_framework.parsers import MultiPartParser, FormParser
 from .permissions import HasCustomPermission,FileDetailsPermission
@@ -312,6 +312,7 @@ class SubmitDraftAPIView(APIView):
                         str(dept_name),
                         str(division_name),
                         str(case_instance.year),
+                        str(UnitMaster.objects.get(unitId= case_instance.unitId).unitName),
                         str(case_instance.caseNo),
                         str(GeneralLookUp.objects.get(lookupId=case_instance.caseType).lookupName),
                         str(GeneralLookUp.objects.get(lookupId= file_details_data[i]['fileType']).lookupName),
@@ -378,6 +379,7 @@ class SubmitDraftAPIView(APIView):
                         str(dept_name),
                         str(division_name),
                         str(case_instance.year),
+                        str(UnitMaster.objects.get(unitId= case_instance.unitId).unitName),
                         str(case_instance.caseNo),
                         str(GeneralLookUp.objects.get(lookupId=case_instance.caseType).lookupName),
                         str(GeneralLookUp.objects.get(lookupId= file_details_data[i]['fileType']).lookupName),
@@ -516,6 +518,7 @@ class CaseInfoDetailsView(APIView):
                         str(dept_name.departmentName),
                         str(div_name.divisionName),
                         str(case_info.year),
+                        str(UnitMaster.objects.get(unitId= case_info.unitId).unitName),
                         str(case_info.caseNo),
                         str(GeneralLookUp.objects.get(lookupId=case_info.caseType).lookupName),
                         str(GeneralLookUp.objects.get(lookupId= file_details_data[i]['fileType']).lookupName),
@@ -626,6 +629,7 @@ class CaseInfoDetailsView(APIView):
                         str(dept_name.departmentName),
                         str(div_name.divisionName),
                         str(caseInfo.year),
+                        str(UnitMaster.objects.get(unitId= caseInfo.unitId).unitName),
                         str(caseInfo.caseNo),
                         str(GeneralLookUp.objects.get(lookupId=caseInfo.caseType).lookupName),
                         str(GeneralLookUp.objects.get(lookupId= file_details_data[i]['fileType']).lookupName),

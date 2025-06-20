@@ -12,7 +12,7 @@ from django.core.files.storage import default_storage
 
 from ManageContent.utils import nested_dict, user_access_scope
 from caseInfoFiles.models import CaseInfoDetails, FileDetails
-from mdm.models import Department, Division, GeneralLookUp
+from mdm.models import Department, Division, GeneralLookUp, UnitMaster
 from users.models import User
 from django.db import transaction
 import re
@@ -211,6 +211,7 @@ class MoveFilesAPIView(APIView):
         divsionId=request.data.get("divisionId")
         file_ids = request.data.get("file_ids")
         target_year = request.data.get("year")  # optional
+        target_unitId = request.data.get("unitId")
         target_caseNo= request.data.get("caseNo")  # optional
         target_caseType= request.data.get("caseType")  # optional
         target_filetype_id = request.data.get("file_type_id")  # optional
@@ -233,6 +234,9 @@ class MoveFilesAPIView(APIView):
 
                 if target_year:
                     current_case.year= target_year
+                
+                if target_unitId:
+                    current_case.unitId= target_unitId
 
                 # Update caseDetails if caseNo changes
                 if target_caseNo and target_caseNo != current_case.caseNo:
@@ -270,6 +274,9 @@ class MoveFilesAPIView(APIView):
             
                 if target_year or current_case.year:
                     relative_parts.append(str(target_year or current_case.year))
+
+                if target_unitId or current_case.unitId:
+                    relative_parts.append(str(target_unitId or current_case.unitId))
 
                 if target_caseNo or current_case.caseNo:
                     relative_parts.append(str(target_caseNo or current_case.caseNo))
@@ -491,6 +498,7 @@ class ArchiveFullTreeAPIView(APIView):
             div = f.division
             case = f.caseDetails
             year    = case.year
+            unitId = case.unitId
             case_no = case.caseNo
             case_type = GeneralLookUp.objects.get(lookupId= f.caseType)
             file_type = f.fileType
@@ -505,29 +513,32 @@ class ArchiveFullTreeAPIView(APIView):
             node = node[year]
             node["_meta"] = {"name": str(year), "level": "year","type": "folder"}
 
+            node = node[unitId]
+            node["_meta"] = {"id":str(unitId),"name": UnitMaster.objects.get(unitId=unitId).unitName, "level": "unitId","type": "folder"}
+
             node = node[case_no]
             node["_meta"] = {"name": case_no, "level": "caseNo", "type": "folder"}
 
-            node = node[case_type.lookupId if case_type else "unassigned"]
+            node = node[case_type.lookupId if case_type else None]
             node["_meta"] = {
                 "id": case_type.lookupId if case_type else None,
-                "name": case_type.lookupName if case_type else "UNASSIGNED",
+                "name": case_type.lookupName if case_type else None,
                 "level": "caseType",
                 "type": "folder"
             }
 
-            node = node[file_type.lookupId if file_type else "unassigned"]
+            node = node[file_type.lookupId if file_type else None]
             node["_meta"] = {
                 "id": file_type.lookupId if file_type else None,
-                "name": file_type.lookupName if file_type else "UNASSIGNED",
+                "name": file_type.lookupName if file_type else None,
                 "level": "filetype",
                 "type": "folder"
             }
 
-            node = node[doc_type.lookupId if doc_type else "unassigned"]
+            node = node[doc_type.lookupId if doc_type else None]
             node["_meta"] = {
                 "id": doc_type.lookupId if doc_type else None,
-                "name": doc_type.lookupName if doc_type else "UNASSIGNED",
+                "name": doc_type.lookupName if doc_type else None,
                 "level": "documenttype",
                 "type": "folder"
             }
@@ -635,6 +646,7 @@ class FolderTreeFullAPIView(APIView):
         user          = request.user
         division_id   = request.data.get("division_id")
         year          = request.data.get("year")
+        unit_id       = request.data.get("unitId")
         case_no    = request.data.get("caseNo")
         case_type  = request.data.get("caseType")
         file_type_id  = request.data.get("fileTypeId")
@@ -667,6 +679,8 @@ class FolderTreeFullAPIView(APIView):
             files = files.filter(division_id=division_id)
         if year:
             files = files.filter(caseDetails__year=int(year))
+        if unit_id:
+            files = files.filter(caseDetails__unitId=int(unit_id))
         if case_no:
             files = files.filter(caseDetails__caseNo=str(case_no))
         if case_type:
@@ -698,6 +712,10 @@ class FolderTreeFullAPIView(APIView):
 
             if case.year:
                 levels.append(("year", case.year, str(case.year)))
+
+            if case.unitId:
+                name = UnitMaster.objects.get(unitId = case.unitId)
+                levels.append(("unitId", str(case.unitId),name.unitName))
 
             if case.caseNo:
                 levels.append(("caseNo", case.caseNo, str(case.caseNo)))
