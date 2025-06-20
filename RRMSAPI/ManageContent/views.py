@@ -14,6 +14,7 @@ from ManageContent.utils import nested_dict, user_access_scope
 from caseInfoFiles.models import CaseInfoDetails, FileDetails
 from mdm.models import Department, Division, GeneralLookUp
 from users.models import User
+from django.db import transaction
 import re
 
 # Create your views here.
@@ -375,7 +376,7 @@ class ArchiveFileAPIView(APIView):
             except OSError as e:
                 results[fid] = f"error: {e!s}"
 
-        return Response({"results": results}, status=200)
+        return Response({"results": results},status=status.HTTP_200_OK)
 
        
 
@@ -442,7 +443,7 @@ class CopyFilesAPIView(APIView):
             except FileDetails.DoesNotExist:
                 continue
 
-        return Response({"copied": copied_files}, status=201)       
+        return Response({"copied": copied_files}, status=status.HTTP_200_OK)       
 
 class ArchiveFullTreeAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -546,7 +547,7 @@ class ArchiveFullTreeAPIView(APIView):
             return meta
 
         response = [dictify(v) for v in tree.values()]
-        return Response(sorted(response, key=lambda x: x.get("name")), status=200)  
+        return Response(sorted(response, key=lambda x: x.get("name")), status=status.HTTP_200_OK)  
     
 class UnArchiveFileAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -604,7 +605,7 @@ class UnArchiveFileAPIView(APIView):
             except OSError as e:
                 results[fid] = f"error: {str(e)}"
 
-        return Response({"results": results}, status=200)
+        return Response({"results": results}, status=status.HTTP_200_OK)
 
 class FolderTreeFullAPIView(APIView):
 
@@ -752,5 +753,87 @@ class FolderTreeFullAPIView(APIView):
 
         return Response(result, status=status.HTTP_200_OK)
     
+class MergeStudentAPIView(APIView):
+    permission_classes = [IsAuthenticated]
 
-    
+    def post(self, request):
+        fromCaseNo = request.data.get("sourceCaseNo")
+        toCaseNo = request.data.get("destinationCaseNo")
+
+        if not fromCaseNo or not toCaseNo:
+            return Response({"detail": "Both Source and destination case no are required to merge."}, status=400)
+
+        if fromCaseNo == toCaseNo:
+            return Response({"detail": "Both Source and destination case no are same, cannot merge the folders."}, status=400)
+
+        try:
+            fromCase = CaseInfoDetails.objects.get(caseNo=fromCaseNo)
+        except CaseInfoDetails.DoesNotExist:
+            return Response({"detail": f"Source Case folder- '{fromCaseNo}' does not exist."}, status=404)
+        
+        try:
+            toCase = CaseInfoDetails.objects.get(caseNo=toCaseNo)
+        except CaseInfoDetails.DoesNotExist:
+            return Response({"detail": f"Destination Case folder '{toCaseNo}' does not exist."}, status=404)
+
+        moved, skipped, errors, renamed = 0, 0, [],[]
+
+        with transaction.atomic():
+            files  = FileDetails.objects.filter(caseDetails=fromCase)
+
+            for f in files:
+                # Build the new path: swap only the caseNo part
+                old_relative = os.path.normpath(f.filePath)
+                old_abs = os.path.join(settings.MEDIA_ROOT, old_relative)
+
+                new_relative = old_relative.replace(str(fromCaseNo), str(toCaseNo), 1)
+                new_abs = os.path.join(settings.MEDIA_ROOT, new_relative)
+
+                # os.makedirs(os.path.dirname(new_abs), exist_ok=True)
+
+                if not os.path.exists(old_abs):
+                    skipped += 1
+                    errors.append(f"Missing file: {old_relative}")
+                    continue
+
+                if os.path.exists(new_abs):
+                    # original_name = os.path.basename(new_abs)
+                    base, ext = os.path.splitext(new_abs)
+                    count = 1
+                    while os.path.exists(f"{base}_{count}{ext}"):
+                        count += 1
+                    new_abs = f"{base}_{count}{ext}"
+                    new_relative = os.path.relpath(new_abs, settings.MEDIA_ROOT)
+                    renamed.append({
+                        "original": os.path.basename(old_relative),
+                        "new": os.path.basename(new_abs),
+                        "path": new_relative.replace("\\", "/")
+                    })
+                
+                try:
+                    os.rename(old_abs, new_abs)
+                except OSError as e:
+                    skipped += 1
+                    errors.append(f"Rename error: {str(e)}")
+                    continue
+
+                f.filePath = new_relative.replace("\\", "/")
+                f.caseDetails = toCase
+                f.save(update_fields=["filePath", "caseDetails"])
+                moved += 1
+            
+            from_folder_root = os.path.join(settings.MEDIA_ROOT)
+            for root, dirs, files in os.walk(from_folder_root, topdown=False):
+                if str(fromCaseNo) in root and not files and not dirs:
+                    try:
+                        os.rmdir(root)
+                    except OSError:
+                        pass
+
+        return Response({
+            "detail": "Merge completed.",
+            "files_moved": moved,
+            "files_skipped": skipped,
+            "renamed": renamed,
+            "errors": errors
+        }, status=200)
