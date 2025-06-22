@@ -805,7 +805,7 @@ class MergeStudentAPIView(APIView):
 
             for f in files:
                 # Build the new path: swap only the caseNo part
-                old_relative = os.path.normpath(f.filePath)
+                old_relative = os.path.normpath(f.filePath).replace("\\", "/")
                 old_abs = os.path.join(settings.MEDIA_ROOT, old_relative)
 
                 new_relative = old_relative.replace(str(fromCaseNo), str(toCaseNo), 1)
@@ -852,10 +852,13 @@ class MergeStudentAPIView(APIView):
                     except OSError:
                         pass
 
-        return Response({
-            "detail": "Merge completed.",
+        response_data = {
+            "detail": "Merge completed with warnings." if errors else "Merge completed successfully.",
             "files_moved": moved,
             "files_skipped": skipped,
             "renamed": renamed,
             "errors": errors
-        }, status=200)
+        }
+
+        return Response(response_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR if errors else status.HTTP_200_OK)
+    
