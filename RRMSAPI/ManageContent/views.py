@@ -10,6 +10,7 @@ from rest_framework import status
 from collections import defaultdict
 from django.core.files.storage import default_storage
 
+
 from ManageContent.utils import nested_dict, user_access_scope
 from caseInfoFiles.models import CaseInfoDetails, FileDetails
 from mdm.models import Department, Division, GeneralLookUp, UnitMaster
@@ -775,90 +776,134 @@ class FolderTreeFullAPIView(APIView):
 
         return Response(result, status=status.HTTP_200_OK)
     
-class MergeStudentAPIView(APIView):
+class MergecaseAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
+    def _target_prefix(self, dst_case_no, dst_case):
+        """
+        Find a path prefix for the destination case folder from any existing file path.
+        Example: ["uploads", "Colleges", "dept2", "Division2", "2025", "college1", "4567"]
+        """
+        example_file = FileDetails.objects.filter(caseDetails=dst_case).first()
+        if not example_file or not example_file.filePath:
+            return None
+        parts = Path(example_file.filePath.replace("\\", "/")).parts
+        try:
+            idx = parts.index(str(dst_case_no))
+            return parts[: idx + 1]  # include dst_case_no
+        except ValueError:
+            return None
+            
+
+
     def post(self, request):
-        fromCaseNo = request.data.get("sourceCaseNo")
-        toCaseNo = request.data.get("destinationCaseNo")
+        src_no = str(request.data.get("sourceCaseNo") or "").strip()
+        dst_no = str(request.data.get("destinationCaseNo") or "").strip()
 
-        if not fromCaseNo or not toCaseNo:
-            return Response({"detail": "Both Source and destination case no are required to merge."}, status=400)
+        if not src_no or not dst_no:
+            return Response({"detail": "Both source and destination case numbers are required."}, status=400)
+        if src_no == dst_no:
+            return Response({"detail": "Source and destination case numbers must differ."}, status=400)
 
-        if fromCaseNo == toCaseNo:
-            return Response({"detail": "Both Source and destination case no are same, cannot merge the folders."}, status=400)
-
+        # Fetch case details
         try:
-            fromCase = CaseInfoDetails.objects.get(caseNo=fromCaseNo)
+            src_case = CaseInfoDetails.objects.get(caseNo=src_no)
         except CaseInfoDetails.DoesNotExist:
-            return Response({"detail": f"Source Case folder- '{fromCaseNo}' does not exist."}, status=404)
-        
+            return Response({"detail": f"Source case '{src_no}' not found."}, status=404)
         try:
-            toCase = CaseInfoDetails.objects.get(caseNo=toCaseNo)
+            dst_case = CaseInfoDetails.objects.get(caseNo=dst_no)
         except CaseInfoDetails.DoesNotExist:
-            return Response({"detail": f"Destination Case folder '{toCaseNo}' does not exist."}, status=404)
+            return Response({"detail": f"Destination case '{dst_no}' not found."}, status=404)
 
-        moved, skipped, errors, renamed = 0, 0, [],[]
+        # Fetch file list
+        files = FileDetails.objects.filter(caseDetails=src_case)
+        if not files.exists():
+            return Response({"detail": "No files to merge from source case."}, status=404)
+
+        moved, skipped, renamed, errors = 0, 0, [], []
+
+        dst_prefix_parts = self._target_prefix(dst_no, dst_case)
 
         with transaction.atomic():
-            files  = FileDetails.objects.filter(caseDetails=fromCase)
-
             for f in files:
-                # Build the new path: swap only the caseNo part
-                old_relative = os.path.normpath(f.filePath).replace("\\", "/")
-                old_abs = os.path.join(settings.MEDIA_ROOT, old_relative)
-
-                new_relative = old_relative.replace(str(fromCaseNo), str(toCaseNo), 1)
-                new_abs = os.path.join(settings.MEDIA_ROOT, new_relative)
-
-                # os.makedirs(os.path.dirname(new_abs), exist_ok=True)
-
-                if not os.path.exists(old_abs):
+                old_rel = f.filePath.replace("\\", "/")
+                if not old_rel:
                     skipped += 1
-                    errors.append(f"Missing file: {old_relative}")
+                    errors.append(f"Missing path for file ID {f.fileId}")
                     continue
 
+                old_abs = os.path.join(settings.MEDIA_ROOT, old_rel)
+                if not os.path.exists(old_abs):
+                    skipped += 1
+                    errors.append(f"File not found on disk: {old_rel}")
+                    continue
+
+                parts = Path(old_rel).parts
+                try:
+                    src_idx = parts.index(str(src_no))
+                except ValueError:
+                    skipped += 1
+                    errors.append(f"'{src_no}' not found in path: {old_rel}")
+                    continue
+
+                tail_parts = parts[src_idx + 1:]
+
+                if dst_prefix_parts:
+                    new_parts = list(dst_prefix_parts) + list(tail_parts)
+                else:
+                    # fallback if no dst files yet
+                    new_parts = list(parts[:src_idx]) + [dst_no] + list(tail_parts)
+
+                new_rel = "/".join(new_parts)
+                new_abs = os.path.join(settings.MEDIA_ROOT, new_rel)
+
+                os.makedirs(os.path.dirname(new_abs), exist_ok=True)
+
+                # Rename if exists
                 if os.path.exists(new_abs):
-                    # original_name = os.path.basename(new_abs)
                     base, ext = os.path.splitext(new_abs)
                     count = 1
                     while os.path.exists(f"{base}_{count}{ext}"):
                         count += 1
                     new_abs = f"{base}_{count}{ext}"
-                    new_relative = os.path.relpath(new_abs, settings.MEDIA_ROOT)
+                    new_rel = os.path.relpath(new_abs, settings.MEDIA_ROOT)
                     renamed.append({
-                        "original": os.path.basename(old_relative),
+                        "original": os.path.basename(old_rel),
                         "new": os.path.basename(new_abs),
-                        "path": new_relative.replace("\\", "/")
+                        "path": new_rel.replace("\\", "/")
                     })
-                
+
                 try:
                     os.rename(old_abs, new_abs)
                 except OSError as e:
                     skipped += 1
-                    errors.append(f"Rename error: {str(e)}")
+                    errors.append(f"Rename error for file {f.fileId}: {str(e)}")
                     continue
 
-                f.filePath = new_relative.replace("\\", "/")
-                f.caseDetails = toCase
+                # Update DB
+                f.filePath = new_rel.replace("\\", "/")
+                f.caseDetails = dst_case
                 f.save(update_fields=["filePath", "caseDetails"])
                 moved += 1
-            
-            from_folder_root = os.path.join(settings.MEDIA_ROOT)
-            for root, dirs, files in os.walk(from_folder_root, topdown=False):
-                if str(fromCaseNo) in root and not files and not dirs:
+
+            # Clean up empty folders from source
+            src_root = os.path.join(settings.MEDIA_ROOT)
+            for root, dirs, files in os.walk(src_root, topdown=False):
+                if src_no in root and not files and not dirs:
                     try:
                         os.rmdir(root)
-                    except OSError:
+                    except Exception:
                         pass
 
-        response_data = {
+        response = {
             "detail": "Merge completed with warnings." if errors else "Merge completed successfully.",
             "files_moved": moved,
             "files_skipped": skipped,
             "renamed": renamed,
-            "errors": errors
+            "errors": errors,
         }
+        return Response(response, status=400 if errors else 200)
+    
 
-        return Response(response_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR if errors else status.HTTP_200_OK)
+
     
