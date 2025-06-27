@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
-from datetime import timedelta
+from datetime import datetime, timedelta
 from decouple import config
 import os
 
@@ -66,7 +66,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware'
+    'corsheaders.middleware.CorsMiddleware',
+    'RRMSAPI.core.middleware.DRFLoggingMiddleware'
 ]
 
 X_FRAME_OPTIONS = 'ALLOWALL'
@@ -198,3 +199,44 @@ EMAIL_USE_TLS = config('EMAIL_USE_TLS')
 EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD =  config('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
+
+LOGGING_DIR = os.path.join(BASE_DIR, 'logs')
+if not os.path.exists(LOGGING_DIR):
+    os.makedirs(LOGGING_DIR)
+
+today_date = datetime.now().strftime("%Y-%m-%d")
+log_filename = os.path.join(LOGGING_DIR, f"drf_{today_date}.log")
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+
+    'formatters': {
+        'verbose': {
+            'format': '[{asctime}] [{levelname}] {name} - {message}',
+            'style': '{',
+        },
+    },
+
+    'handlers': {
+        'daily_file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': log_filename,
+            'formatter': 'verbose',
+            'encoding': 'utf-8',
+        },
+    },
+     'loggers': {
+        'django.request': {
+            'handlers': ['daily_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'drf_logger': {
+            'handlers': ['daily_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
