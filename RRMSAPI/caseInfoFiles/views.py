@@ -182,19 +182,19 @@ class SearchCaseFilesView(APIView):
             filters_applied = True
 
         if 'subject' in searchParams and searchParams["subject"] not in [None, ""]:
-            file_extra_filter &= Q(files__subject__icontains= searchParams['subject'])
+            file_extra_filter &= Q(subject__icontains= searchParams['subject'])
             filters_applied = True
 
         if 'classification' in searchParams and searchParams["classification"] not in [None, ""]:
-            file_extra_filter &= Q(files__classification__lookupId__icontains= searchParams['classification'])
+            file_extra_filter &= Q(classification__lookupId__icontains= searchParams['classification'])
             filters_applied = True
 
         if 'fileType' in searchParams and searchParams["fileType"] not in [None, ""]:
-            file_extra_filter &= Q(files__fileType__lookupId__icontains= searchParams['fileType'])
+            file_extra_filter &= Q(fileType__lookupId__icontains= searchParams['fileType'])
             filters_applied = True
 
         if 'docType' in searchParams and searchParams["docType"] not in [None, ""]:
-            file_extra_filter &= Q(files__documentType__lookupId__icontains= searchParams['docType'])
+            file_extra_filter &= Q(documentType__lookupId__icontains= searchParams['docType'])
             filters_applied = True
 
         if 'fileExt' in searchParams and searchParams["fileExt"]:
