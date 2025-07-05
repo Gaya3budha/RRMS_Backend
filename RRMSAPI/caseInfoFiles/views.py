@@ -178,7 +178,7 @@ class SearchCaseFilesView(APIView):
         file_extra_filter = Q()
 
         if 'hashtag' in searchParams and searchParams["hashtag"] not in [None, ""]:
-            file_extra_filter &= Q(files__hashTag__icontains=searchParams['hashtag'])
+            file_extra_filter &= Q(hashTag__icontains=searchParams['hashtag'])
             filters_applied = True
 
         if 'subject' in searchParams and searchParams["subject"] not in [None, ""]:
