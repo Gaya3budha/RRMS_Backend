@@ -781,10 +781,6 @@ class MergecaseAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def _target_prefix(self, dst_case_no, dst_case):
-        """
-        Find a path prefix for the destination case folder from any existing file path.
-        Example: ["uploads", "Colleges", "dept2", "Division2", "2025", "college1", "4567"]
-        """
         example_file = FileDetails.objects.filter(caseDetails=dst_case).first()
         if not example_file or not example_file.filePath:
             return None
