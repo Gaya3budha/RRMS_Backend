@@ -19,6 +19,7 @@ from .permissions import HasCustomPermission,FileDetailsPermission
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
+from django.db.models.functions import Lower
 import json
 import hashlib
 import os
@@ -27,6 +28,7 @@ import traceback
 from datetime import timedelta
 import pandas as pd
 from docx2pdf import convert
+import re
 import base64
 
 UPLOAD_DIR = os.path.join(settings.MEDIA_ROOT, "uploads","CID")
@@ -91,7 +93,7 @@ class SearchCaseFilesView(APIView):
             query &= Q(division__divisionId__icontains= searchParams['division_id'])
             filters_applied = True
 
-        if "stateId" in searchParams:
+        if "stateId" in searchParams and searchParams["stateId"] not in [None, ""]:
             query &= Q(stateId__icontains= searchParams['stateId'])
             filters_applied = True
 
@@ -126,10 +128,13 @@ class SearchCaseFilesView(APIView):
         if "caseType" in searchParams and searchParams["caseType"] not in [None, ""]:
             query &= Q(caseType__icontains= searchParams['caseType'])
             filters_applied = True
-        
+
         if "caseStatus" in searchParams and searchParams["caseStatus"] not in [None, ""]:
-            query &= Q(caseStatus__icontains= searchParams['caseStatus'])
+            status_value = GeneralLookUp.objects.get(lookupId=searchParams["caseStatus"]).lookupValue
+            query &= Q(caseStatus=status_value)
             filters_applied = True
+            # query &= Q(caseStatus__icontains= searchParams['caseStatus'].strip())
+            # filters_applied = True
 
         if "author" in searchParams and searchParams["author"] not in [None, ""]:
             query &= Q(author__icontains= searchParams['author'])
@@ -149,10 +154,7 @@ class SearchCaseFilesView(APIView):
 
         query &= Q(is_draft__icontains = False)
         
-        if filters_applied:
-            case_details_qs = CaseInfoDetails.objects.filter(query).distinct()
-        else:
-            case_details_qs = CaseInfoDetails.objects.all()
+       
 
         user = request.user
 
@@ -178,8 +180,15 @@ class SearchCaseFilesView(APIView):
         file_extra_filter = Q()
 
         if 'hashtag' in searchParams and searchParams["hashtag"] not in [None, ""]:
-            file_extra_filter &= Q(hashTag__icontains=searchParams['hashtag'])
+            hashtag = searchParams['hashtag'].strip()
+            if not hashtag.startswith("#"):
+                hashtag = "#" + hashtag
+
+            file_extra_filter &= Q(hashTag__isnull=False) & ~Q(hashTag__exact='')
             filters_applied = True
+            exact_hashtag = hashtag
+        else:
+            exact_hashtag = None
 
         if 'subject' in searchParams and searchParams["subject"] not in [None, ""]:
             file_extra_filter &= Q(subject__icontains= searchParams['subject'])
@@ -189,16 +198,19 @@ class SearchCaseFilesView(APIView):
             file_extra_filter &= Q(classification__lookupId__icontains= searchParams['classification'])
             filters_applied = True
 
+
+        print("file Type Id:",searchParams["fileType"])
         if 'fileType' in searchParams and searchParams["fileType"] not in [None, ""]:
-            file_extra_filter &= Q(fileType__lookupId__icontains= searchParams['fileType'])
+            file_extra_filter &= Q(fileType__lookupId= searchParams['fileType'])
             filters_applied = True
 
         if 'docType' in searchParams and searchParams["docType"] not in [None, ""]:
-            file_extra_filter &= Q(documentType__lookupId__icontains= searchParams['docType'])
+            file_extra_filter &= Q(documentType__lookupId= searchParams['docType'])
             filters_applied = True
 
         if 'fileExt' in searchParams and searchParams["fileExt"]:
-            file_ext = searchParams['fileExt']
+            file_ext = searchParams['fileExt'].lower()
+            print('file_ext',file_ext)
             extensions = []
 
             if file_ext.lower() == 'image':
@@ -206,29 +218,43 @@ class SearchCaseFilesView(APIView):
             elif file_ext.lower() == 'document':
                 extensions = ['.pdf', '.docx', '.xlsx']
             elif file_ext.lower() == 'audio':
-                extensions = ['.MP3','.mp3', '.WAV', '.FLAC']
+                extensions = ['.mp3', '.wav', '.flac']
             elif file_ext.lower() == 'video':
-                extensions = ['.MP4','.mp4', '.MOV', '.mov','.WebM','.webm']
-
+                extensions = ['.mp4', '.mov','.webm']
+            print(extensions)
             if extensions:
                 ext_query = Q()
                 for ext in extensions:
-                    ext_query |= Q(fileName__iendswith=ext)
+                    ext_query |= Q(lower_file_name__endswith=ext)
+                
                 file_extra_filter &= ext_query
-
-
-        file_queryset = FileDetails.objects.select_related('classification').filter(file_filter & file_extra_filter).annotate(
+                filters_applied = True
+        print('file_extra_filter:',file_extra_filter)
+        print('filters_applied:',filters_applied)
+        file_queryset = FileDetails.objects.annotate(lower_file_name=Lower('fileName')).filter(file_filter & file_extra_filter).annotate(
             is_favourited=Exists(favourite_subquery),
             is_request_raised = Exists(request_raised_subquery),
             is_access_request_approved=Exists(access_request_subquery)
             )
+        
+        if exact_hashtag:
+            def matches_exact_tag(tag_string, tag):
+                tags = tag_string.strip().split()
+                return tag in tags
 
-        print('file_extra_filter:',file_queryset.count())
+            file_queryset = [f for f in file_queryset if matches_exact_tag(f.hashTag, exact_hashtag)]
+            file_queryset = FileDetails.objects.filter(pk__in=[f.pk for f in file_queryset])
 
+        if filters_applied:
+            case_details_qs = CaseInfoDetails.objects.filter(query,files__in=file_queryset).distinct()
+        else:
+            case_details_qs = CaseInfoDetails.objects.filter(files__in=file_queryset).distinct()
+        
         caseDetails = case_details_qs.prefetch_related(
             Prefetch('files', queryset=file_queryset)
         ).order_by('-lastmodified_Date')[:20]
 
+        print('caseDetails:',caseDetails)
         caseSerializer = CaseInfoSearchSerializers(caseDetails, many = True)
         return Response({"responseData":{"response":caseSerializer.data,"status":status.HTTP_200_OK}})
 
