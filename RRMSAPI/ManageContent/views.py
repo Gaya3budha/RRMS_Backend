@@ -440,7 +440,10 @@ class CopyFilesAPIView(APIView):
                     documentType_id=document_type_id,
                     fileName=original_file.fileName,
                     filePath=saved_path,
-                    uploaded_by=request.user
+                    fileHash=original_file.fileHash,
+                    uploaded_by=request.user,
+                    classification= original_file.classification,
+                    is_approved=original_file.is_approved
                 )
 
                 copied_files.append({
