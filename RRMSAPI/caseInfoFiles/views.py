@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Prefetch, OuterRef, Exists, Case, When, Value, BooleanField
 from .utils import record_file_access, timezone
 from django.conf import settings
+from datetime import datetime
 from django.db.models import Q
 from django.http import FileResponse, Http404
 from rest_framework.permissions import IsAuthenticated
@@ -122,7 +123,9 @@ class SearchCaseFilesView(APIView):
             filters_applied = True
 
         if "caseDate" in searchParams and searchParams["caseDate"] not in [None, ""]:
-            query &= Q(caseDate__icontains= searchParams['caseDate'])
+            case_date = datetime.fromisoformat(searchParams['caseDate'].replace('Z', '')).date()
+            # file_extra_filter &= Q(caseDate=case_date)
+            query &= Q(caseDate= case_date)
             filters_applied = True
         
         if "caseType" in searchParams and searchParams["caseType"] not in [None, ""]:
@@ -179,16 +182,16 @@ class SearchCaseFilesView(APIView):
 
         file_extra_filter = Q()
 
-        if 'hashtag' in searchParams and searchParams["hashtag"] not in [None, ""]:
-            hashtag = searchParams['hashtag'].strip()
-            if not hashtag.startswith("#"):
-                hashtag = "#" + hashtag
+        hashtag_filter = Q()
+        
+        if 'hashTag' in searchParams and searchParams["hashTag"]:
+            input_hashtag = searchParams["hashTag"].strip()
+            # if not input_hashtag.startswith("#"):
+            #     input_hashtag = "#" + input_hashtag
 
-            file_extra_filter &= Q(hashTag__isnull=False) & ~Q(hashTag__exact='')
+            regex_pattern = rf'(^|\s){re.escape(input_hashtag)}(\s|$)'
+            hashtag_filter = Q(hashTag__regex=regex_pattern) & ~Q(hashTag__isnull=True) & ~Q(hashTag__exact="")
             filters_applied = True
-            exact_hashtag = hashtag
-        else:
-            exact_hashtag = None
 
         if 'subject' in searchParams and searchParams["subject"] not in [None, ""]:
             file_extra_filter &= Q(subject__icontains= searchParams['subject'])
@@ -231,20 +234,13 @@ class SearchCaseFilesView(APIView):
                 filters_applied = True
         print('file_extra_filter:',file_extra_filter)
         print('filters_applied:',filters_applied)
-        file_queryset = FileDetails.objects.annotate(lower_file_name=Lower('fileName')).filter(file_filter & file_extra_filter).annotate(
+        file_queryset = FileDetails.objects.annotate(lower_file_name=Lower('fileName')).filter(
+            file_filter & file_extra_filter & hashtag_filter).annotate(
             is_favourited=Exists(favourite_subquery),
             is_request_raised = Exists(request_raised_subquery),
             is_access_request_approved=Exists(access_request_subquery)
             )
         
-        if exact_hashtag:
-            def matches_exact_tag(tag_string, tag):
-                tags = tag_string.strip().split()
-                return tag in tags
-
-            file_queryset = [f for f in file_queryset if matches_exact_tag(f.hashTag, exact_hashtag)]
-            file_queryset = FileDetails.objects.filter(pk__in=[f.pk for f in file_queryset])
-
         if filters_applied:
             case_details_qs = CaseInfoDetails.objects.filter(query,files__in=file_queryset).distinct()
         else:
@@ -254,7 +250,6 @@ class SearchCaseFilesView(APIView):
             Prefetch('files', queryset=file_queryset)
         ).order_by('-lastmodified_Date')[:20]
 
-        print('caseDetails:',caseDetails)
         caseSerializer = CaseInfoSearchSerializers(caseDetails, many = True)
         return Response({"responseData":{"response":caseSerializer.data,"status":status.HTTP_200_OK}})
 
@@ -737,6 +732,7 @@ class CaseFileUploadView(APIView):
                     fileName=file_name,
                     filePath=file_path,
                     fileHash=file_hash,
+                    is_approved=True,
                     hashTag=file_details_data[i]["hashTag"],
                     subject=file_details_data[i]["subject"],
                     fileType=GeneralLookUp.objects.get(lookupId=file_details_data[i]["fileType"]),

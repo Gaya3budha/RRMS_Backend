@@ -105,13 +105,16 @@ class FileDetailsSearchSerializer(serializers.ModelSerializer):
 class FileDetailsSerializer(serializers.ModelSerializer):
     CaseInfoDetailsId = serializers.IntegerField(source='CaseInfoDetails.CaseInfoDetailsId',read_only = True)
     is_favourited = serializers.BooleanField(read_only=True)
-    classification_name = serializers.CharField(source='classification.fileClassificationName', read_only=True)
+    classificationName = serializers.SerializerMethodField()
     filetype_name = serializers.CharField(source='fileType.fileTypeName', read_only=True)
 
     class Meta:
         model = FileDetails
-        fields = ['fileId','CaseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','classification','uploaded_by','documentType','classification_name','is_favourited', 'filetype_name']  
+        fields = ['fileId','CaseInfoDetailsId','fileName','filePath','fileHash','hashTag','subject','fileType','classification','uploaded_by','documentType','classificationName','is_favourited', 'filetype_name']  
         # 'classification_name','is_favourited', 'filetype_name'
+    
+    def get_classificationName(self, obj):
+        return getattr(obj.classification, 'lookupName', None)
 
 class FavouriteFileDetailsSerializer(serializers.ModelSerializer):
     caseInfoDetailsId = serializers.SerializerMethodField()
