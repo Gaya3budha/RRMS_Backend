@@ -291,7 +291,7 @@ class SearchUsersAPIView(APIView):
             filters_applied = True
 
         if "designationId" in searchParams and searchParams["designationId"] not in [None, ""]:
-            query &= Q(designation__designationId__icontains= searchParams['designationId'])
+            query &= Q(designation__designationId= searchParams['designationId'])
             filters_applied = True
         
         if "firstName" in searchParams and searchParams["firstName"] not in [None, ""]:
