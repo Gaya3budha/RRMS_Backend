@@ -9,6 +9,7 @@ from django.db.models import Prefetch, OuterRef, Exists, Case, When, Value, Bool
 from .utils import record_file_access, timezone
 from django.conf import settings
 from datetime import datetime
+from django.db.models.functions import Coalesce
 from django.db.models import Q
 from django.http import FileResponse, Http404
 from rest_framework.permissions import IsAuthenticated
@@ -908,8 +909,6 @@ class FilePreviewAPIView(APIView):
       
   
 class FileAccessRequestListAPIView(APIView):
-    # queryset = FileAccessRequest.objects.all().order_by('-created_at')
-    # serializer_class = FileAccessRequestSerializer
     permission_classes = [IsAuthenticated]
 
     def post(self,request):
@@ -920,14 +919,16 @@ class FileAccessRequestListAPIView(APIView):
 
         print("division_id",division_id)
         if user.role.roleId == 3:  # Content manager role
-            # Viewer can also see the approvals where they are assigned for review
             approvals = approvals.filter(reviewed_by=user)
         else:  # Regular User
-            # Regular user can only see the requests they have submitted
             approvals = approvals.filter(requested_by=user)
 
         if division_id:
             approvals = approvals.filter(file__division__divisionId=division_id)
+
+        approvals = approvals.annotate(
+            latest_action_date=Coalesce('approved_at', 'created_at')
+        ).order_by('-latest_action_date')
 
         # Optional: Filter by department_id if needed
         # if department_id:
@@ -1216,6 +1217,10 @@ class UploadApprovalListView(APIView):
         # Optional: Filter by department_id if needed
         if department_id:
             approvals = approvals.filter(file__division__departmentId=department_id)
+
+        approvals = approvals.annotate(
+            latest_action_date=Coalesce('reviewed_at', 'created_at')
+        ).order_by('-latest_action_date')
 
         # Serialize and return the data
         serializer = FileUploadApprovalSerializer(approvals, many=True)
