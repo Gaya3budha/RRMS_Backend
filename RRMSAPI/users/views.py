@@ -212,13 +212,20 @@ class UpdateUserView(APIView):
 class CustomTokenObtainPairView(TokenObtainPairView):
     def post(self,request):
         serializer_class = CustomTokenObtainPairSerializer(data = request.data)
+        kgid = request.data.get("kgid")
+        if not User.objects.filter(kgid=kgid).exists():
+                return Response({
+                    "statusCode": 500,
+                    "message": "KGID doesn't exist"
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         try:
+            
             serializer_class.is_valid(raise_exception=True)
         except AuthenticationFailed as e:
             return Response({
-                "responseData": str(e),
-                "statusCode": 401
+                "statusCode": 500,
+                "message": "Password is wrong"
             }, status=status.HTTP_401_UNAUTHORIZED)
         user = serializer_class.user
         password_set = serializer_class.validated_data.pop("passwordSet", False)
