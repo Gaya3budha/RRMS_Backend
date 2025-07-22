@@ -214,7 +214,7 @@ class MoveFilesAPIView(APIView):
         file_ids = request.data.get("file_ids")
         target_year = request.data.get("year")  # optional
         target_unitId = request.data.get("unitId")
-        target_caseNo= request.data.get("caseNo")  # optional
+        target_caseNo= request.data.get("caseNo")  
         target_caseType= request.data.get("caseType")  # optional
         target_filetype_id = request.data.get("file_type_id")  # optional
         target_documenttype_id = request.data.get("document_type_id")
@@ -227,6 +227,9 @@ class MoveFilesAPIView(APIView):
         if not file_ids:
             return Response({"detail": "file_ids is required and must be a list."},
                             status=status.HTTP_400_BAD_REQUEST)
+        
+        if not target_caseNo:
+            return Response({"detail":"Destination Case No is required"},status=status.HTTP_400_BAD_REQUEST)
         
         results = {"moved": [], "errors": []}
         for file_id in file_ids:
