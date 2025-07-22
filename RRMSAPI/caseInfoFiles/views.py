@@ -740,7 +740,8 @@ class CaseFileUploadView(APIView):
                     classification=GeneralLookUp.objects.get(lookupId=file_details_data[i]["classification"]),
                     documentType=GeneralLookUp.objects.get(lookupId=file_details_data[i]["documentType"]),
                     uploaded_by=request.user,
-                    division=caseData.division
+                    division=caseData.division,
+                    caseType= caseData.caseType
                 )
 
                 record_file_access(request.user, file_detail)
