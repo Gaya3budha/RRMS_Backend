@@ -57,6 +57,15 @@ class FileDetails(models.Model):
     caseType = models.CharField(max_length = 100,null=True,default=True)
     def __str__(self):
         return self.fileName
+    
+class CaseTransfer(models.Model):
+    caseTransferId= models.AutoField(primary_key=True)
+    caseDetailsId=models.ForeignKey(CaseInfoDetails,on_delete=models.CASCADE,null=True,blank=True)
+    fromDeptId= models.IntegerField(null=False,blank=False)
+    fromdivisionId=models.IntegerField(null=False,blank=False)
+    toDeptId=models.IntegerField(null=False,blank=False)
+    todivisionId=models.IntegerField(null=False,blank=False)
+    transferredBy=models.ForeignKey(User,on_delete=models.CASCADE,null=True,blank=True)
 
 class FileUploadApproval(models.Model):
     STATUS_CHOICES = [

@@ -1,4 +1,4 @@
-from .models import CaseInfoDetails, FileDetails, FavouriteFiles, Notification, FileAccessRequest,FileUploadApproval
+from .models import CaseInfoDetails, CaseTransfer, FileDetails, FavouriteFiles, Notification, FileAccessRequest,FileUploadApproval
 from rest_framework import serializers
 import hashlib
 import os
@@ -293,3 +293,14 @@ class FileAccessRequestSerializer(serializers.ModelSerializer):
             'approved_at',
             'status'
         ]
+
+class CaseTransferSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=CaseTransfer
+        fields = ['caseDetailsId','fromdivisionId', 'toDeptId', 'todivisionId']
+        extra_kwargs = {
+            'caseDetailsId': {'required': True},
+            'fromdivisionId': {'required': True},
+            'toDeptId': {'required': True},
+            'todivisionId': {'required': True},
+        }

@@ -2,8 +2,8 @@ from django.shortcuts import render
 from rest_framework import status, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import CaseInfoDetailsSerializer,FileDetailsUpdateSerializer,FavouriteFileDetailsSerializer,FileUploadApprovalSerializer,FileAccessRequestSerializer,FileDetailsSerializer,NotificationSerializer, CaseInfoSearchSerializers, FavouriteSerializer
-from .models import FileDetails, CaseInfoDetails, FavouriteFiles, Notification, FileAccessRequest, FileUploadApproval
+from .serializers import CaseInfoDetailsSerializer, CaseTransferSerializer,FileDetailsUpdateSerializer,FavouriteFileDetailsSerializer,FileUploadApprovalSerializer,FileAccessRequestSerializer,FileDetailsSerializer,NotificationSerializer, CaseInfoSearchSerializers, FavouriteSerializer
+from .models import CaseTransfer, FileDetails, CaseInfoDetails, FavouriteFiles, Notification, FileAccessRequest, FileUploadApproval
 from django.shortcuts import get_object_or_404
 from django.db.models import Prefetch, OuterRef, Exists, Case, When, Value, BooleanField
 from .utils import record_file_access, timezone
@@ -1335,3 +1335,46 @@ class MarkNotificationAsReadAPIView(APIView):
         notification.save()
 
         return Response({"message": "Notification marked as read."}, status=status.HTTP_200_OK)
+    
+
+class SaveCaseTransferView(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self,request, *args, **kwargs):
+        serializer = CaseTransferSerializer(data=request.data)
+
+        if serializer.is_valid():
+            user = request.user
+
+            designation = user.designation.first()
+            if not designation:
+                return Response({"error": "User has no designation assigned."},
+                                status=status.HTTP_400_BAD_REQUEST)
+            
+            fromDept = designation.department.first()
+
+            if not fromDept:
+                return Response({"error": "User's designation has no department assigned."},
+                                status=status.HTTP_400_BAD_REQUEST)
+            
+            case_details_Id = serializer.validated_data['caseDetailsId']
+
+            transfer = CaseTransfer.objects.create(
+                caseDetailsId=case_details_Id,
+                toDeptId=serializer.validated_data['toDeptId'],
+                todivisionId=serializer.validated_data['todivisionId'],
+                fromDeptId=fromDept.pk,
+                fromdivisionId=serializer.validated_data['fromdivisionId'],
+                transferredBy=user
+            )
+
+            CaseInfoDetails.objects.filter(
+                pk=case_details_Id.pk  # because StudentDetailsId is FK object
+            ).update(division=serializer.validated_data['todivisionId'])
+
+
+            return Response({
+                "message": "Case Transfer saved successfully.",
+                "id": transfer.caseTransferId
+            }, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

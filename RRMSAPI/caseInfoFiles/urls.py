@@ -1,6 +1,6 @@
 from django.urls import path
 from django.contrib import admin
-from .views import CaseInfoDetailsView,SearchCaseFilesView,CaseInfoDraftDetailsView,CaseFileUploadView,SubmitDraftAPIView,FileDetailsView,UploadApprovalDetailView,WithdrawAccessApprovalView,SendAccessApprovalReminder,SendUploadApprovalReminder,WithdrawUploadApprovalView,MarkNotificationAsReadAPIView,UploadApprovalListView,RevokeFileAccessRequestAPIView, FileApprovalDetailsViewSet,FilePreviewAPIView,FileAccessRequestListAPIView,ApproveorDenyConfidentialAPIView,NotificationListView, FavouriteFilesView,FavouriteFilesView,LatestUserFilesView
+from .views import CaseInfoDetailsView, SaveCaseTransferView,SearchCaseFilesView,CaseInfoDraftDetailsView,CaseFileUploadView,SubmitDraftAPIView,FileDetailsView,UploadApprovalDetailView,WithdrawAccessApprovalView,SendAccessApprovalReminder,SendUploadApprovalReminder,WithdrawUploadApprovalView,MarkNotificationAsReadAPIView,UploadApprovalListView,RevokeFileAccessRequestAPIView, FileApprovalDetailsViewSet,FilePreviewAPIView,FileAccessRequestListAPIView,ApproveorDenyConfidentialAPIView,NotificationListView, FavouriteFilesView,FavouriteFilesView,LatestUserFilesView
 
 admin.site.site_header = "RRMS Super Admin Portal"
 admin.site.site_title = "RRMS"
@@ -30,5 +30,6 @@ urlpatterns = [
     path('requests/<int:access_id>/send-reminder',SendAccessApprovalReminder.as_view(),name='send-reminder-access-request'),
     path('withdraw-access-requests/<int:access_id>',WithdrawAccessApprovalView.as_view(),name='withdraw-access-request'),
     path('revoke',RevokeFileAccessRequestAPIView.as_view(),name='revoke-access'),
-    path('markasread',MarkNotificationAsReadAPIView.as_view(),name='mark-as-read')
+    path('markasread',MarkNotificationAsReadAPIView.as_view(),name='mark-as-read'),
+    path('case-transfer',SaveCaseTransferView.as_view(),name='case-transfer')
 ]
