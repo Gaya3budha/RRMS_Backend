@@ -1357,20 +1357,51 @@ class SaveCaseTransferView(APIView):
                                 status=status.HTTP_400_BAD_REQUEST)
             
             case_details_Id = serializer.validated_data['caseDetailsId']
+            to_division = serializer.validated_data['todivisionId']
+            to_dept = serializer.validated_data['toDeptId']
+
+            case_instance = CaseInfoDetails.objects.get(pk=case_details_Id.pk if hasattr(case_details_Id, "pk") else case_details_Id)
 
             transfer = CaseTransfer.objects.create(
                 caseDetailsId=case_details_Id,
-                toDeptId=serializer.validated_data['toDeptId'],
-                todivisionId=serializer.validated_data['todivisionId'],
+                toDeptId=to_dept,
+                todivisionId=to_division,
                 fromDeptId=fromDept.pk,
                 fromdivisionId=serializer.validated_data['fromdivisionId'],
                 transferredBy=user
             )
 
             CaseInfoDetails.objects.filter(
-                pk=case_details_Id.pk  # because StudentDetailsId is FK object
-            ).update(division=serializer.validated_data['todivisionId'])
+                pk=case_details_Id.pk  # because casedetailsId is FK object
+            ).update(division=to_division)
 
+
+            file_qs = FileDetails.objects.filter(caseDetails=case_details_Id.pk)
+            for file in file_qs:
+                file.division = to_division
+
+                # rebuild filePath same as creation logic
+                dept_name = to_dept.departmentName  # assuming Department model has name
+                division_name = to_division.divisionName
+                unit_name = UnitMaster.objects.get(unitId=case_instance.unitId).unitName
+                case_type = GeneralLookUp.objects.get(lookupId=case_instance.caseType).lookupName
+                file_type = GeneralLookUp.objects.get(lookupId=file.fileType_id).lookupName if file.fileType_id else "NA"
+                document_type = GeneralLookUp.objects.get(lookupId=file.documentType_id).lookupName if file.documentType_id else "NA"
+
+                file.filePath = os.path.join(
+                    UPLOAD_DIR,
+                    str(dept_name),
+                    str(division_name),
+                    str(case_details_Id.year),
+                    str(unit_name),
+                    str(case_details_Id.caseNo),
+                    str(case_type),
+                    str(file_type),
+                    str(document_type),
+                    file.fileName
+                )
+
+                file.save()
 
             return Response({
                 "message": "Case Transfer saved successfully.",
