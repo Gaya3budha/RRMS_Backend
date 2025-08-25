@@ -1357,15 +1357,17 @@ class SaveCaseTransferView(APIView):
                                 status=status.HTTP_400_BAD_REQUEST)
             
             case_details_Id = serializer.validated_data['caseDetailsId']
-            to_division = serializer.validated_data['todivisionId']
-            to_dept = serializer.validated_data['toDeptId']
+            to_division_id = serializer.validated_data['todivisionId']
+            to_division = get_object_or_404(Division, pk=to_division_id)
+            to_dept_id = serializer.validated_data['toDeptId']
+            to_dept = get_object_or_404(Department, pk=to_dept_id)
 
             case_instance = CaseInfoDetails.objects.get(pk=case_details_Id.pk if hasattr(case_details_Id, "pk") else case_details_Id)
 
             transfer = CaseTransfer.objects.create(
                 caseDetailsId=case_details_Id,
-                toDeptId=to_dept,
-                todivisionId=to_division,
+                toDeptId=to_dept_id,
+                todivisionId=to_division_id,
                 fromDeptId=fromDept.pk,
                 fromdivisionId=serializer.validated_data['fromdivisionId'],
                 transferredBy=user
