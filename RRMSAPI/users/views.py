@@ -17,7 +17,10 @@ from datetime import date
 from django.db.models import Q
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_decode
+import time, logging
 
+
+logger = logging.getLogger(__name__)
 
 # Create your views here.
 class UserListView(APIView):
@@ -37,8 +40,15 @@ class CreateUserView(APIView):
 
         if serializer.is_valid():
             try:
+                start = time.time()
                 user = serializer.save()
-                return Response(serializer.data,status = status.HTTP_201_CREATED)
+                logger.info(f"User created in {time.time() - start:.2f}s")
+
+                start2 = time.time()
+                data = serializer.data
+                logger.info(f"Serializer data generation took {time.time() - start2:.2f}s")
+
+                return Response(data,status = status.HTTP_201_CREATED)
             except ValidationError as e:
                 return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
