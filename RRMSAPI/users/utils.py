@@ -16,7 +16,7 @@ def send_password_setup_email(user):
     frontend_link = f"https://rrms-frontend.vercel.app/set-password?uid={uid}&token={token}"
 
     message = Mail(
-        from_email='gaya3budha@gmail.com',
+        from_email='rrms@noreply.com',
         to_emails=user.email,
         subject='[RRMS] Confirm your Password',
         plain_text_content=f"Hello {user.first_name},\n\nClick the link below to set your password:\n{frontend_link}\n\nThis link is valid for one-time use only."
