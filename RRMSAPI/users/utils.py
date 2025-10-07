@@ -39,12 +39,26 @@ def send_password_reset_email(user,to_email=None):
     
     frontend_link = f"https://rrms-frontend.vercel.app/set-password?uid={uid}&token={token}"
 
-    subject = "[RRMS] Confirm your Password"
-    message = f"Hello {user.first_name},\n\nClick the link below to set your password:\n{frontend_link}\n\nThis link is valid for one-time use only."
-    from_email = settings.DEFAULT_FROM_EMAIL
-    recipient = to_email or user.email
+    # subject = "[RRMS] Confirm your Password"
+    # message = f"Hello {user.first_name},\n\nClick the link below to set your password:\n{frontend_link}\n\nThis link is valid for one-time use only."
+    # from_email = settings.DEFAULT_FROM_EMAIL
+    # recipient = to_email or user.email
 
-    send_mail(subject, message, from_email, [recipient], fail_silently=False)
+    
+    # send_mail(subject, message, from_email, [recipient], fail_silently=False)
+    message = Mail(
+        from_email='gaya3budha@gmail.com',
+        to_emails=to_email or user.email,
+        subject='[RRMS] Confirm your Password',
+        plain_text_content=f"Hello {user.first_name},\n\nClick the link below to set your password:\n{frontend_link}\n\nThis link is valid for one-time use only."
+    )
+
+    try:
+        sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
+        sg.send(message)
+    except Exception as e:
+        print(e)
+        raise
 
 def generate_otp():
     return str(random.randint(100000, 999999))
@@ -52,10 +66,22 @@ def generate_otp():
 def send_otp_email(user_email, otp):
     from_email = settings.DEFAULT_FROM_EMAIL
 
-    send_mail(
-        '[RRMS] Your OTP for Password Reset',
-        f'Your OTP is {otp}. It is valid for 10 minutes.',
-        from_email,
-        [user_email],
-        fail_silently=False,
+    # send_mail(
+    #     ,
+    #     ,
+    #     from_email,
+    #     [user_email],
+    #     fail_silently=False,
+    # )
+    message = Mail(
+        from_email='gaya3budha@gmail.com',
+        to_emails=user_email,
+        subject='[RRMS] Your OTP for Password Reset',
+        plain_text_content=f'Your OTP is {otp}. It is valid for 10 minutes.'
     )
+    try:
+        sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
+        sg.send(message)
+    except Exception as e:
+        print(e)
+        raise
