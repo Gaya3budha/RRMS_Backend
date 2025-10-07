@@ -50,7 +50,7 @@ class UserSerializer(serializers.ModelSerializer):
             user.designation.set(designations)
 
         # Send password setup email
-        # send_password_setup_email(user)
+        send_password_setup_email(user)
       
         return user
 
