@@ -781,11 +781,14 @@ class FilePreviewAPIView(APIView):
         try:
             objFile = FileDetails.objects.select_related('classification').get(fileHash=file_hash, 
                                                                                caseDetails_id = case_id )
+            
+            print(objFile)
             filePath = objFile.filePath
             file_ext = os.path.splitext(filePath)[1].lower()
 
-            user_role_id = request.user.role.roleId
 
+            user_role_id = request.user.role.roleId
+            print(user_role_id)
             # Direct access if user is uploader, Admin, or Viewer
             if request.user != objFile.uploaded_by and user_role_id not in [1, 3]:
                 if objFile.classification_id==6:
@@ -803,7 +806,7 @@ class FilePreviewAPIView(APIView):
                             if not requested_to_id:
                                 return Response({
                                     "responseData": {
-                                        "error": "requested_to is required for private files",
+                                        "error": "requested_to is required for confidential files",
                                         "status": status.HTTP_400_BAD_REQUEST
                                     }
                                 }, status=status.HTTP_400_BAD_REQUEST)
@@ -825,7 +828,8 @@ class FilePreviewAPIView(APIView):
                                 "status": status.HTTP_202_ACCEPTED
                             }
                         })
-                    
+            
+            print(filePath)
             record_file_access(request.user, objFile)
             
             if not os.path.exists(filePath):
@@ -1405,6 +1409,20 @@ class SaveCaseTransferView(APIView):
 
                 file.save()
 
+            dig_designagions=Designation.objects.filter(designationName_iexact="DIG").first()
+            if dig_designagions:
+                dig_users=User.objects.filter(designation=dig_designagions,designation__department=to_dept,designation__division=to_division).distinct()  
+            
+                for u in dig_users:
+                    Notification.objects.create(
+                        recipient=u,
+                        requestedBy=request.user,
+                        division=to_division,
+                        message=f"Case No {case_instance.firNo/case_instance.year} has been transferred to {to_division.divisionName} Divison",
+                        type="Case_Transfer",
+                        content_type=ContentType.objects.get_for_model(CaseTransfer),
+                        object_id=transfer.caseTransferId
+                    )
             return Response({
                 "message": "Case Transfer saved successfully.",
                 "id": transfer.caseTransferId
