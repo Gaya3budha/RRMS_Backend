@@ -1,3 +1,4 @@
+import shutil
 from django.shortcuts import render
 from rest_framework import status, permissions
 from rest_framework.response import Response
@@ -1299,7 +1300,7 @@ class NotificationListView(APIView):
         user = request.user
 
         division_id = request.query_params.get('division_id')
-        allowed_types = ["UPLOAD_APPROVAL", "ACCESS_REQUEST", "GENERIC", "UPLOAD_APPROVAL_REMINDER"]
+        allowed_types = ["UPLOAD_APPROVAL", "ACCESS_REQUEST", "GENERIC", "UPLOAD_APPROVAL_REMINDER","Case_Transfer"]
 
         if not division_id and not user.is_staff:
             return Response({"detail": "Division ID is required."}, status=400)
@@ -1384,6 +1385,7 @@ class SaveCaseTransferView(APIView):
 
             file_qs = FileDetails.objects.filter(caseDetails=case_details_Id.pk)
             for file in file_qs:
+                old_path = file.filePath
                 file.division = to_division
 
                 # rebuild filePath same as creation logic
@@ -1394,7 +1396,7 @@ class SaveCaseTransferView(APIView):
                 file_type = GeneralLookUp.objects.get(lookupId=file.fileType_id).lookupName if file.fileType_id else "NA"
                 document_type = GeneralLookUp.objects.get(lookupId=file.documentType_id).lookupName if file.documentType_id else "NA"
 
-                file.filePath = os.path.join(
+                new_path = os.path.join(
                     UPLOAD_DIR,
                     str(dept_name),
                     str(division_name),
@@ -1407,6 +1409,19 @@ class SaveCaseTransferView(APIView):
                     file.fileName
                 )
 
+                os.makedirs(os.path.dirname(new_path), exist_ok=True)
+
+                # move file physically if it exists
+                if os.path.exists(old_path):
+                    try:
+                        shutil.move(old_path, new_path)
+                        print(f"✅ File moved from {old_path} → {new_path}")
+                    except Exception as e:
+                        print(f"⚠️ Error moving file {old_path} → {new_path}: {e}")
+                else:
+                    print(f"⚠️ Old file not found: {old_path}")
+
+                file.filePath = new_path
                 file.save()
 
             dig_designagions=Designation.objects.filter(designationName__icontains="DIG")
