@@ -1409,16 +1409,22 @@ class SaveCaseTransferView(APIView):
 
                 file.save()
 
-            dig_designagions=Designation.objects.filter(designationName_iexact="DIG").first()
+            dig_designagions=Designation.objects.filter(designationName__icontains="DIG")
+            print(dig_designagions)
             if dig_designagions:
-                dig_users=User.objects.filter(designation=dig_designagions,designation__department=to_dept,designation__division=to_division).distinct()  
-            
+                dig_users=User.objects.filter(
+                            designation__in=dig_designagions,
+                            designation__department__in=[to_dept],
+                            designation__division__in=[to_division]
+                        ).distinct()
+
+                print(dig_users)
                 for u in dig_users:
                     Notification.objects.create(
                         recipient=u,
                         requestedBy=request.user,
                         division=to_division,
-                        message=f"Case No {case_instance.firNo/case_instance.year} has been transferred to {to_division.divisionName} Divison",
+                        message=f"Case No {case_instance.firNo}/{case_instance.year} has been transferred to {to_division.divisionName} Divison",
                         type="Case_Transfer",
                         content_type=ContentType.objects.get_for_model(CaseTransfer),
                         object_id=transfer.caseTransferId
