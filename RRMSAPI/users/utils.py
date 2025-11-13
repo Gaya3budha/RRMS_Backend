@@ -5,8 +5,7 @@ from django.urls import reverse
 from django.core.mail import send_mail
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
+
 import os
 
 def send_password_setup_email(user):
