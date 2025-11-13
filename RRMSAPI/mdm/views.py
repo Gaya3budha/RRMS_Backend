@@ -1,12 +1,12 @@
 from django.shortcuts import render
-from rest_framework import status
+from rest_framework import status,serializers
 from .models import EmailDomain, Role,SMTPSettings,DesignationHierarchy, Department,Division,GeneralLookUp, DistrictMaster, StateMaster,UnitMaster, Designation, FileType, FileClassification, CaseStatus
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .permissions import HasRequiredPermission, IsSuperAdminOrReadOnly
 from rest_framework import viewsets
-from .serializers import DesignationHierarchySerializer,DesignationViewSerializer, EmailDomainSerializer,SMTPSerializer,CorrFilesSerializer,CaseFilesSerializer,FileTypeSerializer,FileClassificationSerializer,CaseStatusSerializer,DepartmentSeriallizer,LookupCustomSerializer, DivisionSerializer, DesignationSerializer
+from .serializers import DesignationHierarchySerializer,DesignationViewSerializer, EmailDomainSerializer, FinalReportCaseStatusSerializer,SMTPSerializer,CorrFilesSerializer,CaseFilesSerializer,FileTypeSerializer,FileClassificationSerializer,CaseStatusSerializer,DepartmentSeriallizer,LookupCustomSerializer, DivisionSerializer, DesignationSerializer
 from rest_framework.permissions import IsAdminUser
 from .utils import CATEGORY_LABELS
 from rest_framework.generics import ListAPIView
@@ -274,6 +274,33 @@ class CaseStatusViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         serializer.save()
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.active = 'N'
+        instance.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    
+class FinalReportCaseStatusViewSet(viewsets.ModelViewSet):
+    serializer_class = FinalReportCaseStatusSerializer
+
+    def get_queryset(self):
+        category_id = self.request.query_params.get('categoryId')
+        if category_id:
+            queryset = queryset.filter(CategoryId=category_id)
+        return queryset.order_by('lookupId')
+
+    def perform_create(self, serializer):
+        category_id = self.request.data.get('categoryId')
+        if not category_id:
+            raise serializers.ValidationError({"categoryId": "This field is required."})
+        serializer.save(CategoryId=category_id, active='Y')
+
+    def perform_update(self, serializer):
+        category_id = self.request.data.get('categoryId')
+        if not category_id:
+            raise serializers.ValidationError({"categoryId": "This field is required."})
+        serializer.save(CategoryId=category_id)
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()

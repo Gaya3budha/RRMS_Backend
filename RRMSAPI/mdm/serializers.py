@@ -129,6 +129,15 @@ class CaseStatusSerializer(serializers.ModelSerializer):
         model = GeneralLookUp
         fields = ['statusId','statusName']
 
+class FinalReportCaseStatusSerializer(serializers.ModelSerializer):
+    frstatusId = serializers.IntegerField(source='lookupId',read_only=True)
+    frstatusName = serializers.CharField(source='lookupName')
+    categoryId = serializers.IntegerField(source='CategoryId')
+
+    class Meta:
+        model = GeneralLookUp
+        fields = ['frstatusId','frstatusName','categoryId']
+
 class LookupCustomSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(source='lookupid')
     value = serializers.CharField(source='lookupvalue')

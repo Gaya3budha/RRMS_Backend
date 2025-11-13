@@ -67,6 +67,9 @@ insert into public.mdm_generallookup values(25,'Charge Sheet [C]',6,5,'Y',CURREN
 insert into public.mdm_generallookup values(26,'Pending Trail',6,6,'Y',CURRENT_DATE);
 insert into public.mdm_generallookup values(27,'Disposal',6,7,'Y',CURRENT_DATE);
 insert into public.mdm_generallookup values(28,'Under Enquiry',6,8,'Y',CURRENT_DATE);
+insert into public.mdm_generallookup values(33,'Final Report A',6,9,'Y',CURRENT_DATE);
+insert into public.mdm_generallookup values(34,'Final Report B',6,10,'Y',CURRENT_DATE);
+insert into public.mdm_generallookup values(35,'Final Report C',6,11,'Y',CURRENT_DATE);
 
 insert into public.mdm_generallookup values(29,'Image',5,'Y',CURRENT_DATE,1);
 insert into public.mdm_generallookup values(30,'Document',5,'Y',CURRENT_DATE,2);
