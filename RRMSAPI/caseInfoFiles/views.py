@@ -140,6 +140,10 @@ class SearchCaseFilesView(APIView):
             filters_applied = True
             # query &= Q(caseStatus__icontains= searchParams['caseStatus'].strip())
             # filters_applied = True
+        if "finalReportCaseStatus" in searchParams and searchParams["finalReportCaseStatus"] not in [None, ""]:
+            final_status_value = GeneralLookUp.objects.get(lookupId=searchParams["finalReportCaseStatus"]).lookupValue
+            query &= Q(caseStatus=final_status_value)
+            filters_applied = True
 
         if "author" in searchParams and searchParams["author"] not in [None, ""]:
             query &= Q(author__icontains= searchParams['author'])

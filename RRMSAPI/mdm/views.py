@@ -286,6 +286,7 @@ class FinalReportCaseStatusViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         category_id = self.request.query_params.get('categoryId')
+        queryset = GeneralLookUp.objects.filter(active='Y')
         if category_id:
             queryset = queryset.filter(CategoryId=category_id)
         return queryset.order_by('lookupId')

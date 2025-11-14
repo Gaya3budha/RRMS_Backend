@@ -17,6 +17,7 @@ class CaseInfoDetailsSerializer(serializers.ModelSerializer):
     caseTypeName = serializers.SerializerMethodField()
     caseDate = serializers.DateTimeField(format="%d-%m-%Y",required=False,allow_null=True)
     caseStatusName = serializers.SerializerMethodField()
+    finalReportCaseStatusName=serializers.SerializerMethodField()
 
     class Meta:
         model = CaseInfoDetails
@@ -46,7 +47,13 @@ class CaseInfoDetailsSerializer(serializers.ModelSerializer):
     
     def get_caseStatusName(self, obj):
         try:
-            state = GeneralLookUp.objects.get(lookupId = obj.caseType)
+            state = GeneralLookUp.objects.get(lookupId = obj.caseStatus)
+            return state.lookupName
+        except GeneralLookUp.DoesNotExist:
+            return None
+    def get_finalReportCaseStatusName(self, obj):
+        try:
+            state = GeneralLookUp.objects.get(lookupId = obj.finalReportCaseStatus)
             return state.lookupName
         except GeneralLookUp.DoesNotExist:
             return None
@@ -176,16 +183,24 @@ class CaseInfoSearchSerializers(serializers.ModelSerializer):
     caseTypeName = serializers.SerializerMethodField()
     caseDate = serializers.DateTimeField(format="%d-%m-%Y")
     caseStatusName = serializers.SerializerMethodField()
+    finalReportCaseStatusName = serializers.SerializerMethodField()
 
     files = FileDetailsSearchSerializer(many= True, read_only= True)
 
     class Meta:
         model = CaseInfoDetails
-        fields = ['CaseInfoDetailsId','stateId','stateName','year','districtId','districtName','unitId','unitName','Office','caseDate','caseNo','firNo','letterNo','caseType','caseTypeName','author','toAddr','caseStatus','caseStatusName','files']
+        fields = ['CaseInfoDetailsId','stateId','stateName','year','districtId','districtName','finalReportCaseStatus','finalReportCaseStatusName','unitId','unitName','Office','caseDate','caseNo','firNo','letterNo','caseType','caseTypeName','author','toAddr','caseStatus','caseStatusName','files']
 
     def get_caseStatusName(self, obj):
         try:
-            state = GeneralLookUp.objects.get(lookupId = obj.caseType)
+            state = GeneralLookUp.objects.get(lookupId = obj.caseStatus)
+            return state.lookupName
+        except GeneralLookUp.DoesNotExist:
+            return None
+    
+    def get_finalReportCaseStatusName(self, obj):
+        try:
+            state = GeneralLookUp.objects.get(lookupId = obj.finalReportCaseStatus)
             return state.lookupName
         except GeneralLookUp.DoesNotExist:
             return None

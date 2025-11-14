@@ -24,7 +24,8 @@ class CaseInfoDetails(models.Model):
     caseStatus = models.IntegerField( null = True, blank= True)
     lastmodified_by = models.ForeignKey(User, on_delete=models.CASCADE, null = True,blank = True)
     lastmodified_Date = models.DateTimeField(auto_now_add=True, null = True,blank = True)
-    division  = models.ForeignKey(Division,blank= True, null=True,on_delete=models.CASCADE) 
+    division  = models.ForeignKey(Division,blank= True, null=True,on_delete=models.CASCADE)
+    finalReportCaseStatus=models.IntegerField(null=True,blank=True)
 
     is_draft = models.BooleanField(default=True)
     submitted_at = models.DateTimeField(null=True, blank=True)
